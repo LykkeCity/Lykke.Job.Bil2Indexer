@@ -1,0 +1,18 @@
+Bil2IndexerJob:
+  Db:
+    LogsConnString:
+      settings-key: Bil2IndexerJob-LogsConnString
+      types:
+        - AzureTableStorage
+SlackNotifications:
+    AzureQueue:
+        ConnectionString:
+            settings-key: SlackNotificationsConnString
+            types:
+                - AzureTableStorage
+        QueueName:
+            settings-key: SlackQueueName
+MonitoringServiceClient:
+    MonitoringServiceUrl:
+        settings-key: MonitoringServiceUrl
+
