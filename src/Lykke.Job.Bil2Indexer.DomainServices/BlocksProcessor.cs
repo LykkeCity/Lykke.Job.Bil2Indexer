@@ -3,10 +3,11 @@ using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Bil2.Contract.BlocksReader.Commands;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Domain.Services;
 
 namespace Lykke.Job.Bil2Indexer.DomainServices
 {
-    public class BlocksProcessor
+    public class BlocksProcessor : IBlocksProcessor
     {
         private readonly IBlocksReaderApi _blocksReaderApi;
         private readonly IBlocksRepository _blocksRepository;

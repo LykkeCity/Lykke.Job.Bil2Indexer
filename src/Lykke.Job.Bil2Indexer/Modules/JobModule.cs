@@ -1,7 +1,5 @@
 ﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Common;
-using Common.Log;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Settings.JobSettings;
 using Lykke.Sdk;

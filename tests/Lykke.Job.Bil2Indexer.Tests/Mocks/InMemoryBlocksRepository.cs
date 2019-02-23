@@ -13,37 +13,49 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
 
         public Task SaveAsync(BlockHeader block)
         {
-            _blocks.Add(block.Number, block);
+            lock (_blocks)
+            {
+                _blocks.Add(block.Number, block);
 
-            Console.WriteLine($"Saved: {block}");
+                Console.WriteLine($"Saved: {block}");
+            }
 
             return Task.CompletedTask;
         }
 
         public Task<BlockHeader> GetOrDefaultAsync(long blockNumber)
         {
-            _blocks.TryGetValue(blockNumber, out var block);
+            lock (_blocks)
+            {
+                _blocks.TryGetValue(blockNumber, out var block);    
 
-            return Task.FromResult(block);
+                return Task.FromResult(block);
+            }
         }
 
         public Task RemoveAsync(BlockHeader block)
         {
-            Console.WriteLine($"Removed: {block}");
-
-            var storedBlock = _blocks[block.Number];
-
-            if (storedBlock.Hash == block.Hash)
+            lock (_blocks)
             {
-                _blocks.Remove(storedBlock.Number);
-            }
+                var storedBlock = _blocks[block.Number];
 
-            return Task.CompletedTask;
+                if (storedBlock.Hash == block.Hash)
+                {
+                    _blocks.Remove(storedBlock.Number);
+                }
+
+                Console.WriteLine($"Removed: {block}");
+
+                return Task.CompletedTask;
+            }
         }
 
         public Task<IReadOnlyList<BlockHeader>> GetAllAsync()
         {
-            return Task.FromResult<IReadOnlyList<BlockHeader>>(new ReadOnlyCollection<BlockHeader>(_blocks.Values));
+            lock (_blocks)
+            {
+                return Task.FromResult<IReadOnlyList<BlockHeader>>(new ReadOnlyCollection<BlockHeader>(_blocks.Values));
+            }
         }
     }
 }
