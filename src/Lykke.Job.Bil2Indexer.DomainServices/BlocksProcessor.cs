@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Bil2.Contract.BlocksReader.Commands;
+using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
@@ -10,18 +11,24 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
 {
     public class BlocksProcessor : IBlocksProcessor
     {
+        private readonly string _blockchainType;
         private readonly int _startBlock;
+        private readonly IContractEventsPublisher _contractEventsPublisher;
         private readonly IBlocksReaderApi _blocksReaderApi;
         private readonly IBlocksRepository _blocksRepository;
         private readonly IBlocksDeduplicationRepository _blocksDeduplicationRepository;
 
         public BlocksProcessor(
+            string blockchainType,
             int startBlock,
+            IContractEventsPublisher contractEventsPublisher,
             IBlocksReaderApi blocksReaderApi,
             IBlocksRepository blocksRepository,
             IBlocksDeduplicationRepository blocksDeduplicationRepository)
         {
+            _blockchainType = blockchainType;
             _startBlock = startBlock;
+            _contractEventsPublisher = contractEventsPublisher;
             _blocksReaderApi = blocksReaderApi;
             _blocksRepository = blocksRepository;
             _blocksDeduplicationRepository = blocksDeduplicationRepository;
@@ -125,10 +132,16 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 _blocksRepository.SetHeadAsync(newHeadBlock, storedHeadBlock)
             );
 
+            await _contractEventsPublisher.PublishAsync(new BlockRolledBackEvent
+            {
+                BlockchainType = _blockchainType,
+                BlockNumber = storedPreviousBlock.Number,
+                BlockHash = storedPreviousBlock.Hash,
+                PreviousBlockHash = storedPreviousBlock.PreviousBlockHash
+            });
+
             // Should be last step
             await _blocksReaderApi.SendAsync(new ReadBlockCommand(block.Number - 1));
-
-            // TODO: Publish BlockRolledBackEvent
         }
     }
 }
