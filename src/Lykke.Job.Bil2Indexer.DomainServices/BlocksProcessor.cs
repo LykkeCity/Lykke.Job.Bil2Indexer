@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Bil2.Contract.BlocksReader.Commands;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -9,46 +10,60 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
 {
     public class BlocksProcessor : IBlocksProcessor
     {
+        private readonly int _startBlock;
         private readonly IBlocksReaderApi _blocksReaderApi;
         private readonly IBlocksRepository _blocksRepository;
+        private readonly IBlocksDeduplicationRepository _blocksDeduplicationRepository;
 
         public BlocksProcessor(
+            int startBlock,
             IBlocksReaderApi blocksReaderApi,
-            IBlocksRepository blocksRepository)
+            IBlocksRepository blocksRepository,
+            IBlocksDeduplicationRepository blocksDeduplicationRepository)
         {
+            _startBlock = startBlock;
             _blocksReaderApi = blocksReaderApi;
             _blocksRepository = blocksRepository;
+            _blocksDeduplicationRepository = blocksDeduplicationRepository;
         }
 
         public async Task ProcessBlockAsync(BlockHeader block)
         {
-            var storedBlock = await _blocksRepository.GetOrDefaultAsync(block.Number);
-
-            if (block.Hash == storedBlock?.Hash)
+            if (await _blocksDeduplicationRepository.IsProcessedAsync(block.Hash))
             {
                 return;
             }
 
-            var storedPreviousBlock = await _blocksRepository.GetOrDefaultAsync(block.Number - 1);
+            var (storedPreviousBlock, storedHeadBlock) = await TaskExecution.WhenAll
+            (
+                _blocksRepository.GetOrDefaultAsync(block.Number - 1),
+                _blocksRepository.GetHeadOrDefaultAsync()
+            );
+
+            if (storedHeadBlock?.Hash != storedPreviousBlock?.Hash)
+            {
+                throw new InvalidOperationException($"prev: {storedPreviousBlock?.Hash}, head: {storedHeadBlock?.Hash}");
+            }
 
             if (storedPreviousBlock == null || block.PreviousBlockHash == storedPreviousBlock.Hash)
             {
-                await MoveForwardAsync(block);
+                await MoveForwardAsync(storedHeadBlock, block);
             }
             else
             {
-                await MoveBackwardAsync(block, storedPreviousBlock);
+                await MoveBackwardAsync(storedHeadBlock, block, storedPreviousBlock);
             }
+
+            await _blocksDeduplicationRepository.MarkAsProcessedAsync(block.Hash);
         }
 
-        private async Task MoveForwardAsync(BlockHeader block)
+        private async Task MoveForwardAsync(BlockHeader storedHeadBlock, BlockHeader block)
         {
-            //var lastValidBlock = await _blocksRepository.GetLastValidOrDefault();
-
-            //if (lastValidBlock?.Number != block.Number)
-            //{
-            //    // TODO: Defer processing of the block
-            //}
+            if (storedHeadBlock == null && block.Number != _startBlock || 
+                storedHeadBlock != null && block.Number != storedHeadBlock.Number + 1)
+            {
+                throw new InvalidOperationException($"Disordered block on forward turn: {block.Number}, waiting for block: {storedHeadBlock?.Number + 1 ?? _startBlock}");
+            }
 
             long nextBlockNumber;
             var currentBlock = block;
@@ -67,32 +82,53 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 // Is next block already stored, but belongs to another chain? Removing it if so.
                 if (storedNextBlock.PreviousBlockHash != currentBlock.Hash)
                 {
-                    await _blocksRepository.RemoveAsync(storedNextBlock);
+                    await Task.WhenAll
+                    (
+                        _blocksRepository.RemoveAsync(storedNextBlock),
+                        _blocksDeduplicationRepository.MarkAsNotProcessedAsync(storedNextBlock.Hash)
+                    );
                     break;
                 }
 
                 currentBlock = storedNextBlock;
             }
-            
-            await _blocksRepository.SaveAsync(block);
+
+            await Task.WhenAll
+            (
+                _blocksRepository.SaveAsync(block),
+                _blocksRepository.SetHeadAsync(currentBlock, storedHeadBlock)
+            );
+
+            // Should be last step
             await _blocksReaderApi.SendAsync(new ReadBlockCommand(nextBlockNumber));
         }
 
-        private async Task MoveBackwardAsync(BlockHeader block, BlockHeader storedPreviousBlock)
+        private async Task MoveBackwardAsync(BlockHeader storedHeadBlock, BlockHeader block, BlockHeader storedPreviousBlock)
         {
-            //var lastValidBlock = await _blocksRepository.GetLastValidOrDefault();
-            //if (lastValidBlock?.Number != block.Number - 2)
-            //{
-            //    // TODO: Defer processing of the block
-            //}
+            if (block.Number != storedHeadBlock.Number + 1)
+            {
+                throw new InvalidOperationException($"Disordered block on backward turn: {block.Number}, waiting for block: {storedHeadBlock.Number + 1}");
+            }
 
-            await _blocksRepository.RemoveAsync(storedPreviousBlock);
+            var getNewHeadBlockTask = _blocksRepository.GetOrDefaultAsync(block.Number - 2);
+            var removePreviousBlockTask = _blocksRepository.RemoveAsync(storedPreviousBlock);
+            var markPreviousBlockAsNotProcessedTask = _blocksDeduplicationRepository.MarkAsNotProcessedAsync(storedPreviousBlock.Hash);
+            var saveBlockTask = _blocksRepository.SaveAsync(block);
+
+            var newHeadBlock = await getNewHeadBlockTask;
+
+            await Task.WhenAll
+            (
+                removePreviousBlockTask,
+                markPreviousBlockAsNotProcessedTask,
+                saveBlockTask,
+                _blocksRepository.SetHeadAsync(newHeadBlock, storedHeadBlock)
+            );
+
+            // Should be last step
+            await _blocksReaderApi.SendAsync(new ReadBlockCommand(block.Number - 1));
 
             // TODO: Publish BlockRolledBackEvent
-
-            await _blocksRepository.SaveAsync(block);
-            //await _blocksRepository.SetLastValidBlockAsync(block.Number - 2);
-            await _blocksReaderApi.SendAsync(new ReadBlockCommand(block.Number - 1));
         }
     }
 }

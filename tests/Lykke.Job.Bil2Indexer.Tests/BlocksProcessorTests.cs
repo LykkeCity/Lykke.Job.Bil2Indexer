@@ -269,7 +269,22 @@ namespace Lykke.Job.Bil2Indexer.Tests
                         new BlockHeader(6, "6C", DateTime.UtcNow, 0, 0, "5C"),
                     }
                 }
-            }
+            },
+            // case: 6
+            // A: 1-2-3-4
+            new Dictionary<char, BlockHeader[]>
+            {
+                {
+                    'A',
+                    new[]
+                    {
+                        new BlockHeader(1, "1A", DateTime.UtcNow, 0, 0, null),
+                        new BlockHeader(2, "2A", DateTime.UtcNow, 0, 0, "1A"),
+                        new BlockHeader(3, "3A", DateTime.UtcNow, 0, 0, "2A"),
+                        new BlockHeader(4, "4A", DateTime.UtcNow, 0, 0, "3A"),
+                    }
+                }
+            },
         };
 
         #endregion
@@ -280,17 +295,20 @@ namespace Lykke.Job.Bil2Indexer.Tests
         private InMemoryBlocksRepository _blocksRepository;
         private InMemoryReadBlockCommandsQueue _queue;
         private BlocksReaderApiMock _blocksReaderApi;
-        private BlocksProcessor _blocksProcessor;
         private ChainsEvaluator _chainsEvaluator;
+        private InMemoryBlocksDeduplicationRepository _blocksDeduplicationRepository;
 
         [SetUp]
         public void SetUp()
         {
             _blocksRepository = new InMemoryBlocksRepository();
+            _blocksDeduplicationRepository = new InMemoryBlocksDeduplicationRepository();
             _queue = new InMemoryReadBlockCommandsQueue();
             _blocksReaderApi = new BlocksReaderApiMock(_queue);
-            _blocksProcessor = new BlocksProcessor(_blocksReaderApi, _blocksRepository);
-            _chainsEvaluator = new ChainsEvaluator(Chains, _blocksProcessor);
+            
+            var blocksProcessor = new BlocksProcessor(1, _blocksReaderApi, _blocksRepository, _blocksDeduplicationRepository);
+
+            _chainsEvaluator = new ChainsEvaluator(Chains, blocksProcessor);
 
             _queue.CommandReceived += async (s, a) =>
             {
@@ -322,7 +340,8 @@ namespace Lykke.Job.Bil2Indexer.Tests
         [TestCase(3)]
         [TestCase(4)]
         [TestCase(5)]
-        public async Task Test_that_chain_switching_during_forward_turn_works(int @case)
+        [TestCase(6)]
+        public async Task Test_that_longest_chain_is_processed(int @case)
         {
             // Arrange
 
@@ -371,7 +390,11 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             await _blocksReaderApi.SendAsync(new ReadBlockCommand(1));
 
-            _queue.Wait();
+            if (!_queue.Wait())
+            {
+                _queue.Stop();
+                _queue.Wait();
+            }
 
             // Assert
 
@@ -379,6 +402,141 @@ namespace Lykke.Job.Bil2Indexer.Tests
             var expectedBlocks = GetLongestChain(@case);
 
             Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());
+
+            CollectionAssert.AreEqual(
+                expectedBlocks.Select(b => b.Number),
+                actualBlocks.Select(b => b.Number));
+
+            CollectionAssert.AreEqual(
+                expectedBlocks.Select(b => b.Hash),
+                actualBlocks.Select(b => b.Hash));
+        }
+
+        [Test]
+        [TestCase(0, "1A")]
+        [TestCase(0, "2A")]
+        [TestCase(0, "3A")]
+        [TestCase(0, "6A")]
+        [TestCase(0, "3B")]
+        [TestCase(0, "4B")]
+        [TestCase(0, "5B")]
+        [TestCase(0, "6B")]
+        [TestCase(0, "7B")]
+        [TestCase(6, "1A")]
+        [TestCase(6, "2A")]
+        [TestCase(6, "4A")]
+        public async Task Test_that_block_duplication_is_processed_well(int @case, string duplicateBlockHash)
+        {
+            // Arrange
+
+            _chainsEvaluator.Case = @case;
+
+            _chainsEvaluator.CustomBlockProcessing = async (blockProcessor, chains, activeChain, block) =>
+            {
+                if (block.Hash == duplicateBlockHash)
+                {
+                    await blockProcessor.ProcessBlockAsync(block);
+                }
+
+                return true;
+            };
+
+            // Act
+
+            await _blocksReaderApi.SendAsync(new ReadBlockCommand(1));
+
+            if (!_queue.Wait())
+            {
+                _queue.Stop();
+                _queue.Wait();
+            }
+
+            // Assert
+
+            var actualBlocks = await _blocksRepository.GetAllAsync();
+            var expectedBlocks = GetLongestChain(@case);
+
+            Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());
+
+            CollectionAssert.AreEqual(
+                expectedBlocks.Select(b => b.Number),
+                actualBlocks.Select(b => b.Number));
+
+            CollectionAssert.AreEqual(
+                expectedBlocks.Select(b => b.Hash),
+                actualBlocks.Select(b => b.Hash));
+        }
+
+        [Test]
+        [TestCase(0, "3B", "1A")]
+        [TestCase(0, "3B", "2A")]
+        [TestCase(0, "3B", "3A", Ignore = "Not supported yet case")]
+        [TestCase(0, "3B", "4A")]
+        [TestCase(0, "3B", "5A")]
+        [TestCase(0, "3B", "4B")]
+        [TestCase(0, "3B", "5B")]
+        [TestCase(0, "3B", "6B")]
+        [TestCase(0, "4B", "1A")]
+        [TestCase(0, "4B", "2A")]
+        [TestCase(0, "4B", "3A")]
+        [TestCase(0, "4B", "4A", Ignore = "Not supported yet case")]
+        [TestCase(0, "4B", "5A")]
+        [TestCase(0, "4B", "3B")]
+        [TestCase(0, "4B", "5B")]
+        [TestCase(0, "4B", "6B")]
+        [TestCase(0, "5B", "1A")]
+        [TestCase(0, "5B", "2A")]
+        [TestCase(0, "5B", "3A")]
+        [TestCase(0, "5B", "4A")]
+        [TestCase(0, "5B", "5A", Ignore = "Not supported yet case")]
+        [TestCase(0, "5B", "3B")]
+        [TestCase(0, "5B", "4B")]
+        [TestCase(0, "5B", "6B")]
+        [TestCase(6, "2A", "3A")]
+        [TestCase(6, "2A", "4A")]
+        public async Task Test_that_disordered_blocks_eventually_processed(int @case, string substitutableBlockHash, string substituteBlockHash)
+        {
+            // Arrange
+
+            _chainsEvaluator.Case = @case;
+
+            var isSubstituted = false;
+
+            _chainsEvaluator.CustomBlockProcessing = async (blockProcessor, chains, activeChain, block) =>
+            {
+                if (!isSubstituted && block.Hash == substitutableBlockHash)
+                {
+                    isSubstituted = true;
+
+                    var chain = chains[substituteBlockHash.Last()];
+                    var substituteBlock = chain.First(b => b.Hash == substituteBlockHash);
+
+                    Console.WriteLine($"Substituting: {block} with {substituteBlock}");
+
+                    await blockProcessor.ProcessBlockAsync(substituteBlock);
+                }
+
+                return true;
+            };
+
+            // Act
+
+            await _blocksReaderApi.SendAsync(new ReadBlockCommand(1));
+
+            if (!_queue.Wait())
+            {
+                _queue.Stop();
+                _queue.Wait();
+            }
+
+            // Assert
+
+            var actualBlocks = await _blocksRepository.GetAllAsync();
+            var expectedBlocks = GetLongestChain(@case);
+
+            Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());
+
+            Assert.IsTrue(isSubstituted);
 
             CollectionAssert.AreEqual(
                 expectedBlocks.Select(b => b.Number),
