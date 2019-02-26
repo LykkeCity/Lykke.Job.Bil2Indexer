@@ -7,7 +7,5 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
         Task SaveAsync(BlockHeader block);
         Task<BlockHeader> GetOrDefaultAsync(long blockNumber);
         Task RemoveAsync(BlockHeader block);
-        Task<BlockHeader> GetHeadOrDefaultAsync();
-        Task SetHeadAsync(BlockHeader newHead, BlockHeader previousHead);
     }
 }

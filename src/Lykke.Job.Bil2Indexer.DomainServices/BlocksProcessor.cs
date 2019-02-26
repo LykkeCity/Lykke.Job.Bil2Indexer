@@ -16,6 +16,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
         private readonly IContractEventsPublisher _contractEventsPublisher;
         private readonly IBlocksReaderApi _blocksReaderApi;
         private readonly IBlocksRepository _blocksRepository;
+        private readonly IBlockExpectationRepository _blockExpectationRepository;
         private readonly IBlocksDeduplicationRepository _blocksDeduplicationRepository;
 
         public BlocksProcessor(
@@ -24,6 +25,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             IContractEventsPublisher contractEventsPublisher,
             IBlocksReaderApi blocksReaderApi,
             IBlocksRepository blocksRepository,
+            IBlockExpectationRepository blockExpectationRepository,
             IBlocksDeduplicationRepository blocksDeduplicationRepository)
         {
             _blockchainType = blockchainType;
@@ -31,7 +33,18 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             _contractEventsPublisher = contractEventsPublisher;
             _blocksReaderApi = blocksReaderApi;
             _blocksRepository = blocksRepository;
+            _blockExpectationRepository = blockExpectationRepository;
             _blocksDeduplicationRepository = blocksDeduplicationRepository;
+        }
+
+        public async Task StartAsync()
+        {
+            // If no block was expected, then start from the scratch
+            var blockExpectation = await _blockExpectationRepository.GetOrDefaultAsync() ??
+                                new BlockExpectation(_startBlock);
+
+            await _blockExpectationRepository.SaveAsync(blockExpectation);
+            await _blocksReaderApi.SendAsync(new ReadBlockCommand(blockExpectation.Number));
         }
 
         public async Task ProcessBlockAsync(BlockHeader block)
@@ -41,44 +54,48 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 return;
             }
 
-            var (storedPreviousBlock, storedHeadBlock) = await TaskExecution.WhenAll
+            var (previousBlock, blockExpectation) = await TaskExecution.WhenAll
             (
                 _blocksRepository.GetOrDefaultAsync(block.Number - 1),
-                _blocksRepository.GetHeadOrDefaultAsync()
+                _blockExpectationRepository.GetOrDefaultAsync()
             );
 
-            if (storedHeadBlock?.Hash != storedPreviousBlock?.Hash)
+            if (blockExpectation != null && block.Number != blockExpectation.Number)
             {
-                throw new InvalidOperationException($"prev: {storedPreviousBlock?.Hash}, head: {storedHeadBlock?.Hash}");
+                throw new InvalidOperationException($"Disordered block: [{block.Number}], expected block: [{blockExpectation.Number}]");
             }
+            
+            var nextBlockExpectation = previousBlock == null || block.PreviousBlockHash == previousBlock.Hash
+                ? await MoveForwardAsync(blockExpectation, block)
+                : await MoveBackwardAsync(blockExpectation, block, previousBlock);
 
-            if (storedPreviousBlock == null || block.PreviousBlockHash == storedPreviousBlock.Hash)
-            {
-                await MoveForwardAsync(storedHeadBlock, block);
-            }
-            else
-            {
-                await MoveBackwardAsync(storedHeadBlock, block, storedPreviousBlock);
-            }
-
+            await _blocksReaderApi.SendAsync(new ReadBlockCommand(nextBlockExpectation.Number));
             await _blocksDeduplicationRepository.MarkAsProcessedAsync(block.Hash);
         }
 
-        private async Task MoveForwardAsync(BlockHeader storedHeadBlock, BlockHeader block)
-        {
-            if (storedHeadBlock == null && block.Number != _startBlock || 
-                storedHeadBlock != null && block.Number != storedHeadBlock.Number + 1)
-            {
-                throw new InvalidOperationException($"Disordered block on forward turn: {block.Number}, waiting for block: {storedHeadBlock?.Number + 1 ?? _startBlock}");
-            }
+        private async Task<BlockExpectation> MoveForwardAsync(BlockExpectation blockExpectation, BlockHeader block)
+        {          
+            var skippedBlocksNumber = await SkipAlreadyReadBlocks(block);
+            var nextBlockExpectation = blockExpectation.Skip(skippedBlocksNumber);
 
-            long nextBlockNumber;
+            await Task.WhenAll
+            (
+                _blocksRepository.SaveAsync(block),
+                _blockExpectationRepository.SaveAsync(nextBlockExpectation)
+            );
+
+            return nextBlockExpectation;
+        }
+
+        private async Task<long> SkipAlreadyReadBlocks(BlockHeader block)
+        {
+            var nextBlockNumber = block.Number;
             var currentBlock = block;
 
-            // Is next block already read? Skipping it if so.
             while (true)
             {
-                nextBlockNumber = currentBlock.Number + 1;
+                nextBlockNumber++;
+
                 var storedNextBlock = await _blocksRepository.GetOrDefaultAsync(nextBlockNumber);
 
                 if (storedNextBlock == null)
@@ -86,7 +103,10 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                     break;
                 }
 
-                // Is next block already stored, but belongs to another chain? Removing it if so.
+                // Removes already stored blocks, which belongs to another chain.
+                // For example, if chain was switched during the backward turn, thus
+                // already read on the backward turn blocks are belongs to the stale chain.
+
                 if (storedNextBlock.PreviousBlockHash != currentBlock.Hash)
                 {
                     await Task.WhenAll
@@ -100,48 +120,34 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 currentBlock = storedNextBlock;
             }
 
-            await Task.WhenAll
-            (
-                _blocksRepository.SaveAsync(block),
-                _blocksRepository.SetHeadAsync(currentBlock, storedHeadBlock)
-            );
-
-            // Should be last step
-            await _blocksReaderApi.SendAsync(new ReadBlockCommand(nextBlockNumber));
+            return nextBlockNumber - block.Number;
         }
 
-        private async Task MoveBackwardAsync(BlockHeader storedHeadBlock, BlockHeader block, BlockHeader storedPreviousBlock)
+        private async Task<BlockExpectation> MoveBackwardAsync(BlockExpectation blockExpectation, BlockHeader block, BlockHeader previousBlock)
         {
-            if (block.Number != storedHeadBlock.Number + 1)
-            {
-                throw new InvalidOperationException($"Disordered block on backward turn: {block.Number}, waiting for block: {storedHeadBlock.Number + 1}");
-            }
+            var nextBlockToRead = blockExpectation.Previous();
 
-            var getNewHeadBlockTask = _blocksRepository.GetOrDefaultAsync(block.Number - 2);
-            var removePreviousBlockTask = _blocksRepository.RemoveAsync(storedPreviousBlock);
-            var markPreviousBlockAsNotProcessedTask = _blocksDeduplicationRepository.MarkAsNotProcessedAsync(storedPreviousBlock.Hash);
+            var removePreviousBlockTask = _blocksRepository.RemoveAsync(previousBlock);
+            var markPreviousBlockAsNotProcessedTask = _blocksDeduplicationRepository.MarkAsNotProcessedAsync(previousBlock.Hash);
             var saveBlockTask = _blocksRepository.SaveAsync(block);
-
-            var newHeadBlock = await getNewHeadBlockTask;
 
             await Task.WhenAll
             (
                 removePreviousBlockTask,
                 markPreviousBlockAsNotProcessedTask,
                 saveBlockTask,
-                _blocksRepository.SetHeadAsync(newHeadBlock, storedHeadBlock)
+                _blockExpectationRepository.SaveAsync(nextBlockToRead)
             );
 
             await _contractEventsPublisher.PublishAsync(new BlockRolledBackEvent
             {
                 BlockchainType = _blockchainType,
-                BlockNumber = storedPreviousBlock.Number,
-                BlockHash = storedPreviousBlock.Hash,
-                PreviousBlockHash = storedPreviousBlock.PreviousBlockHash
+                BlockNumber = previousBlock.Number,
+                BlockHash = previousBlock.Hash,
+                PreviousBlockHash = previousBlock.PreviousBlockHash
             });
 
-            // Should be last step
-            await _blocksReaderApi.SendAsync(new ReadBlockCommand(block.Number - 1));
+            return nextBlockToRead;
         }
     }
 }

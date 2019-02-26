@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Lykke.Bil2.Contract.BlocksReader.Commands;
 using Lykke.Job.Bil2Indexer.Domain;
+using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.DomainServices;
 using Lykke.Job.Bil2Indexer.Tests.Mocks;
+using Moq;
 using NUnit.Framework;
 
 namespace Lykke.Job.Bil2Indexer.Tests
@@ -297,6 +298,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
         private BlocksReaderApiMock _blocksReaderApi;
         private ChainsEvaluator _chainsEvaluator;
         private InMemoryBlocksDeduplicationRepository _blocksDeduplicationRepository;
+        private BlocksProcessor _blocksProcessor;
 
         [SetUp]
         public void SetUp()
@@ -305,10 +307,20 @@ namespace Lykke.Job.Bil2Indexer.Tests
             _blocksDeduplicationRepository = new InMemoryBlocksDeduplicationRepository();
             _queue = new InMemoryReadBlockCommandsQueue();
             _blocksReaderApi = new BlocksReaderApiMock(_queue);
-            
-            var blocksProcessor = new BlocksProcessor(1, _blocksReaderApi, _blocksRepository, _blocksDeduplicationRepository);
 
-            _chainsEvaluator = new ChainsEvaluator(Chains, blocksProcessor);
+            var contractEventsPublisher = new Mock<IContractEventsPublisher>();
+            var blockExpectationRepository = new InMemoryBlockExpectationRepository();
+            
+            _blocksProcessor = new BlocksProcessor(
+                "Bitcoin", 
+                1, 
+                contractEventsPublisher.Object,
+                _blocksReaderApi, 
+                _blocksRepository, 
+                blockExpectationRepository, 
+                _blocksDeduplicationRepository);
+
+            _chainsEvaluator = new ChainsEvaluator(Chains, _blocksProcessor);
 
             _queue.CommandReceived += async (s, a) =>
             {
@@ -349,8 +361,8 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Act
 
-            await _blocksReaderApi.SendAsync(new ReadBlockCommand(1));
-
+            await _blocksProcessor.StartAsync();
+            
             _queue.Wait();
 
             // Assert
@@ -388,7 +400,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Act
 
-            await _blocksReaderApi.SendAsync(new ReadBlockCommand(1));
+            await _blocksProcessor.StartAsync();
 
             if (!_queue.Wait())
             {
@@ -443,7 +455,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Act
 
-            await _blocksReaderApi.SendAsync(new ReadBlockCommand(1));
+            await _blocksProcessor.StartAsync();
 
             if (!_queue.Wait())
             {
@@ -521,7 +533,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Act
 
-            await _blocksReaderApi.SendAsync(new ReadBlockCommand(1));
+            await _blocksProcessor.StartAsync();
 
             if (!_queue.Wait())
             {

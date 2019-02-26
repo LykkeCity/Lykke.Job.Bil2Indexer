@@ -10,8 +10,6 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
     internal class InMemoryBlocksRepository : IBlocksRepository
     {
         private readonly SortedList<long, BlockHeader> _blocks = new SortedList<long, BlockHeader>();
-        private BlockHeader _head;
-        private readonly object _headLock = new object();
 
         public Task SaveAsync(BlockHeader block)
         {
@@ -58,26 +56,6 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
             {
                 return Task.FromResult<IReadOnlyList<BlockHeader>>(new ReadOnlyCollection<BlockHeader>(_blocks.Values));
             }
-        }
-
-        public Task<BlockHeader> GetHeadOrDefaultAsync()
-        {
-            return Task.FromResult(_head);
-        }
-
-        public Task SetHeadAsync(BlockHeader newHead, BlockHeader previousHead)
-        {
-            lock (_headLock)
-            {
-                if (_head?.Hash != previousHead?.Hash)
-                {
-                    throw new InvalidOperationException($"Previous head expected: {previousHead}, but it is {_head}");
-                }
-
-                _head = newHead;
-            }
-
-            return Task.CompletedTask;
         }
     }
 }

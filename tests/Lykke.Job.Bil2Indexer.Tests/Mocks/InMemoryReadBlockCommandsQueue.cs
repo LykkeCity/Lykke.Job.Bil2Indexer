@@ -48,7 +48,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
 
                         Policy.Handle<Exception>()
                             .WaitAndRetryForeverAsync(
-                                i => TimeSpan.FromMilliseconds(500), 
+                                i => TimeSpan.FromMilliseconds(Math.Pow(100, i / 2.0)), 
                                 (ex, delay) => Console.WriteLine($"Retrying block {cmd.BlockNumber} in {delay}"))
                             .ExecuteAsync(
                                 async () =>
