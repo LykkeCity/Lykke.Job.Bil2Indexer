@@ -7,7 +7,7 @@ using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
 namespace Lykke.Job.Bil2Indexer.Tests.Mocks
 {
-    internal class InMemoryBlocksRepository : IBlocksRepository
+    internal class InMemoryBlockHeadersRepository : IBlockHeadersRepository
     {
         private readonly SortedList<long, BlockHeader> _blocks = new SortedList<long, BlockHeader>();
 

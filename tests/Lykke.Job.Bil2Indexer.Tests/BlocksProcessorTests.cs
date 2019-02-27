@@ -11,6 +11,9 @@ using NUnit.Framework;
 
 namespace Lykke.Job.Bil2Indexer.Tests
 {
+    // TODO: Fix ignored cases
+    // TODO: Add concurrent processing tests
+
     [TestFixture]
     public class BlocksProcessorTests
     {
@@ -293,7 +296,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
         #region Common
 
-        private InMemoryBlocksRepository _blocksRepository;
+        private InMemoryBlockHeadersRepository _blockHeadersRepository;
         private InMemoryReadBlockCommandsQueue _queue;
         private BlocksReaderApiMock _blocksReaderApi;
         private ChainsEvaluator _chainsEvaluator;
@@ -303,7 +306,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
         [SetUp]
         public void SetUp()
         {
-            _blocksRepository = new InMemoryBlocksRepository();
+            _blockHeadersRepository = new InMemoryBlockHeadersRepository();
             _blocksDeduplicationRepository = new InMemoryBlocksDeduplicationRepository();
             _queue = new InMemoryReadBlockCommandsQueue();
             _blocksReaderApi = new BlocksReaderApiMock(_queue);
@@ -316,7 +319,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
                 1, 
                 contractEventsPublisher.Object,
                 _blocksReaderApi, 
-                _blocksRepository, 
+                _blockHeadersRepository, 
                 blockExpectationRepository, 
                 _blocksDeduplicationRepository);
 
@@ -367,7 +370,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Assert
 
-            var actualBlocks = await _blocksRepository.GetAllAsync();
+            var actualBlocks = await _blockHeadersRepository.GetAllAsync();
             var expectedBlocks = GetLongestChain(@case);
 
             Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());
@@ -410,7 +413,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Assert
 
-            var actualBlocks = await _blocksRepository.GetAllAsync();
+            var actualBlocks = await _blockHeadersRepository.GetAllAsync();
             var expectedBlocks = GetLongestChain(@case);
 
             Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());
@@ -465,7 +468,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Assert
 
-            var actualBlocks = await _blocksRepository.GetAllAsync();
+            var actualBlocks = await _blockHeadersRepository.GetAllAsync();
             var expectedBlocks = GetLongestChain(@case);
 
             Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());
@@ -543,7 +546,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Assert
 
-            var actualBlocks = await _blocksRepository.GetAllAsync();
+            var actualBlocks = await _blockHeadersRepository.GetAllAsync();
             var expectedBlocks = GetLongestChain(@case);
 
             Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());

@@ -2,7 +2,7 @@
 
 namespace Lykke.Job.Bil2Indexer.Domain.Repositories
 {
-    public interface IBlocksRepository
+    public interface IBlockHeadersRepository
     {
         Task SaveAsync(BlockHeader block);
         Task<BlockHeader> GetOrDefaultAsync(long blockNumber);

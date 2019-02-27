@@ -15,7 +15,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
         private readonly int _startBlock;
         private readonly IContractEventsPublisher _contractEventsPublisher;
         private readonly IBlocksReaderApi _blocksReaderApi;
-        private readonly IBlocksRepository _blocksRepository;
+        private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly IBlockExpectationRepository _blockExpectationRepository;
         private readonly IBlocksDeduplicationRepository _blocksDeduplicationRepository;
 
@@ -24,7 +24,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             int startBlock,
             IContractEventsPublisher contractEventsPublisher,
             IBlocksReaderApi blocksReaderApi,
-            IBlocksRepository blocksRepository,
+            IBlockHeadersRepository blockHeadersRepository,
             IBlockExpectationRepository blockExpectationRepository,
             IBlocksDeduplicationRepository blocksDeduplicationRepository)
         {
@@ -32,7 +32,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             _startBlock = startBlock;
             _contractEventsPublisher = contractEventsPublisher;
             _blocksReaderApi = blocksReaderApi;
-            _blocksRepository = blocksRepository;
+            _blockHeadersRepository = blockHeadersRepository;
             _blockExpectationRepository = blockExpectationRepository;
             _blocksDeduplicationRepository = blocksDeduplicationRepository;
         }
@@ -41,7 +41,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
         {
             // If no block was expected, then start from the scratch
             var blockExpectation = await _blockExpectationRepository.GetOrDefaultAsync() ??
-                                new BlockExpectation(_startBlock);
+                                   new BlockExpectation(_startBlock);
 
             await _blockExpectationRepository.SaveAsync(blockExpectation);
             await _blocksReaderApi.SendAsync(new ReadBlockCommand(blockExpectation.Number));
@@ -56,7 +56,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
 
             var (previousBlock, blockExpectation) = await TaskExecution.WhenAll
             (
-                _blocksRepository.GetOrDefaultAsync(block.Number - 1),
+                _blockHeadersRepository.GetOrDefaultAsync(block.Number - 1),
                 _blockExpectationRepository.GetOrDefaultAsync()
             );
 
@@ -80,7 +80,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
 
             await Task.WhenAll
             (
-                _blocksRepository.SaveAsync(block),
+                _blockHeadersRepository.SaveAsync(block),
                 _blockExpectationRepository.SaveAsync(nextBlockExpectation)
             );
 
@@ -96,7 +96,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             {
                 nextBlockNumber++;
 
-                var storedNextBlock = await _blocksRepository.GetOrDefaultAsync(nextBlockNumber);
+                var storedNextBlock = await _blockHeadersRepository.GetOrDefaultAsync(nextBlockNumber);
 
                 if (storedNextBlock == null)
                 {
@@ -111,7 +111,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 {
                     await Task.WhenAll
                     (
-                        _blocksRepository.RemoveAsync(storedNextBlock),
+                        _blockHeadersRepository.RemoveAsync(storedNextBlock),
                         _blocksDeduplicationRepository.MarkAsNotProcessedAsync(storedNextBlock.Hash)
                     );
                     break;
@@ -127,9 +127,9 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
         {
             var nextBlockToRead = blockExpectation.Previous();
 
-            var removePreviousBlockTask = _blocksRepository.RemoveAsync(previousBlock);
+            var removePreviousBlockTask = _blockHeadersRepository.RemoveAsync(previousBlock);
             var markPreviousBlockAsNotProcessedTask = _blocksDeduplicationRepository.MarkAsNotProcessedAsync(previousBlock.Hash);
-            var saveBlockTask = _blocksRepository.SaveAsync(block);
+            var saveBlockTask = _blockHeadersRepository.SaveAsync(block);
 
             await Task.WhenAll
             (
