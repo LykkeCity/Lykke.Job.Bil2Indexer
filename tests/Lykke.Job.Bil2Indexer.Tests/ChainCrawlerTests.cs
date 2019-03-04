@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Lykke.Common.Chaos;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.DomainServices;
@@ -15,7 +16,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
     // TODO: Add concurrent processing tests
 
     [TestFixture]
-    public class BlocksProcessorTests
+    public class ChainCrawlerTests
     {
         #region Chain cases
 
@@ -301,7 +302,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
         private BlocksReaderApiMock _blocksReaderApi;
         private ChainsEvaluator _chainsEvaluator;
         private InMemoryBlocksDeduplicationRepository _blocksDeduplicationRepository;
-        private BlocksProcessor _blocksProcessor;
+        private ChainCrawler _chainCrawler;
 
         [SetUp]
         public void SetUp()
@@ -313,17 +314,18 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             var contractEventsPublisher = new Mock<IContractEventsPublisher>();
             var blockExpectationRepository = new InMemoryBlockExpectationRepository();
+            var chaosKitty = new SilentChaosKitty();
             
-            _blocksProcessor = new BlocksProcessor(
+            _chainCrawler = new ChainCrawler(
                 "Bitcoin", 
-                1, 
+                1, chaosKitty, 
                 contractEventsPublisher.Object,
                 _blocksReaderApi, 
                 _blockHeadersRepository, 
                 blockExpectationRepository, 
                 _blocksDeduplicationRepository);
 
-            _chainsEvaluator = new ChainsEvaluator(Chains, _blocksProcessor);
+            _chainsEvaluator = new ChainsEvaluator(Chains, _chainCrawler);
 
             _queue.CommandReceived += async (s, a) =>
             {
@@ -364,7 +366,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Act
 
-            await _blocksProcessor.StartAsync();
+            await _chainCrawler.StartAsync();
             
             _queue.Wait();
 
@@ -403,7 +405,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Act
 
-            await _blocksProcessor.StartAsync();
+            await _chainCrawler.StartAsync();
 
             if (!_queue.Wait())
             {
@@ -458,7 +460,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Act
 
-            await _blocksProcessor.StartAsync();
+            await _chainCrawler.StartAsync();
 
             if (!_queue.Wait())
             {
@@ -536,7 +538,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             // Act
 
-            await _blocksProcessor.StartAsync();
+            await _chainCrawler.StartAsync();
 
             if (!_queue.Wait())
             {

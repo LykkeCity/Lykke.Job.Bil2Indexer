@@ -2,7 +2,7 @@
 
 namespace Lykke.Job.Bil2Indexer.Domain.Services
 {
-    public interface IBlocksProcessor
+    public interface IChainCrawler
     {
         Task StartAsync();
         Task ProcessBlockAsync(BlockHeader block);

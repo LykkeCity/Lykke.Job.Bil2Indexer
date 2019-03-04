@@ -5,7 +5,8 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
 {
     public interface ITransactionsRepository
     {
-        Task SaveAsync(TransactionExecutedEvent transaction);
+        Task SaveAsync(TransferAmountTransactionExecutedEvent transaction);
+        Task SaveAsync(TransferCoinsTransactionExecutedEvent transaction);
         Task SaveAsync(TransactionFailedEvent transaction);
     }
 }

@@ -10,20 +10,20 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
     internal class ChainsEvaluator
     {
         public Func<char, long, bool> ForceSwitchChain { get; set; }
-        public Func<IBlocksProcessor, Dictionary<char, BlockHeader[]>, char, BlockHeader, Task<bool>> CustomBlockProcessing { get; set; }
+        public Func<IChainCrawler, Dictionary<char, BlockHeader[]>, char, BlockHeader, Task<bool>> CustomBlockProcessing { get; set; }
         public int Case { get; set; }
 
         private readonly Dictionary<char, BlockHeader[]>[] _chains;
-        private readonly IBlocksProcessor _blocksProcessor;
+        private readonly IChainCrawler _chainCrawler;
 
         private char _activeChain;
 
         public ChainsEvaluator(
             Dictionary<char, BlockHeader[]>[] chains,
-            IBlocksProcessor blocksProcessor)
+            IChainCrawler chainCrawler)
         {
             _chains = chains;
-            _blocksProcessor = blocksProcessor;
+            _chainCrawler = chainCrawler;
 
 
             _activeChain = 'A';
@@ -43,12 +43,12 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
             {
                 Console.WriteLine($"Processing: {block}");
 
-                var customBlockProcessingTask = CustomBlockProcessing?.Invoke(_blocksProcessor, _chains[Case], _activeChain, block) ??
+                var customBlockProcessingTask = CustomBlockProcessing?.Invoke(_chainCrawler, _chains[Case], _activeChain, block) ??
                                                 Task.FromResult(true);
 
                 if (await customBlockProcessingTask)
                 {
-                    await _blocksProcessor.ProcessBlockAsync(block);
+                    await _chainCrawler.ProcessBlockAsync(block);
                 }
 
                 return true;

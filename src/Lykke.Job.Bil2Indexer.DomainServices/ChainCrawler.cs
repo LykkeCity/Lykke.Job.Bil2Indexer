@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Bil2.Contract.BlocksReader.Commands;
+using Lykke.Common.Chaos;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -9,19 +10,21 @@ using Lykke.Job.Bil2Indexer.Domain.Services;
 
 namespace Lykke.Job.Bil2Indexer.DomainServices
 {
-    public class BlocksProcessor : IBlocksProcessor
+    public class ChainCrawler : IChainCrawler
     {
         private readonly string _blockchainType;
         private readonly int _startBlock;
+        private readonly IChaosKitty _chaosKitty;
         private readonly IContractEventsPublisher _contractEventsPublisher;
         private readonly IBlocksReaderApi _blocksReaderApi;
         private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly IBlockExpectationRepository _blockExpectationRepository;
         private readonly IBlocksDeduplicationRepository _blocksDeduplicationRepository;
 
-        public BlocksProcessor(
+        public ChainCrawler(
             string blockchainType,
             int startBlock,
+            IChaosKitty chaosKitty,
             IContractEventsPublisher contractEventsPublisher,
             IBlocksReaderApi blocksReaderApi,
             IBlockHeadersRepository blockHeadersRepository,
@@ -30,6 +33,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
         {
             _blockchainType = blockchainType;
             _startBlock = startBlock;
+            _chaosKitty = chaosKitty;
             _contractEventsPublisher = contractEventsPublisher;
             _blocksReaderApi = blocksReaderApi;
             _blockHeadersRepository = blockHeadersRepository;
@@ -49,6 +53,10 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
 
         public async Task ProcessBlockAsync(BlockHeader block)
         {
+            // TODO: Have to:
+            // 1. read state, make a decision, send command
+            // 2. update state in the command handler, publish event
+
             if (await _blocksDeduplicationRepository.IsProcessedAsync(block.Hash))
             {
                 return;
@@ -70,6 +78,9 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 : await MoveBackwardAsync(blockExpectation, block, previousBlock);
 
             await _blocksReaderApi.SendAsync(new ReadBlockCommand(nextBlockExpectation.Number));
+
+            _chaosKitty.Meow(block.Hash);
+
             await _blocksDeduplicationRepository.MarkAsProcessedAsync(block.Hash);
         }
 
@@ -83,6 +94,8 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 _blockHeadersRepository.SaveAsync(block),
                 _blockExpectationRepository.SaveAsync(nextBlockExpectation)
             );
+
+            _chaosKitty.Meow(block.Hash);
 
             return nextBlockExpectation;
         }
@@ -114,6 +127,11 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                         _blockHeadersRepository.RemoveAsync(storedNextBlock),
                         _blocksDeduplicationRepository.MarkAsNotProcessedAsync(storedNextBlock.Hash)
                     );
+
+                    _chaosKitty.Meow(block.Hash);
+
+                    // TODO: Publish BlockRolledBackEvent
+
                     break;
                 }
 
@@ -125,6 +143,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
 
         private async Task<BlockExpectation> MoveBackwardAsync(BlockExpectation blockExpectation, BlockHeader block, BlockHeader previousBlock)
         {
+            // TODO: This is not idempotent. Should be processed in independent command handler
             var nextBlockToRead = blockExpectation.Previous();
 
             var removePreviousBlockTask = _blockHeadersRepository.RemoveAsync(previousBlock);
@@ -138,6 +157,8 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 saveBlockTask,
                 _blockExpectationRepository.SaveAsync(nextBlockToRead)
             );
+
+            _chaosKitty.Meow(block.Hash);
 
             await _contractEventsPublisher.PublishAsync(new BlockRolledBackEvent
             {
