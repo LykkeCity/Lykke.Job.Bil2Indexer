@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Lykke.Job.Bil2Indexer.Domain;
 
 namespace Lykke.Job.Bil2Indexer.Tests.Mocks
@@ -14,8 +15,10 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
         private readonly Dictionary<char, BlockHeader[]>[] _chains;
         private readonly InMemoryBlocksQueue _blocksQueue;
 
-        private char _activeChain;
+        private readonly ManualResetEventSlim _chainEndEvent;
 
+        private char _activeChain;
+        
         public ChainsEvaluator(
             Dictionary<char, BlockHeader[]>[] chains,
             InMemoryBlocksQueue blocksQueue)
@@ -23,6 +26,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
             _chains = chains;
             _blocksQueue = blocksQueue;
             
+            _chainEndEvent = new ManualResetEventSlim();
+
             _activeChain = 'A';
         }
 
@@ -38,7 +43,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
 
             if (block != null)
             {
-                Console.WriteLine($"Processing: {block}");
+                Console.WriteLine($"Publishing: {block}");
 
                 var customBlockProcessingResult = CustomBlockProcessing?.Invoke(_blocksQueue, _chains[Case], _activeChain, block) ?? true;
 
@@ -51,8 +56,13 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
             {
                 Console.WriteLine("Chain is finished");
 
-                _blocksQueue.Stop();
+                _chainEndEvent.Set();
             }
+        }
+
+        public void Wait()
+        {
+            _chainEndEvent.Wait(Waiting.Timeout);
         }
 
         private BlockHeader GetBlockOrDefault(int @case, char chain, long blockNumber)

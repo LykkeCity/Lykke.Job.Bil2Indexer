@@ -318,7 +318,9 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             _chainCrawler = new ChainCrawler(
                 "Bitcoin", 
-                1, chaosKitty, 
+                1,
+                null,
+                chaosKitty, 
                 contractEventsPublisher.Object,
                 _blocksReaderApi, 
                 _blockHeadersRepository, 
@@ -358,6 +360,8 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             await _chainCrawler.StartAsync();
             
+            _chainsEvaluator.Wait();
+            _queue.Stop();
             _queue.Wait();
 
             // Assert
@@ -397,12 +401,10 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             await _chainCrawler.StartAsync();
 
-            if (!_queue.Wait())
-            {
-                _queue.Stop();
-                _queue.Wait();
-            }
-
+            _chainsEvaluator.Wait();
+            _queue.Stop();
+            _queue.Wait();
+            
             // Assert
 
             var actualBlocks = await _blockHeadersRepository.GetAllAsync();
@@ -452,11 +454,9 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             await _chainCrawler.StartAsync();
 
-            if (!_queue.Wait())
-            {
-                _queue.Stop();
-                _queue.Wait();
-            }
+            _chainsEvaluator.Wait();
+            _queue.Stop();
+            _queue.Wait();
 
             // Assert
 
@@ -530,11 +530,9 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             await _chainCrawler.StartAsync();
 
-            if (!_queue.Wait())
-            {
-                _queue.Stop();
-                _queue.Wait();
-            }
+            _chainsEvaluator.Wait();
+            _queue.Stop();
+            _queue.Wait();
 
             // Assert
 

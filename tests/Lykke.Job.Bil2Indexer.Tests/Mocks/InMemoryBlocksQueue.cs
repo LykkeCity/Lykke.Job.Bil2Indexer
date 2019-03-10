@@ -88,12 +88,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
 
         public bool Wait()
         {
-            if (!Debugger.IsAttached)
-            {
-                return _task.Wait(TimeSpan.FromSeconds(1));
-            }
-
-            _task.Wait();
+            _task.Wait(Waiting.Timeout);
 
             return true;
         }

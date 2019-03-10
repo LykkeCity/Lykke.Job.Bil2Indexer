@@ -13,17 +13,29 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
     public class ChainCrawler : IChainCrawler
     {
         private readonly string _blockchainType;
-        private readonly int _startBlock;
+        
+        /// <summary>
+        /// Inclusive block number to start crawling from.
+        /// </summary>
+        private readonly long _startBlock;
+        
+        /// <summary>
+        /// Exclusive block number to stop crawling on, or null to continue crawling forever.
+        /// </summary>
+        private readonly long? _stopBlock;
+        
         private readonly IChaosKitty _chaosKitty;
         private readonly IContractEventsPublisher _contractEventsPublisher;
         private readonly IBlocksReaderApi _blocksReaderApi;
         private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly IBlockExpectationRepository _blockExpectationRepository;
         private readonly IBlocksDeduplicationRepository _blocksDeduplicationRepository;
+        private readonly string _id;
 
         public ChainCrawler(
             string blockchainType,
-            int startBlock,
+            long startBlock,
+            long? stopBlock,
             IChaosKitty chaosKitty,
             IContractEventsPublisher contractEventsPublisher,
             IBlocksReaderApi blocksReaderApi,
@@ -33,26 +45,38 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
         {
             _blockchainType = blockchainType;
             _startBlock = startBlock;
+            _stopBlock = stopBlock;
             _chaosKitty = chaosKitty;
             _contractEventsPublisher = contractEventsPublisher;
             _blocksReaderApi = blocksReaderApi;
             _blockHeadersRepository = blockHeadersRepository;
             _blockExpectationRepository = blockExpectationRepository;
             _blocksDeduplicationRepository = blocksDeduplicationRepository;
+
+            _id = $"{startBlock}-{stopBlock}";
         }
 
         public async Task StartAsync()
         {
             // If no block was expected, then start from the scratch
-            var blockExpectation = await _blockExpectationRepository.GetOrDefaultAsync() ??
-                                   new BlockExpectation(_startBlock);
+            var blockExpectation = await _blockExpectationRepository.GetOrDefaultAsync(_id);
 
-            await _blockExpectationRepository.SaveAsync(blockExpectation);
+            if (blockExpectation == null)
+            {
+                blockExpectation = new BlockExpectation(_startBlock);
+                await _blockExpectationRepository.SaveAsync(_id, blockExpectation);
+            }
+            
             await _blocksReaderApi.SendAsync(new ReadBlockCommand(blockExpectation.Number));
         }
 
         public async Task ProcessBlockAsync(BlockHeader block)
         {
+            if (block.Number < _startBlock || _stopBlock.HasValue && block.Number >= _stopBlock.Value)
+            {
+                return;
+            }
+
             // TODO: Have to:
             // 1. read state, make a decision, send command
             // 2. update state in the command handler, publish event
@@ -65,7 +89,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             var (previousBlock, blockExpectation) = await TaskExecution.WhenAll
             (
                 _blockHeadersRepository.GetOrDefaultAsync(block.Number - 1),
-                _blockExpectationRepository.GetOrDefaultAsync()
+                _blockExpectationRepository.GetOrDefaultAsync(_id)
             );
 
             if (blockExpectation != null && block.Number != blockExpectation.Number)
@@ -77,7 +101,10 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 ? await MoveForwardAsync(blockExpectation, block)
                 : await MoveBackwardAsync(blockExpectation, block, previousBlock);
 
-            await _blocksReaderApi.SendAsync(new ReadBlockCommand(nextBlockExpectation.Number));
+            if (!_stopBlock.HasValue || nextBlockExpectation.Number < _stopBlock.Value)
+            {
+                await _blocksReaderApi.SendAsync(new ReadBlockCommand(nextBlockExpectation.Number));
+            }
 
             _chaosKitty.Meow(block.Hash);
 
@@ -92,7 +119,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             await Task.WhenAll
             (
                 _blockHeadersRepository.SaveAsync(block),
-                _blockExpectationRepository.SaveAsync(nextBlockExpectation)
+                _blockExpectationRepository.SaveAsync(_id, nextBlockExpectation)
             );
 
             _chaosKitty.Meow(block.Hash);
@@ -108,6 +135,11 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             while (true)
             {
                 nextBlockNumber++;
+
+                if (_stopBlock.HasValue && nextBlockNumber >= _stopBlock)
+                {
+                    break;
+                }
 
                 var storedNextBlock = await _blockHeadersRepository.GetOrDefaultAsync(nextBlockNumber);
 
@@ -155,7 +187,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 removePreviousBlockTask,
                 markPreviousBlockAsNotProcessedTask,
                 saveBlockTask,
-                _blockExpectationRepository.SaveAsync(nextBlockToRead)
+                _blockExpectationRepository.SaveAsync(_id, nextBlockToRead)
             );
 
             _chaosKitty.Meow(block.Hash);

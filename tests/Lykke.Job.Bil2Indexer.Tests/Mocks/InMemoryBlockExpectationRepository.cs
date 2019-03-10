@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -7,30 +8,38 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
 {
     internal class InMemoryBlockExpectationRepository : IBlockExpectationRepository
     {
-        private BlockExpectation _storedExpectation;
-        private readonly object _lock = new object();
+        private readonly ConcurrentDictionary<string, BlockExpectation> _storedExpectations;
 
-        public Task<BlockExpectation> GetOrDefaultAsync()
+        public InMemoryBlockExpectationRepository()
         {
-            lock (_lock)
-            {
-                return _storedExpectation != null
-                    ? Task.FromResult(_storedExpectation)
-                    : Task.FromResult<BlockExpectation>(null);
-            }
+            _storedExpectations = new ConcurrentDictionary<string, BlockExpectation>();
         }
 
-        public Task SaveAsync(BlockExpectation blockExpectation)
+        public Task<BlockExpectation> GetOrDefaultAsync(string crawlerId)
         {
-            lock (_lock)
-            {
-                if (_storedExpectation?.Version != blockExpectation.Version)
-                {
-                    throw new InvalidOperationException($"Optimistic concurrency: expected block was modified by someone else. Passed block [{blockExpectation}] does not match stored block [{_storedExpectation}]");
-                }
+            _storedExpectations.TryGetValue(crawlerId, out var expectation);
 
-                _storedExpectation = new BlockExpectation(Guid.NewGuid().ToString("N"), blockExpectation.Number);
-            }
+            return Task.FromResult(expectation);
+        }
+
+        public Task SaveAsync(string crawlerId, BlockExpectation blockExpectation)
+        {
+            _storedExpectations.AddOrUpdate
+            (
+                crawlerId,
+                id => blockExpectation,
+                (id, storedExpectation) =>
+                {
+                    if (storedExpectation?.Version != blockExpectation.Version)
+                    {
+                        throw new InvalidOperationException($"Optimistic concurrency: expected block was modified by someone else. Passed block [{blockExpectation}] does not match stored block [{_storedExpectations}]");
+                    }
+
+                    return blockExpectation;
+                }
+            );
+
+            Console.WriteLine($"Expected saved: {crawlerId}: {blockExpectation.Number}");
 
             return Task.CompletedTask;
         }
