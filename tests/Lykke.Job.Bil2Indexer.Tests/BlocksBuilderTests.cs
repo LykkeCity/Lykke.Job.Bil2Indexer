@@ -12,7 +12,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
         public void Test()
         {
             // TODO:
-            // 1. When chainWalker has been added a block, it should call blocksBuilder which saves a blockBuilding.
+            // 1. When chainCrawler has been added a block, it should call blocksBuilder which saves a blockBuilding.
             // 2. New blockBuilding should be added to the blocks being built list. blocksBuilder keeps this list in memory.
             // 3. blocksBuilder iterates list of the blocks being built in the background thread and updates number of the stored transactions.
             // 4. blocksBuilder another background thread with more iteration period reads blocks being built from the storage to the in memory list (it only adds items to the list).

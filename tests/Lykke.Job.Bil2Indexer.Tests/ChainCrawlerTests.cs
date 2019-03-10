@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Common.Chaos;
+using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.DomainServices;
 using Lykke.Job.Bil2Indexer.Tests.Mocks;
 using Moq;
+using MoreLinq;
 using NUnit.Framework;
 
 namespace Lykke.Job.Bil2Indexer.Tests
@@ -302,6 +304,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
         private ChainsEvaluator _chainsEvaluator;
         private InMemoryBlocksDeduplicationRepository _blocksDeduplicationRepository;
         private ChainCrawler _chainCrawler;
+        private Mock<IContractEventsPublisher> _contractEventsPublisher;
 
         [SetUp]
         public void SetUp()
@@ -311,8 +314,8 @@ namespace Lykke.Job.Bil2Indexer.Tests
             _blocksReaderApi = new BlocksReaderApiMock(_chainsEvaluator);
             _blockHeadersRepository = new InMemoryBlockHeadersRepository();
             _blocksDeduplicationRepository = new InMemoryBlocksDeduplicationRepository();
+            _contractEventsPublisher = new Mock<IContractEventsPublisher>();
 
-            var contractEventsPublisher = new Mock<IContractEventsPublisher>();
             var blockExpectationRepository = new InMemoryBlockExpectationRepository();
             var chaosKitty = new SilentChaosKitty();
 
@@ -321,7 +324,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
                 1,
                 null,
                 chaosKitty, 
-                contractEventsPublisher.Object,
+                _contractEventsPublisher.Object,
                 _blocksReaderApi, 
                 _blockHeadersRepository, 
                 blockExpectationRepository, 
@@ -378,19 +381,21 @@ namespace Lykke.Job.Bil2Indexer.Tests
             CollectionAssert.AreEqual(
                 expectedBlocks.Select(b => b.Hash),
                 actualBlocks.Select(b => b.Hash));
+
+            AssertRolledBackBlocks(@case);
         }
 
         [Test]
-        [TestCase(1, 3)]
-        [TestCase(1, 4)]
-        [TestCase(1, 5)]
-        [TestCase(1, 6)]
-        [TestCase(2, 5)]
-        [TestCase(2, 6)]
-        [TestCase(3, 4)]
-        [TestCase(4, 4)]
-        [TestCase(5, 4)]
-        public async Task Test_that_chain_switching_during_backward_turn_works(int @case, long blockToSwitchToChainC)
+        [TestCase(1, 3, "")]
+        [TestCase(1, 4, "3B,4B")]
+        [TestCase(1, 5, "3B,4B,5B")]
+        [TestCase(1, 6, "3B,4B,5B,6B")]
+        [TestCase(2, 5, "5B")]
+        [TestCase(2, 6, "5B,6B")]
+        [TestCase(3, 4, "3A,3B,4B")]
+        [TestCase(4, 4, "3B,4B")]
+        [TestCase(5, 4, "3B,4B")]
+        public async Task Test_that_chain_switching_during_backward_turn_works(int @case, long blockToSwitchToChainC, string shouldBeNotRolledBackBlockHashes)
         {
             // Arrange
 
@@ -419,6 +424,10 @@ namespace Lykke.Job.Bil2Indexer.Tests
             CollectionAssert.AreEqual(
                 expectedBlocks.Select(b => b.Hash),
                 actualBlocks.Select(b => b.Hash));
+
+            var parsedShouldBeNotRolledBackBlockHashes = new HashSet<string>(shouldBeNotRolledBackBlockHashes.Split(','));
+
+            AssertRolledBackBlocks(@case, b => !parsedShouldBeNotRolledBackBlockHashes.Contains(b.Hash));
         }
 
         [Test]
@@ -472,6 +481,8 @@ namespace Lykke.Job.Bil2Indexer.Tests
             CollectionAssert.AreEqual(
                 expectedBlocks.Select(b => b.Hash),
                 actualBlocks.Select(b => b.Hash));
+
+            AssertRolledBackBlocks(@case);
         }
 
         [Test]
@@ -550,6 +561,47 @@ namespace Lykke.Job.Bil2Indexer.Tests
             CollectionAssert.AreEqual(
                 expectedBlocks.Select(b => b.Hash),
                 actualBlocks.Select(b => b.Hash));
+
+            AssertRolledBackBlocks(@case);
+        }
+
+        private void AssertRolledBackBlocks(int @case, Func<BlockHeader, bool> predicate = null)
+        {
+            var chains = ChainCases.Chains[@case];
+            var expectedRolledBackBlocks = new List<BlockHeader>();
+            
+            foreach (var chainKey in chains.Keys.Skip(1).OrderByDescending(k => k))
+            {
+                var chain = chains[chainKey];
+                var previousChain = chains[(char) (chainKey - 1)];
+
+                var exceptedBlocks = previousChain.ExceptBy(chain, b => b.Hash);
+
+                if (predicate != null)
+                {
+                    exceptedBlocks = exceptedBlocks.Where(predicate);
+                }
+
+                expectedRolledBackBlocks.AddRange(exceptedBlocks);
+            }
+
+            var blocksThatWasNotRolledBack = chains.Values
+                .Aggregate((a, b) => a.Concat(b).ToArray())
+                .ExceptBy(expectedRolledBackBlocks, b => b.Hash);
+
+            foreach (var blockHash in expectedRolledBackBlocks.Select(b => b.Hash).Distinct())
+            {
+                _contractEventsPublisher.Verify(
+                    x => x.PublishAsync(It.Is<BlockRolledBackEvent>(b => b.BlockHash == blockHash)),
+                    Times.Exactly(expectedRolledBackBlocks.Count(b => b.Hash == blockHash)));
+            }
+
+            foreach (var blockHash in blocksThatWasNotRolledBack.Select(b => b.Hash).Distinct())
+            {
+                _contractEventsPublisher.Verify(
+                    x => x.PublishAsync(It.Is<BlockRolledBackEvent>(b => b.BlockHash == blockHash)),
+                    Times.Never);
+            }
         }
     }
 }

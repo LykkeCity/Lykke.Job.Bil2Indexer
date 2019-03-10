@@ -162,7 +162,13 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
 
                     _chaosKitty.Meow(block.Hash);
 
-                    // TODO: Publish BlockRolledBackEvent
+                    await _contractEventsPublisher.PublishAsync(new BlockRolledBackEvent
+                    {
+                        BlockchainType = _blockchainType,
+                        BlockNumber = storedNextBlock.Number,
+                        BlockHash = storedNextBlock.Hash,
+                        PreviousBlockHash = storedNextBlock.PreviousBlockHash
+                    });
 
                     break;
                 }

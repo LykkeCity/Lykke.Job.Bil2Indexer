@@ -9,5 +9,10 @@ namespace Lykke.Job.Bil2Indexer.Contract.Events
         public long BlockNumber { get; set; }
         public string BlockHash { get; set; }
         public string PreviousBlockHash { get; set; }
+
+        public override string ToString()
+        {
+            return BlockHash;
+        }
     }
 }
