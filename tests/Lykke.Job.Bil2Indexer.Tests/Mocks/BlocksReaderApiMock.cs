@@ -6,16 +6,16 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
 {
     internal class BlocksReaderApiMock : IBlocksReaderApi
     {
-        private readonly InMemoryReadBlockCommandsQueue _commandsQueue;
+        private readonly ChainsEvaluator _chainsEvaluator;
         
-        public BlocksReaderApiMock(InMemoryReadBlockCommandsQueue commandsQueue)
+        public BlocksReaderApiMock(ChainsEvaluator chainsEvaluator)
         {
-            _commandsQueue = commandsQueue;
+            _chainsEvaluator = chainsEvaluator;
         }
 
         public Task SendAsync(ReadBlockCommand command)
         {
-            _commandsQueue.Send(command);
+            _chainsEvaluator.EvaluateBlock(command.BlockNumber);
 
             return Task.CompletedTask;
         }

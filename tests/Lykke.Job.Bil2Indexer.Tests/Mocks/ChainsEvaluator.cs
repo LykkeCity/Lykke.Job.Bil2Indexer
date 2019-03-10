@@ -1,35 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain;
-using Lykke.Job.Bil2Indexer.Domain.Services;
 
 namespace Lykke.Job.Bil2Indexer.Tests.Mocks
 {
     internal class ChainsEvaluator
     {
         public Func<char, long, bool> ForceSwitchChain { get; set; }
-        public Func<IChainCrawler, Dictionary<char, BlockHeader[]>, char, BlockHeader, Task<bool>> CustomBlockProcessing { get; set; }
+        public Func<InMemoryBlocksQueue, Dictionary<char, BlockHeader[]>, char, BlockHeader, bool> CustomBlockProcessing { get; set; }
         public int Case { get; set; }
 
         private readonly Dictionary<char, BlockHeader[]>[] _chains;
-        private readonly IChainCrawler _chainCrawler;
+        private readonly InMemoryBlocksQueue _blocksQueue;
 
         private char _activeChain;
 
         public ChainsEvaluator(
             Dictionary<char, BlockHeader[]>[] chains,
-            IChainCrawler chainCrawler)
+            InMemoryBlocksQueue blocksQueue)
         {
             _chains = chains;
-            _chainCrawler = chainCrawler;
-
-
+            _blocksQueue = blocksQueue;
+            
             _activeChain = 'A';
         }
 
-        public async Task<bool> EvaluateBlockAsync(long blockNumber)
+        public void EvaluateBlock(long blockNumber)
         {
             if (ForceSwitchChain?.Invoke(_activeChain, blockNumber) == true)
             {
@@ -43,19 +40,19 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
             {
                 Console.WriteLine($"Processing: {block}");
 
-                var customBlockProcessingTask = CustomBlockProcessing?.Invoke(_chainCrawler, _chains[Case], _activeChain, block) ??
-                                                Task.FromResult(true);
+                var customBlockProcessingResult = CustomBlockProcessing?.Invoke(_blocksQueue, _chains[Case], _activeChain, block) ?? true;
 
-                if (await customBlockProcessingTask)
+                if (customBlockProcessingResult)
                 {
-                    await _chainCrawler.ProcessBlockAsync(block);
+                    _blocksQueue.Publish(block);
                 }
-
-                return true;
             }
+            else
+            {
+                Console.WriteLine("Chain is finished");
 
-            Console.WriteLine("Chain is finished");
-            return false;
+                _blocksQueue.Stop();
+            }
         }
 
         private BlockHeader GetBlockOrDefault(int @case, char chain, long blockNumber)

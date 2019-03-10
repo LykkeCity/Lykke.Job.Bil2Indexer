@@ -13,14 +13,13 @@ using NUnit.Framework;
 namespace Lykke.Job.Bil2Indexer.Tests
 {
     // TODO: Fix ignored cases
-    // TODO: Add concurrent processing tests
 
     [TestFixture]
     public class ChainCrawlerTests
     {
         #region Chain cases
 
-        private static readonly Dictionary<char, BlockHeader[]>[] Chains =
+        private static readonly ChainsCases ChainCases = new ChainsCases(new []
         {
             // case: 0
             // A: 1-2-3-4-5
@@ -290,7 +289,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
                     }
                 }
             },
-        };
+        });
 
         #endregion
 
@@ -298,7 +297,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
         #region Common
 
         private InMemoryBlockHeadersRepository _blockHeadersRepository;
-        private InMemoryReadBlockCommandsQueue _queue;
+        private InMemoryBlocksQueue _queue;
         private BlocksReaderApiMock _blocksReaderApi;
         private ChainsEvaluator _chainsEvaluator;
         private InMemoryBlocksDeduplicationRepository _blocksDeduplicationRepository;
@@ -307,15 +306,16 @@ namespace Lykke.Job.Bil2Indexer.Tests
         [SetUp]
         public void SetUp()
         {
+            _queue = new InMemoryBlocksQueue();
+            _chainsEvaluator = new ChainsEvaluator(ChainCases.Chains, _queue);
+            _blocksReaderApi = new BlocksReaderApiMock(_chainsEvaluator);
             _blockHeadersRepository = new InMemoryBlockHeadersRepository();
             _blocksDeduplicationRepository = new InMemoryBlocksDeduplicationRepository();
-            _queue = new InMemoryReadBlockCommandsQueue();
-            _blocksReaderApi = new BlocksReaderApiMock(_queue);
 
             var contractEventsPublisher = new Mock<IContractEventsPublisher>();
             var blockExpectationRepository = new InMemoryBlockExpectationRepository();
             var chaosKitty = new SilentChaosKitty();
-            
+
             _chainCrawler = new ChainCrawler(
                 "Bitcoin", 
                 1, chaosKitty, 
@@ -325,14 +325,9 @@ namespace Lykke.Job.Bil2Indexer.Tests
                 blockExpectationRepository, 
                 _blocksDeduplicationRepository);
 
-            _chainsEvaluator = new ChainsEvaluator(Chains, _chainCrawler);
-
-            _queue.CommandReceived += async (s, a) =>
+            _queue.BlockReceived += async (s, a) =>
             {
-                if (!await _chainsEvaluator.EvaluateBlockAsync(a.Command.BlockNumber))
-                {
-                    _queue.Stop();
-                }
+                await _chainCrawler.ProcessBlockAsync(a.Block);
             };
         }
 
@@ -341,12 +336,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
         {
             _queue.Dispose();
         }
-
-        private static BlockHeader[] GetLongestChain(int @case)
-        {
-            return Chains[@case].Values.OrderByDescending(x => x.Length).First();
-        }
-
+        
         #endregion
 
 
@@ -373,7 +363,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
             // Assert
 
             var actualBlocks = await _blockHeadersRepository.GetAllAsync();
-            var expectedBlocks = GetLongestChain(@case);
+            var expectedBlocks = ChainCases.GetLongestChain(@case);
 
             Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());
 
@@ -416,7 +406,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
             // Assert
 
             var actualBlocks = await _blockHeadersRepository.GetAllAsync();
-            var expectedBlocks = GetLongestChain(@case);
+            var expectedBlocks = ChainCases.GetLongestChain(@case);
 
             Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());
 
@@ -448,11 +438,11 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             _chainsEvaluator.Case = @case;
 
-            _chainsEvaluator.CustomBlockProcessing = async (blockProcessor, chains, activeChain, block) =>
+            _chainsEvaluator.CustomBlockProcessing = (blocksQueue, chains, activeChain, block) =>
             {
                 if (block.Hash == duplicateBlockHash)
                 {
-                    await blockProcessor.ProcessBlockAsync(block);
+                     blocksQueue.Publish(block);
                 }
 
                 return true;
@@ -471,7 +461,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
             // Assert
 
             var actualBlocks = await _blockHeadersRepository.GetAllAsync();
-            var expectedBlocks = GetLongestChain(@case);
+            var expectedBlocks = ChainCases.GetLongestChain(@case);
 
             Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());
 
@@ -519,7 +509,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             var isSubstituted = false;
 
-            _chainsEvaluator.CustomBlockProcessing = async (blockProcessor, chains, activeChain, block) =>
+            _chainsEvaluator.CustomBlockProcessing = (blocksQueue, chains, activeChain, block) =>
             {
                 if (!isSubstituted && block.Hash == substitutableBlockHash)
                 {
@@ -530,7 +520,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
                     Console.WriteLine($"Substituting: {block} with {substituteBlock}");
 
-                    await blockProcessor.ProcessBlockAsync(substituteBlock);
+                    blocksQueue.Publish(substituteBlock);
                 }
 
                 return true;
@@ -549,7 +539,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
             // Assert
 
             var actualBlocks = await _blockHeadersRepository.GetAllAsync();
-            var expectedBlocks = GetLongestChain(@case);
+            var expectedBlocks = ChainCases.GetLongestChain(@case);
 
             Assert.IsNull(_queue.BackgroundException, _queue.BackgroundException?.ToString());
 
