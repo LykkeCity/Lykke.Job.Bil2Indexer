@@ -53,7 +53,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             _blockExpectationRepository = blockExpectationRepository;
             _blocksDeduplicationRepository = blocksDeduplicationRepository;
 
-            _id = $"{startBlock}-{stopBlock}";
+            _id = stopBlock.HasValue ? $"{startBlock}-{stopBlock}" : $"{startBlock}-*";
         }
 
         public async Task StartAsync()
@@ -81,7 +81,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             // 1. read state, make a decision, send command
             // 2. update state in the command handler, publish event
 
-            if (await _blocksDeduplicationRepository.IsProcessedAsync(block.Hash))
+            if (await _blocksDeduplicationRepository.IsProcessedAsync(block.Id))
             {
                 return;
             }
@@ -97,7 +97,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 throw new InvalidOperationException($"Disordered block: [{block.Number}], expected block: [{blockExpectation.Number}]");
             }
             
-            var nextBlockExpectation = previousBlock == null || block.PreviousBlockHash == previousBlock.Hash
+            var nextBlockExpectation = previousBlock == null || block.PreviousBlockId == previousBlock.Id
                 ? await MoveForwardAsync(blockExpectation, block)
                 : await MoveBackwardAsync(blockExpectation, block, previousBlock);
 
@@ -106,9 +106,9 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 await _blocksReaderApi.SendAsync(new ReadBlockCommand(nextBlockExpectation.Number));
             }
 
-            _chaosKitty.Meow(block.Hash);
+            _chaosKitty.Meow(block.Id);
 
-            await _blocksDeduplicationRepository.MarkAsProcessedAsync(block.Hash);
+            await _blocksDeduplicationRepository.MarkAsProcessedAsync(block.Id);
         }
 
         private async Task<BlockExpectation> MoveForwardAsync(BlockExpectation blockExpectation, BlockHeader block)
@@ -122,7 +122,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 _blockExpectationRepository.SaveAsync(_id, nextBlockExpectation)
             );
 
-            _chaosKitty.Meow(block.Hash);
+            _chaosKitty.Meow(block.Id);
 
             return nextBlockExpectation;
         }
@@ -152,22 +152,22 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 // For example, if chain was switched during the backward turn, thus
                 // already read on the backward turn blocks are belongs to the stale chain.
 
-                if (storedNextBlock.PreviousBlockHash != currentBlock.Hash)
+                if (storedNextBlock.PreviousBlockId != currentBlock.Id)
                 {
                     await Task.WhenAll
                     (
                         _blockHeadersRepository.RemoveAsync(storedNextBlock),
-                        _blocksDeduplicationRepository.MarkAsNotProcessedAsync(storedNextBlock.Hash)
+                        _blocksDeduplicationRepository.MarkAsNotProcessedAsync(storedNextBlock.Id)
                     );
 
-                    _chaosKitty.Meow(block.Hash);
+                    _chaosKitty.Meow(block.Id);
 
                     await _contractEventsPublisher.PublishAsync(new BlockRolledBackEvent
                     {
                         BlockchainType = _blockchainType,
                         BlockNumber = storedNextBlock.Number,
-                        BlockHash = storedNextBlock.Hash,
-                        PreviousBlockHash = storedNextBlock.PreviousBlockHash
+                        BlockId = storedNextBlock.Id,
+                        PreviousBlockId = storedNextBlock.PreviousBlockId
                     });
 
                     break;
@@ -185,7 +185,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             var nextBlockToRead = blockExpectation.Previous();
 
             var removePreviousBlockTask = _blockHeadersRepository.RemoveAsync(previousBlock);
-            var markPreviousBlockAsNotProcessedTask = _blocksDeduplicationRepository.MarkAsNotProcessedAsync(previousBlock.Hash);
+            var markPreviousBlockAsNotProcessedTask = _blocksDeduplicationRepository.MarkAsNotProcessedAsync(previousBlock.Id);
             var saveBlockTask = _blockHeadersRepository.SaveAsync(block);
 
             await Task.WhenAll
@@ -196,14 +196,14 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 _blockExpectationRepository.SaveAsync(_id, nextBlockToRead)
             );
 
-            _chaosKitty.Meow(block.Hash);
+            _chaosKitty.Meow(block.Id);
 
             await _contractEventsPublisher.PublishAsync(new BlockRolledBackEvent
             {
                 BlockchainType = _blockchainType,
                 BlockNumber = previousBlock.Number,
-                BlockHash = previousBlock.Hash,
-                PreviousBlockHash = previousBlock.PreviousBlockHash
+                BlockId = previousBlock.Id,
+                PreviousBlockId = previousBlock.PreviousBlockId
             });
 
             return nextBlockToRead;

@@ -1,37 +1,24 @@
 ﻿using Autofac;
-using Autofac.Extensions.DependencyInjection;
+using Hangfire;
+using Hangfire.Autofac;
+using Hangfire.MemoryStorage;
+using JetBrains.Annotations;
+using Lykke.Common.Chaos;
+using Lykke.Job.Bil2Indexer.Domain.Services;
+using Lykke.Job.Bil2Indexer.DomainServices;
 using Lykke.Job.Bil2Indexer.Services;
-using Lykke.Job.Bil2Indexer.Settings.JobSettings;
+using Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs;
+using Lykke.Logs.Hangfire;
 using Lykke.Sdk;
 using Lykke.Sdk.Health;
-using Lykke.SettingsReader;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Lykke.Job.Bil2Indexer.Modules
 {
+    [UsedImplicitly]
     public class JobModule : Module
     {
-        private readonly Bil2IndexerJobSettings _settings;
-        private readonly IReloadingManager<Bil2IndexerJobSettings> _settingsManager;
-        // NOTE: you can remove it if you don't need to use IServiceCollection extensions to register service specific dependencies
-        private readonly IServiceCollection _services;
-
-        public JobModule(Bil2IndexerJobSettings settings, IReloadingManager<Bil2IndexerJobSettings> settingsManager)
-        {
-            _settings = settings;
-            _settingsManager = settingsManager;
-
-            _services = new ServiceCollection();
-        }
-
         protected override void Load(ContainerBuilder builder)
         {
-            // NOTE: Do not register entire settings in container, pass necessary settings to services which requires them
-            // ex:
-            // builder.RegisterType<QuotesPublisher>()
-            //  .As<IQuotesPublisher>()
-            //  .WithParameter(TypedParameter.From(_settings.Rabbit.ConnectionString))
-
             builder.RegisterType<HealthService>()
                 .As<IHealthService>()
                 .SingleInstance();
@@ -45,9 +32,30 @@ namespace Lykke.Job.Bil2Indexer.Modules
                 .AutoActivate()
                 .SingleInstance();
 
-            // TODO: Add your dependencies here
+            builder.RegisterChaosKitty(null);
 
-            builder.Populate(_services);
+            builder.RegisterType<ContractEventsPublisher>()
+                .As<IContractEventsPublisher>();
+
+            builder.RegisterType<RetryNotFoundBlockBackgroundJob>()
+                .AsSelf();
+
+            builder
+                .RegisterBuildCallback(StartHangfireServer)
+                .Register(c => new BackgroundJobServer())
+                .SingleInstance();
+        }
+
+        private static void StartHangfireServer(IContainer container)
+        {
+            GlobalConfiguration.Configuration
+                .UseMemoryStorage();
+
+            GlobalConfiguration.Configuration
+                .UseLykkeLogProvider(container)
+                .UseAutofacActivator(container);
+
+            container.Resolve<BackgroundJobServer>();
         }
     }
 }

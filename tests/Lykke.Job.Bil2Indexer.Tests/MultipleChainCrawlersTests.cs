@@ -210,16 +210,16 @@ namespace Lykke.Job.Bil2Indexer.Tests
                 actualChainBlocks.Select(b => b.Number));
 
             CollectionAssert.AreEqual(
-                expectedChainBlocks.Select(b => b.Hash),
-                actualChainBlocks.Select(b => b.Hash));
+                expectedChainBlocks.Select(b => b.Id),
+                actualChainBlocks.Select(b => b.Id));
 
             CollectionAssert.AreEqual(
                 expectedReceivedBlocks.Select(b => b.Number),
                 actualReceivedBlocks.Select(b => b.Number));
 
             CollectionAssert.AreEqual(
-                expectedReceivedBlocks.Select(b => b.Hash),
-                actualReceivedBlocks.Select(b => b.Hash));
+                expectedReceivedBlocks.Select(b => b.Id),
+                actualReceivedBlocks.Select(b => b.Id));
         }
     }
 }

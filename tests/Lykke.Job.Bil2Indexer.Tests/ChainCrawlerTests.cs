@@ -379,8 +379,8 @@ namespace Lykke.Job.Bil2Indexer.Tests
                 actualBlocks.Select(b => b.Number));
 
             CollectionAssert.AreEqual(
-                expectedBlocks.Select(b => b.Hash),
-                actualBlocks.Select(b => b.Hash));
+                expectedBlocks.Select(b => b.Id),
+                actualBlocks.Select(b => b.Id));
 
             AssertRolledBackBlocks(@case);
         }
@@ -395,7 +395,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
         [TestCase(3, 4, "3A,3B,4B")]
         [TestCase(4, 4, "3B,4B")]
         [TestCase(5, 4, "3B,4B")]
-        public async Task Test_that_chain_switching_during_backward_turn_works(int @case, long blockToSwitchToChainC, string shouldBeNotRolledBackBlockHashes)
+        public async Task Test_that_chain_switching_during_backward_turn_works(int @case, long blockToSwitchToChainC, string shouldBeNotRolledBackBlockIds)
         {
             // Arrange
 
@@ -422,12 +422,12 @@ namespace Lykke.Job.Bil2Indexer.Tests
                 actualBlocks.Select(b => b.Number));
 
             CollectionAssert.AreEqual(
-                expectedBlocks.Select(b => b.Hash),
-                actualBlocks.Select(b => b.Hash));
+                expectedBlocks.Select(b => b.Id),
+                actualBlocks.Select(b => b.Id));
 
-            var parsedShouldBeNotRolledBackBlockHashes = new HashSet<string>(shouldBeNotRolledBackBlockHashes.Split(','));
+            var parsedShouldBeNotRolledBackBlockIds = new HashSet<string>(shouldBeNotRolledBackBlockIds.Split(','));
 
-            AssertRolledBackBlocks(@case, b => !parsedShouldBeNotRolledBackBlockHashes.Contains(b.Hash));
+            AssertRolledBackBlocks(@case, b => !parsedShouldBeNotRolledBackBlockIds.Contains(b.Id));
         }
 
         [Test]
@@ -443,7 +443,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
         [TestCase(6, "1A")]
         [TestCase(6, "2A")]
         [TestCase(6, "4A")]
-        public async Task Test_that_block_duplication_is_processed_well(int @case, string duplicateBlockHash)
+        public async Task Test_that_block_duplication_is_processed_well(int @case, string duplicateBlockId)
         {
             // Arrange
 
@@ -451,7 +451,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             _chainsEvaluator.CustomBlockProcessing = (blocksQueue, chains, activeChain, block) =>
             {
-                if (block.Hash == duplicateBlockHash)
+                if (block.Id == duplicateBlockId)
                 {
                      blocksQueue.Publish(block);
                 }
@@ -479,8 +479,8 @@ namespace Lykke.Job.Bil2Indexer.Tests
                 actualBlocks.Select(b => b.Number));
 
             CollectionAssert.AreEqual(
-                expectedBlocks.Select(b => b.Hash),
-                actualBlocks.Select(b => b.Hash));
+                expectedBlocks.Select(b => b.Id),
+                actualBlocks.Select(b => b.Id));
 
             AssertRolledBackBlocks(@case);
         }
@@ -512,7 +512,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
         [TestCase(0, "5B", "6B")]
         [TestCase(6, "2A", "3A")]
         [TestCase(6, "2A", "4A")]
-        public async Task Test_that_disordered_blocks_eventually_processed(int @case, string substitutableBlockHash, string substituteBlockHash)
+        public async Task Test_that_disordered_blocks_eventually_processed(int @case, string substitutableBlockId, string substituteBlockId)
         {
             // Arrange
 
@@ -522,12 +522,12 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             _chainsEvaluator.CustomBlockProcessing = (blocksQueue, chains, activeChain, block) =>
             {
-                if (!isSubstituted && block.Hash == substitutableBlockHash)
+                if (!isSubstituted && block.Id == substitutableBlockId)
                 {
                     isSubstituted = true;
 
-                    var chain = chains[substituteBlockHash.Last()];
-                    var substituteBlock = chain.First(b => b.Hash == substituteBlockHash);
+                    var chain = chains[substituteBlockId.Last()];
+                    var substituteBlock = chain.First(b => b.Id == substituteBlockId);
 
                     Console.WriteLine($"Substituting: {block} with {substituteBlock}");
 
@@ -559,8 +559,8 @@ namespace Lykke.Job.Bil2Indexer.Tests
                 actualBlocks.Select(b => b.Number));
 
             CollectionAssert.AreEqual(
-                expectedBlocks.Select(b => b.Hash),
-                actualBlocks.Select(b => b.Hash));
+                expectedBlocks.Select(b => b.Id),
+                actualBlocks.Select(b => b.Id));
 
             AssertRolledBackBlocks(@case);
         }
@@ -575,7 +575,7 @@ namespace Lykke.Job.Bil2Indexer.Tests
                 var chain = chains[chainKey];
                 var previousChain = chains[(char) (chainKey - 1)];
 
-                var exceptedBlocks = previousChain.ExceptBy(chain, b => b.Hash);
+                var exceptedBlocks = previousChain.ExceptBy(chain, b => b.Id);
 
                 if (predicate != null)
                 {
@@ -587,19 +587,19 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
             var blocksThatWasNotRolledBack = chains.Values
                 .Aggregate((a, b) => a.Concat(b).ToArray())
-                .ExceptBy(expectedRolledBackBlocks, b => b.Hash);
+                .ExceptBy(expectedRolledBackBlocks, b => b.Id);
 
-            foreach (var blockHash in expectedRolledBackBlocks.Select(b => b.Hash).Distinct())
+            foreach (var blockId in expectedRolledBackBlocks.Select(b => b.Id).Distinct())
             {
                 _contractEventsPublisher.Verify(
-                    x => x.PublishAsync(It.Is<BlockRolledBackEvent>(b => b.BlockHash == blockHash)),
-                    Times.Exactly(expectedRolledBackBlocks.Count(b => b.Hash == blockHash)));
+                    x => x.PublishAsync(It.Is<BlockRolledBackEvent>(b => b.BlockId == blockId)),
+                    Times.Exactly(expectedRolledBackBlocks.Count(b => b.Id == blockId)));
             }
 
-            foreach (var blockHash in blocksThatWasNotRolledBack.Select(b => b.Hash).Distinct())
+            foreach (var blockId in blocksThatWasNotRolledBack.Select(b => b.Id).Distinct())
             {
                 _contractEventsPublisher.Verify(
-                    x => x.PublishAsync(It.Is<BlockRolledBackEvent>(b => b.BlockHash == blockHash)),
+                    x => x.PublishAsync(It.Is<BlockRolledBackEvent>(b => b.BlockId == blockId)),
                     Times.Never);
             }
         }

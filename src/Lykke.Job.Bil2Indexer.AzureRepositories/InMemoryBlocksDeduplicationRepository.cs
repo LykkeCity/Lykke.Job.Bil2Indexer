@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
-namespace Lykke.Job.Bil2Indexer.Tests.Mocks
+namespace Lykke.Job.Bil2Indexer.AzureRepositories
 {
-    internal class InMemoryBlocksDeduplicationRepository : IBlocksDeduplicationRepository
+    public class InMemoryBlocksDeduplicationRepository : IBlocksDeduplicationRepository
     {
         private readonly ConcurrentDictionary<string, bool> _blockIds;
 

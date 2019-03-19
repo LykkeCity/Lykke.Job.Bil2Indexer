@@ -7,12 +7,12 @@ namespace Lykke.Job.Bil2Indexer.Contract.Events
     {
         public string BlockchainType { get; set; }
         public long BlockNumber { get; set; }
-        public string BlockHash { get; set; }
-        public string PreviousBlockHash { get; set; }
+        public string BlockId { get; set; }
+        public string PreviousBlockId { get; set; }
 
         public override string ToString()
         {
-            return BlockHash;
+            return BlockId;
         }
     }
 }

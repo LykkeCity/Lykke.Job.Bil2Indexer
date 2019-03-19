@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
-namespace Lykke.Job.Bil2Indexer.Tests.Mocks
+namespace Lykke.Job.Bil2Indexer.AzureRepositories
 {
-    internal class InMemoryBlockHeadersRepository : IBlockHeadersRepository
+    public class InMemoryBlockHeadersRepository : IBlockHeadersRepository
     {
         private readonly SortedList<long, BlockHeader> _blocks = new SortedList<long, BlockHeader>();
 
@@ -17,7 +17,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
             {
                 _blocks.Add(block.Number, block);
 
-                Console.WriteLine($"Saved: {block}");
+                Console.WriteLine($"Header saved: {block}");
             }
 
             return Task.CompletedTask;
@@ -44,7 +44,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Mocks
                     _blocks.Remove(storedBlock.Number);
                 }
 
-                Console.WriteLine($"Removed: {block}");
+                Console.WriteLine($"Header removed: {block}");
 
                 return Task.CompletedTask;
             }

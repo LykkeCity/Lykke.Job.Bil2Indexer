@@ -1,31 +1,42 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Common.Log;
+using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Common.Log;
+using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Sdk;
 
 namespace Lykke.Job.Bil2Indexer.Services
 {
-    // NOTE: Sometimes, startup process which is expressed explicitly is not just better, 
-    // but the only way. If this is your case, use this class to manage startup.
-    // For example, sometimes some state should be restored before any periodical handler will be started, 
-    // or any incoming message will be processed and so on.
-    // Do not forget to remove As<IStartable>() and AutoActivate() from DI registartions of services, 
-    // which you want to startup explicitly.
-
     public class StartupManager : IStartupManager
     {
+        private readonly IBlocksReaderClient _blocksReaderClient;
+        private readonly Func<IChainCrawlersManager> _chainCrawlersManager;
         private readonly ILog _log;
 
-        public StartupManager(ILogFactory logFactory)
+        public StartupManager(
+            ILogFactory logFactory,
+            IBlocksReaderClient blocksReaderClient,
+            Func<IChainCrawlersManager> chainCrawlersManager)
         {
+            _blocksReaderClient = blocksReaderClient;
+            _chainCrawlersManager = chainCrawlersManager;
             _log = logFactory.CreateLog(this);
         }
 
         public async Task StartAsync()
         {
-            // TODO: Implement your startup logic here. Good idea is to log every step
+            _log.Info("Initializing blocks reader client...");
 
-            await Task.CompletedTask;
+            _blocksReaderClient.Initialize();
+
+            _log.Info("Starting crawlers manager...");
+
+            await _chainCrawlersManager.Invoke().StartAsync();
+
+            _log.Info("Starting blocks reader events listening...");
+            
+            _blocksReaderClient.StartListening();
         }
     }
 }
