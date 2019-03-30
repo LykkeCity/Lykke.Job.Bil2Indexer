@@ -4,8 +4,6 @@ using Hangfire.Autofac;
 using Hangfire.MemoryStorage;
 using JetBrains.Annotations;
 using Lykke.Common.Chaos;
-using Lykke.Job.Bil2Indexer.Domain.Services;
-using Lykke.Job.Bil2Indexer.DomainServices;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs;
 using Lykke.Logs.Hangfire;
@@ -32,10 +30,10 @@ namespace Lykke.Job.Bil2Indexer.Modules
                 .AutoActivate()
                 .SingleInstance();
 
-            builder.RegisterChaosKitty(null);
+            builder.RegisterType<RabbitMqConfigurator>()
+                .AsSelf();
 
-            builder.RegisterType<ContractEventsPublisher>()
-                .As<IContractEventsPublisher>();
+            builder.RegisterChaosKitty(null);
 
             builder.RegisterType<RetryNotFoundBlockBackgroundJob>()
                 .AsSelf();

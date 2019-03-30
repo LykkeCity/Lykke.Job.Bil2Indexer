@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace Lykke.Job.Bil2Indexer.DomainServices
+namespace Lykke.Job.Bil2Indexer.Infrastructure
 {
-    internal static class TaskExecution
+    public static class TaskExecution
     {
         public static async Task<(TResult1, TResult2)> WhenAll<TResult1, TResult2>(Task<TResult1> task1, Task<TResult2> task2)
         {

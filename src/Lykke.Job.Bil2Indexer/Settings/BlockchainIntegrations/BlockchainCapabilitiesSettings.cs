@@ -7,5 +7,8 @@ namespace Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations
     {
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
         public BlockchainTransferModel TransferModel { get; set; }
+
+        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+        public long FirstBlockNumber { get; set; }
     }
 }

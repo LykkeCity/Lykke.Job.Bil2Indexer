@@ -1,212 +1,219 @@
-﻿using System;
-using System.Threading.Tasks;
-using Lykke.Bil2.Client.BlocksReader.Services;
-using Lykke.Bil2.Contract.BlocksReader.Commands;
-using Lykke.Common.Chaos;
-using Lykke.Job.Bil2Indexer.Contract.Events;
-using Lykke.Job.Bil2Indexer.Domain;
-using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using Lykke.Job.Bil2Indexer.Domain.Services;
+﻿//using System;
+//using System.Threading.Tasks;
+//using Lykke.Bil2.Client.BlocksReader;
+//using Lykke.Bil2.Client.BlocksReader.Services;
+//using Lykke.Bil2.Contract.BlocksReader.Commands;
+//using Lykke.Bil2.RabbitMq.Publication;
+//using Lykke.Common.Chaos;
+//using Lykke.Job.Bil2Indexer.Contract.Events;
+//using Lykke.Job.Bil2Indexer.Domain;
+//using Lykke.Job.Bil2Indexer.Domain.Repositories;
+//using Lykke.Job.Bil2Indexer.Domain.Services;
 
-namespace Lykke.Job.Bil2Indexer.DomainServices
-{
-    public class ChainCrawler : IChainCrawler
-    {
-        private readonly string _blockchainType;
+//namespace Lykke.Job.Bil2Indexer.DomainServices
+//{
+//    // TODO: Нужен дедупликатор всех евентов.
+//    // TODO: При удалении блока, удалять все его транзакции и AccountActions.
+//    // TODO: Нужна пошаговая обработка блока - собрали, обновили actions.
+//    // TODO: В blockHeadersRepository нужен blockchainType
+
+//    public class ChainCrawler : IChainCrawler
+//    {
+//        public string Id { get; private set; }
+
+//        private readonly string _blockchainType;
         
-        /// <summary>
-        /// Inclusive block number to start crawling from.
-        /// </summary>
-        private readonly long _startBlock;
+//        /// <summary>
+//        /// Inclusive block number to start crawling from.
+//        /// </summary>
+//        private readonly long _startBlock;
         
-        /// <summary>
-        /// Exclusive block number to stop crawling on, or null to continue crawling forever.
-        /// </summary>
-        private readonly long? _stopBlock;
+//        /// <summary>
+//        /// Exclusive block number to stop crawling on, or null to continue crawling forever.
+//        /// </summary>
+//        private readonly long? _stopBlock;
         
-        private readonly IChaosKitty _chaosKitty;
-        private readonly IContractEventsPublisher _contractEventsPublisher;
-        private readonly IBlocksReaderApi _blocksReaderApi;
-        private readonly IBlockHeadersRepository _blockHeadersRepository;
-        private readonly IBlockExpectationRepository _blockExpectationRepository;
-        private readonly IBlocksDeduplicationRepository _blocksDeduplicationRepository;
-        private readonly string _id;
+//        private readonly IChaosKitty _chaosKitty;
+//        private readonly IBlocksReaderApi _blocksReaderApi;
+//        private readonly IBlockHeadersRepository _blockHeadersRepository;
+//        private readonly ICrawlersRepository _crawlersRepository;
+//        private readonly IBlocksDeduplicationRepository _blocksDeduplicationRepository;
 
-        public ChainCrawler(
-            string blockchainType,
-            long startBlock,
-            long? stopBlock,
-            IChaosKitty chaosKitty,
-            IContractEventsPublisher contractEventsPublisher,
-            IBlocksReaderApi blocksReaderApi,
-            IBlockHeadersRepository blockHeadersRepository,
-            IBlockExpectationRepository blockExpectationRepository,
-            IBlocksDeduplicationRepository blocksDeduplicationRepository)
-        {
-            _blockchainType = blockchainType;
-            _startBlock = startBlock;
-            _stopBlock = stopBlock;
-            _chaosKitty = chaosKitty;
-            _contractEventsPublisher = contractEventsPublisher;
-            _blocksReaderApi = blocksReaderApi;
-            _blockHeadersRepository = blockHeadersRepository;
-            _blockExpectationRepository = blockExpectationRepository;
-            _blocksDeduplicationRepository = blocksDeduplicationRepository;
+//        public ChainCrawler(
+//            string blockchainType,
+//            long startBlock,
+//            long? stopBlock,
+//            IChaosKitty chaosKitty,
+//            IBlocksReaderApi blocksReaderApi,
+//            IBlockHeadersRepository blockHeadersRepository,
+//            ICrawlersRepository crawlersRepository,
+//            IBlocksDeduplicationRepository blocksDeduplicationRepository)
+//        {
+//            _blockchainType = blockchainType;
+//            _startBlock = startBlock;
+//            _stopBlock = stopBlock;
+//            _chaosKitty = chaosKitty;
+//            _blocksReaderApi = blocksReaderApi;
+//            _blockHeadersRepository = blockHeadersRepository;
+//            _crawlersRepository = crawlersRepository;
+//            _blocksDeduplicationRepository = blocksDeduplicationRepository;
 
-            _id = stopBlock.HasValue ? $"{startBlock}-{stopBlock}" : $"{startBlock}-*";
-        }
+//            Id = stopBlock.HasValue ? $"{startBlock}-{stopBlock}" : $"{startBlock}-*";
+//        }
 
-        public async Task StartAsync()
-        {
-            // If no block was expected, then start from the scratch
-            var blockExpectation = await _blockExpectationRepository.GetOrDefaultAsync(_id);
+//        public async Task StartAsync()
+//        {
+//            // If no block was expected, then start from the scratch
+//            var blockExpectation = await _crawlersRepository.GetOrDefaultAsync(_blockchainType, Id);
 
-            if (blockExpectation == null)
-            {
-                blockExpectation = new BlockExpectation(_startBlock);
-                await _blockExpectationRepository.SaveAsync(_id, blockExpectation);
-            }
+//            if (blockExpectation == null)
+//            {
+//                blockExpectation = new BlockExpectation(_startBlock);
+//                await _crawlersRepository.SaveAsync(_blockchainType, Id, blockExpectation);
+//            }
             
-            await _blocksReaderApi.SendAsync(new ReadBlockCommand(blockExpectation.Number));
-        }
+//            await _blocksReaderApi.SendAsync(new ReadBlockCommand(blockExpectation.Number));
+//        }
 
-        public async Task ProcessBlockAsync(BlockHeader block)
-        {
-            if (block.Number < _startBlock || _stopBlock.HasValue && block.Number >= _stopBlock.Value)
-            {
-                return;
-            }
+//        public bool CanProcess(long blockNumber)
+//        {
+//            return blockNumber >= _startBlock && (!_stopBlock.HasValue || blockNumber < _stopBlock.Value);
+//        }
 
-            // TODO: Have to:
-            // 1. read state, make a decision, send command
-            // 2. update state in the command handler, publish event
+//        public async Task ChooseDirectionAsync(BlockHeader block)
+//        {
+//            // TODO: Have to:
+//            // 1. read state, make a decision, send command
+//            // 2. update state in the command handler, publish event
 
-            if (await _blocksDeduplicationRepository.IsProcessedAsync(block.Id))
-            {
-                return;
-            }
+//            if (await _blocksDeduplicationRepository.IsProcessedAsync(block.Id))
+//            {
+//                return;
+//            }
 
-            var (previousBlock, blockExpectation) = await TaskExecution.WhenAll
-            (
-                _blockHeadersRepository.GetOrDefaultAsync(block.Number - 1),
-                _blockExpectationRepository.GetOrDefaultAsync(_id)
-            );
+//            var (previousBlock, blockExpectation) = await TaskExecution.WhenAll
+//            (
+//                _blockHeadersRepository.GetOrDefaultAsync(block.Number - 1),
+//                _crawlersRepository.GetOrDefaultAsync(TODO, Id)
+//            );
 
-            if (blockExpectation != null && block.Number != blockExpectation.Number)
-            {
-                throw new InvalidOperationException($"Disordered block: [{block.Number}], expected block: [{blockExpectation.Number}]");
-            }
-            
-            var nextBlockExpectation = previousBlock == null || block.PreviousBlockId == previousBlock.Id
-                ? await MoveForwardAsync(blockExpectation, block)
-                : await MoveBackwardAsync(blockExpectation, block, previousBlock);
+//            if (blockExpectation != null && block.Number != blockExpectation.Number)
+//            {
+//                throw new InvalidOperationException($"Disordered block: [{block.Number}], expected block: [{blockExpectation.Number}]");
+//            }
 
-            if (!_stopBlock.HasValue || nextBlockExpectation.Number < _stopBlock.Value)
-            {
-                await _blocksReaderApi.SendAsync(new ReadBlockCommand(nextBlockExpectation.Number));
-            }
+//            // --
 
-            _chaosKitty.Meow(block.Id);
+//            var nextBlockExpectation = previousBlock == null || block.PreviousBlockId == previousBlock.Id
+//                ? await MoveForwardAsync(blockExpectation, block)
+//                : await MoveBackwardAsync(blockExpectation, block, previousBlock);
 
-            await _blocksDeduplicationRepository.MarkAsProcessedAsync(block.Id);
-        }
+//            if (!_stopBlock.HasValue || nextBlockExpectation.Number < _stopBlock.Value)
+//            {
+//                await _blocksReaderApi.SendAsync(new ReadBlockCommand(nextBlockExpectation.Number));
+//            }
 
-        private async Task<BlockExpectation> MoveForwardAsync(BlockExpectation blockExpectation, BlockHeader block)
-        {          
-            var skippedBlocksNumber = await SkipAlreadyReadBlocks(block);
-            var nextBlockExpectation = blockExpectation.Skip(skippedBlocksNumber);
+//            _chaosKitty.Meow(block.Id);
 
-            await Task.WhenAll
-            (
-                _blockHeadersRepository.SaveAsync(block),
-                _blockExpectationRepository.SaveAsync(_id, nextBlockExpectation)
-            );
+//            await _blocksDeduplicationRepository.MarkAsProcessedAsync(block.Id);
+//        }
 
-            _chaosKitty.Meow(block.Id);
+//        private async Task<BlockExpectation> MoveForwardAsync(BlockExpectation blockExpectation, BlockHeader block)
+//        {          
+//            var skippedBlocksNumber = await SkipAlreadyReadBlocks(block);
+//            var nextBlockExpectation = blockExpectation.Skip(skippedBlocksNumber);
 
-            return nextBlockExpectation;
-        }
+//            await Task.WhenAll
+//            (
+//                _blockHeadersRepository.SaveAsync(block),
+//                _crawlersRepository.SaveAsync(TODO, Id, nextBlockExpectation)
+//            );
 
-        private async Task<long> SkipAlreadyReadBlocks(BlockHeader block)
-        {
-            var nextBlockNumber = block.Number;
-            var currentBlock = block;
+//            _chaosKitty.Meow(block.Id);
 
-            while (true)
-            {
-                nextBlockNumber++;
+//            return nextBlockExpectation;
+//        }
 
-                if (_stopBlock.HasValue && nextBlockNumber >= _stopBlock)
-                {
-                    break;
-                }
+//        private async Task<long> SkipAlreadyReadBlocks(BlockHeader block)
+//        {
+//            var nextBlockNumber = block.Number;
+//            var currentBlock = block;
 
-                var storedNextBlock = await _blockHeadersRepository.GetOrDefaultAsync(nextBlockNumber);
+//            while (true)
+//            {
+//                nextBlockNumber++;
 
-                if (storedNextBlock == null)
-                {
-                    break;
-                }
+//                if (_stopBlock.HasValue && nextBlockNumber >= _stopBlock)
+//                {
+//                    break;
+//                }
 
-                // Removes already stored blocks, which belongs to another chain.
-                // For example, if chain was switched during the backward turn, thus
-                // already read on the backward turn blocks are belongs to the stale chain.
+//                var storedNextBlock = await _blockHeadersRepository.GetOrDefaultAsync(nextBlockNumber);
 
-                if (storedNextBlock.PreviousBlockId != currentBlock.Id)
-                {
-                    await Task.WhenAll
-                    (
-                        _blockHeadersRepository.RemoveAsync(storedNextBlock),
-                        _blocksDeduplicationRepository.MarkAsNotProcessedAsync(storedNextBlock.Id)
-                    );
+//                if (storedNextBlock == null)
+//                {
+//                    break;
+//                }
 
-                    _chaosKitty.Meow(block.Id);
+//                // Removes already stored blocks, which belongs to another chain.
+//                // For example, if chain was switched during the backward turn, thus
+//                // already read on the backward turn blocks are belongs to the stale chain.
 
-                    await _contractEventsPublisher.PublishAsync(new BlockRolledBackEvent
-                    {
-                        BlockchainType = _blockchainType,
-                        BlockNumber = storedNextBlock.Number,
-                        BlockId = storedNextBlock.Id,
-                        PreviousBlockId = storedNextBlock.PreviousBlockId
-                    });
+//                if (storedNextBlock.PreviousBlockId != currentBlock.Id)
+//                {
+//                    await Task.WhenAll
+//                    (
+//                        _blockHeadersRepository.RemoveAsync(storedNextBlock),
+//                        _blocksDeduplicationRepository.MarkAsNotProcessedAsync(storedNextBlock.Id)
+//                    );
 
-                    break;
-                }
+//                    _chaosKitty.Meow(block.Id);
 
-                currentBlock = storedNextBlock;
-            }
+//                    await _contractEventsPublisher.PublishAsync(new BlockRolledBackEvent
+//                    {
+//                        BlockchainType = _blockchainType,
+//                        BlockNumber = storedNextBlock.Number,
+//                        BlockId = storedNextBlock.Id,
+//                        PreviousBlockId = storedNextBlock.PreviousBlockId
+//                    });
 
-            return nextBlockNumber - block.Number;
-        }
+//                    break;
+//                }
 
-        private async Task<BlockExpectation> MoveBackwardAsync(BlockExpectation blockExpectation, BlockHeader block, BlockHeader previousBlock)
-        {
-            // TODO: This is not idempotent. Should be processed in independent command handler
-            var nextBlockToRead = blockExpectation.Previous();
+//                currentBlock = storedNextBlock;
+//            }
 
-            var removePreviousBlockTask = _blockHeadersRepository.RemoveAsync(previousBlock);
-            var markPreviousBlockAsNotProcessedTask = _blocksDeduplicationRepository.MarkAsNotProcessedAsync(previousBlock.Id);
-            var saveBlockTask = _blockHeadersRepository.SaveAsync(block);
+//            return nextBlockNumber - block.Number;
+//        }
 
-            await Task.WhenAll
-            (
-                removePreviousBlockTask,
-                markPreviousBlockAsNotProcessedTask,
-                saveBlockTask,
-                _blockExpectationRepository.SaveAsync(_id, nextBlockToRead)
-            );
+//        private async Task<BlockExpectation> MoveBackwardAsync(BlockExpectation blockExpectation, BlockHeader block, BlockHeader previousBlock)
+//        {
+//            // TODO: This is not idempotent. Should be processed in independent command handler
+//            var nextBlockToRead = blockExpectation.Previous();
 
-            _chaosKitty.Meow(block.Id);
+//            var removePreviousBlockTask = _blockHeadersRepository.RemoveAsync(previousBlock);
+//            var markPreviousBlockAsNotProcessedTask = _blocksDeduplicationRepository.MarkAsNotProcessedAsync(previousBlock.Id);
+//            var saveBlockTask = _blockHeadersRepository.SaveAsync(block);
 
-            await _contractEventsPublisher.PublishAsync(new BlockRolledBackEvent
-            {
-                BlockchainType = _blockchainType,
-                BlockNumber = previousBlock.Number,
-                BlockId = previousBlock.Id,
-                PreviousBlockId = previousBlock.PreviousBlockId
-            });
+//            await Task.WhenAll
+//            (
+//                removePreviousBlockTask,
+//                markPreviousBlockAsNotProcessedTask,
+//                saveBlockTask,
+//                _crawlersRepository.SaveAsync(TODO, Id, nextBlockToRead)
+//            );
 
-            return nextBlockToRead;
-        }
-    }
-}
+//            _chaosKitty.Meow(block.Id);
+
+//            await _contractEventsPublisher.PublishAsync(new BlockRolledBackEvent
+//            {
+//                BlockchainType = _blockchainType,
+//                BlockNumber = previousBlock.Number,
+//                BlockId = previousBlock.Id,
+//                PreviousBlockId = previousBlock.PreviousBlockId
+//            });
+
+//            return nextBlockToRead;
+//        }
+//    }
+//}

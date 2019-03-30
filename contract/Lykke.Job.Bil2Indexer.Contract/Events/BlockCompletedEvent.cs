@@ -3,7 +3,7 @@
 namespace Lykke.Job.Bil2Indexer.Contract.Events
 {
     [PublicAPI]
-    public class BlockRolledBackEvent
+    public class BlockCompletedEvent
     {
         public string BlockchainType { get; set; }
         public long BlockNumber { get; set; }

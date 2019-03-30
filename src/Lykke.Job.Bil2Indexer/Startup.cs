@@ -3,6 +3,7 @@ using Lykke.Job.Bil2Indexer.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Lykke.Logs;
 using Lykke.Logs.Loggers.LykkeSlack;
 using Lykke.Sdk;
 
@@ -28,9 +29,11 @@ namespace Lykke.Job.Bil2Indexer
                 {
                     logs.AzureTableName = "Bil2IndexerJobLog";
                     logs.AzureTableConnectionStringResolver = settings => settings.Bil2IndexerJob.Db.LogsConnString;
-
+                    
                     logs.Extended = extendedLogs =>
                     {
+                        //extendedLogs.AddFilter((provider, component, level) => provider == "Lykke.Logs.Loggers.LykkeConsole.LykkeConsoleLoggerProvider");
+                       
                         extendedLogs.AddAdditionalSlackChannel("CommonBlockChainIntegration", channelOptions =>
                         {
                             channelOptions.MinLogLevel = Microsoft.Extensions.Logging.LogLevel.Information;

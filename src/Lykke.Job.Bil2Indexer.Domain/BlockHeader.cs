@@ -4,6 +4,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 {
     public class BlockHeader
     {
+        public string BlockchainType { get; }
         public long Number { get; }
         public string Id { get; }
         public DateTime MiningMoment { get; }
@@ -11,8 +12,9 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public int TransactionsCount { get; }
         public string PreviousBlockId { get; }
 
-        public BlockHeader(long number, string id, DateTime miningMoment, int size, int transactionsCount, string previousBlockId)
+        public BlockHeader(string blockchainType, long number, string id, DateTime miningMoment, int size, int transactionsCount, string previousBlockId)
         {
+            BlockchainType = blockchainType;
             Number = number;
             Id = id;
             MiningMoment = miningMoment;
@@ -23,7 +25,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public override string ToString()
         {
-            return $"{Number}: {PreviousBlockId} -> {Id}";
+            return $"{BlockchainType}:{Number}:{Id} <- {PreviousBlockId}";
         }
     }
 }

@@ -10,15 +10,18 @@ namespace Lykke.Job.Bil2Indexer.Services
 {
     public class StartupManager : IStartupManager
     {
+        private readonly RabbitMqConfigurator _rabbitMqConfigurator;
         private readonly IBlocksReaderClient _blocksReaderClient;
-        private readonly Func<IChainCrawlersManager> _chainCrawlersManager;
+        private readonly Func<ICrawlersManager> _chainCrawlersManager;
         private readonly ILog _log;
 
         public StartupManager(
             ILogFactory logFactory,
+            RabbitMqConfigurator rabbitMqConfigurator,
             IBlocksReaderClient blocksReaderClient,
-            Func<IChainCrawlersManager> chainCrawlersManager)
+            Func<ICrawlersManager> chainCrawlersManager)
         {
+            _rabbitMqConfigurator = rabbitMqConfigurator;
             _blocksReaderClient = blocksReaderClient;
             _chainCrawlersManager = chainCrawlersManager;
             _log = logFactory.CreateLog(this);
@@ -29,12 +32,16 @@ namespace Lykke.Job.Bil2Indexer.Services
             _log.Info("Initializing blocks reader client...");
 
             _blocksReaderClient.Initialize();
+            
+            _log.Info("Initializing indexer messaging configuration...");
+
+            _rabbitMqConfigurator.Configure();
 
             _log.Info("Starting crawlers manager...");
 
             await _chainCrawlersManager.Invoke().StartAsync();
 
-            _log.Info("Starting blocks reader events listening...");
+            _log.Info("Starting events listening...");
             
             _blocksReaderClient.StartListening();
         }

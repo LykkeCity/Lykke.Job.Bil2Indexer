@@ -5,13 +5,12 @@ using Autofac.Extensions.DependencyInjection;
 using JetBrains.Annotations;
 using Lykke.Bil2.Client.BlocksReader;
 using Lykke.Bil2.Client.BlocksReader.Services;
-using Lykke.Common.Chaos;
+using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.DomainServices;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Settings;
-using Lykke.Job.Bil2Indexer.Workflow.EventHandlers;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -44,36 +43,24 @@ namespace Lykke.Job.Bil2Indexer.Modules
             });
             
             builder.Populate(services);
-
-            builder.RegisterType<BlockEventsHandler>()
-                .As<IBlockEventsHandler>();
-
+            
             builder.Register(c =>
                 {
-                    // TODO: Validate, that ranges are not crossed
+                    // TODO: Validate, that ranges are not crossed and have no gaps
 
-                    var blocksReaderApiFactory = c.Resolve<IBlocksReaderApiFactory>();
                     var crawlers = _settings.BlockchainIntegrations
                         .ToDictionary(
                             i => i.Type,
-                            i => (IReadOnlyCollection<IChainCrawler>) i.Indexer.ChainCrawlers
-                                .Select(cs => new ChainCrawler
-                                (
-                                    i.Type,
-                                    cs.StartBlock,
-                                    cs.StopBlock,
-                                    c.Resolve<IChaosKitty>(),
-                                    c.Resolve<IContractEventsPublisher>(),
-                                    blocksReaderApiFactory.Create(i.Type),
-                                    c.Resolve<IBlockHeadersRepository>(),
-                                    c.Resolve<IBlockExpectationRepository>(),
-                                    c.Resolve<IBlocksDeduplicationRepository>()
-                                ))
+                            i => (IReadOnlyCollection<CrawlerConfiguration>) i.Indexer.ChainCrawlers
+                                .Select(cs => new CrawlerConfiguration(cs.StartBlock, cs.StopBlock))
                                 .ToArray());
 
-                    return new ChainCrawlersManager(crawlers);
+                    return new CrawlersManager(
+                        c.Resolve<ICrawlersRepository>(),
+                        c.Resolve<IBlocksReaderApiFactory>(),
+                        crawlers);
                 })
-                .As<IChainCrawlersManager>()
+                .As<ICrawlersManager>()
                 .SingleInstance();
 
             builder.Register(c => new IntegrationSettingsProvider(_settings.BlockchainIntegrations))

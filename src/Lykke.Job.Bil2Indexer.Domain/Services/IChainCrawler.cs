@@ -1,10 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿//using System.Threading.Tasks;
 
-namespace Lykke.Job.Bil2Indexer.Domain.Services
-{
-    public interface IChainCrawler
-    {
-        Task StartAsync();
-        Task ProcessBlockAsync(BlockHeader block);
-    }
-}
+//namespace Lykke.Job.Bil2Indexer.Domain.Services
+//{
+//    public interface IChainCrawler
+//    {
+//        string Id { get; }
+//        Task StartAsync();
+//        bool CanProcess(long blockNumber);
+//    }
+//}

@@ -1,0 +1,253 @@
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Hangfire;
+using Lykke.Bil2.Client.BlocksReader.Services;
+using Lykke.Bil2.Contract.BlocksReader.Events;
+using Lykke.Bil2.RabbitMq.Publication;
+using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Job.Bil2Indexer.Domain;
+using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Domain.Services;
+using Lykke.Job.Bil2Indexer.Services;
+using Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs;
+using Lykke.Job.Bil2Indexer.Workflow.Commands;
+
+namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
+{
+    public class BlockReaderEventsHandler : IBlockEventsHandler
+    {
+        private readonly ICommandsSenderFactory _commandsSenderFactory;
+        private readonly IBlockHeadersRepository _blockHeadersRepository;
+        private readonly IntegrationSettingsProvider _integrationSettingsProvider;
+        private readonly ICrawlersManager _crawlersManager;
+        private readonly ITransactionsRepository _transactionsRepository;
+        private readonly IBalanceActionsRepository _balanceActionsRepository;
+        private readonly ICoinsRepository _coinsRepository;
+
+        public BlockReaderEventsHandler(
+            ICommandsSenderFactory commandsSenderFactory,
+            IBlockHeadersRepository blockHeadersRepository,
+            IntegrationSettingsProvider integrationSettingsProvider,
+            ICrawlersManager crawlersManager,
+            ITransactionsRepository transactionsRepository,
+            IBalanceActionsRepository balanceActionsRepository,
+            ICoinsRepository coinsRepository)
+        {
+            _commandsSenderFactory = commandsSenderFactory;
+            _blockHeadersRepository = blockHeadersRepository;
+            _integrationSettingsProvider = integrationSettingsProvider;
+            _crawlersManager = crawlersManager;
+            _transactionsRepository = transactionsRepository;
+            _balanceActionsRepository = balanceActionsRepository;
+            _coinsRepository = coinsRepository;
+        }
+
+        public async Task HandleAsync(string blockchainType, BlockHeaderReadEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        {
+            var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
+            var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, evt.BlockNumber);
+
+            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            {
+                // Disordered message, we should ignore it.
+                return;
+            }
+
+            var blockHeader = new BlockHeader
+            (
+                blockchainType,
+                evt.BlockNumber,
+                evt.BlockId,
+                evt.BlockMiningMoment,
+                evt.BlockSize,
+                evt.BlockTransactionsCount,
+                evt.PreviousBlockId
+            );
+            
+            var commandsSender = _commandsSenderFactory.Create();
+
+            await _blockHeadersRepository.SaveAsync(blockHeader);
+
+            commandsSender.Publish
+            (
+                new WaitForBlockAssemblingCommand
+                {
+                    BlockchainType = blockchainType,
+                    BlockId = evt.BlockId
+                },
+                headers.CorrelationId
+            );
+        }
+
+        public async Task HandleAsync(string blockchainType, BlockNotFoundEvent evt, MessageHeaders headers, IMessagePublisher responsePublisher)
+        {
+            var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
+            var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, evt.BlockNumber);
+
+            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            {
+                // Disordered message, we should ignore it.
+                return;
+            }
+
+            // TODO: if delay is less than some configured threshold, use Task.Delay instead of scheduler,
+            // because of too high latency of the scheduler.
+
+            var delay = _integrationSettingsProvider.Get(blockchainType).Indexer.NotFoundBlockRetryDelay;
+
+            BackgroundJob.Schedule<RetryNotFoundBlockBackgroundJob>
+            (
+                job => job.RetryAsync(blockchainType, evt.BlockNumber, messageCorrelationId),
+                delay
+            );
+        }
+
+        public async Task HandleAsync(string blockchainType, TransferAmountTransactionExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        {
+            var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
+            var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
+
+            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            {
+                // Disordered message, we should ignore it.
+                return;
+            }
+
+            await _transactionsRepository.SaveAsync(blockchainType, evt);
+
+            var actions = evt.BalanceChanges
+                .Where(x => x.Address != null)
+                .Select
+                (
+                    x => new BalanceAction
+                    (
+                        x.Address,
+                        x.Asset,
+                        x.Value,
+                        crawler.ExpectedBlockNumber,
+                        evt.BlockId,
+                        evt.TransactionId
+                    )
+                );
+
+            // TODO: save fee
+
+            await _balanceActionsRepository.SaveAsync(blockchainType, actions);
+        }
+
+        public async Task HandleAsync(string blockchainType, TransferCoinsTransactionExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        {
+            if (evt.Fees != null)
+            {
+                throw new NotSupportedException();
+            }
+
+            var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
+            var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
+
+            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            {
+                // Disordered message, we should ignore it.
+                return;
+            }
+
+            await _transactionsRepository.SaveAsync(blockchainType, evt);
+
+            // TODO: Should be done when block is assembled
+            // TODO: unspent coins in the same block should be checked first
+
+            //foreach (var coinReference in evt.SpentCoins)
+            //{
+            //    // TODO: Request coins as batch
+
+            //    var coin = await _coinsRepository.GetToSpendAsync
+            //    (
+            //        blockchainType,
+            //        coinReference.TransactionId,
+            //        coinReference.CoinNumber,
+            //        // TODO: вынести в отдельную проверку
+            //        evt.TransactionId
+            //    );
+
+            //    // TODO: Batch
+
+            //    await _balanceActionsRepository.SaveAsync
+            //    (
+            //        blockchainType,
+            //        coin.Address,
+            //        coin.Asset,
+            //        -(Money) coin.Value,
+            //        blockHeader.Number,
+            //        evt.BlockId,
+            //        evt.TransactionId
+            //    );
+            //}
+
+            //// 0..100,101...1000,1001...*
+
+            //// TODO: Should be done when block is assembled
+
+            //foreach (var coinReference in evt.SpentCoins)
+            //{
+            //    // TODO: Batch
+
+            //    await _coinsRepository.SpendAsync
+            //    (
+            //        blockchainType,
+            //        coinReference.TransactionId,
+            //        coinReference.CoinNumber,
+            //        // TODO: вынести в отдельную проверку
+            //        evt.TransactionId
+            //    );
+            //}
+
+            await _coinsRepository.SaveAsync
+            (
+                blockchainType,
+                evt.TransactionId,
+                evt.ReceivedCoins
+            );
+
+            var actions = evt.ReceivedCoins
+                .Where(c => c.Address != null)
+                .Select
+                (
+                    x => new BalanceAction
+                    (
+                        x.Address,
+                        x.Asset,
+                        x.Value,
+                        crawler.ExpectedBlockNumber,
+                        evt.BlockId,
+                        evt.TransactionId
+                    )
+                );
+
+            // TODO: Calc and save fee
+
+            await _balanceActionsRepository.SaveAsync(blockchainType, actions);
+        }
+
+        public async Task HandleAsync(string blockchainType, TransactionFailedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        {
+            var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
+            var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
+
+            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            {
+                // Disordered message, we should ignore it.
+                return;
+            }
+
+            // TODO: save fee
+
+            await _transactionsRepository.SaveAsync(blockchainType, evt);
+        }
+
+        public Task HandleAsync(string blockchainType, LastIrreversibleBlockUpdatedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        {
+            return Task.CompletedTask;
+        }
+    }
+}
