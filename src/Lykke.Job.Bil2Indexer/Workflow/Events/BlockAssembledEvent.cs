@@ -2,7 +2,6 @@
 
 namespace Lykke.Job.Bil2Indexer.Workflow.Events
 {
-    [PublicAPI]
     public class BlockAssembledEvent
     {
         public string BlockchainType { get; set; }

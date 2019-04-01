@@ -9,5 +9,9 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
         Task SaveAsync(string blockchainType, TransferCoinsTransactionExecutedEvent transaction);
         Task SaveAsync(string blockchainType, TransactionFailedEvent transaction);
         Task<int> CountInBlockAsync(string blockchainType, string blockId);
+        Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(
+            string blockchainType, 
+            string blockId, 
+            string continuation);
     }
 }

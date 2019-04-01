@@ -1,70 +1,132 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
+using Common.Log;
 using Lykke.Bil2.Contract.BlocksReader.Events;
+using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
 namespace Lykke.Job.Bil2Indexer.AzureRepositories
 {
     public class InMemoryTransactionsRepository : ITransactionsRepository
     {
-        private readonly ConcurrentDictionary<(string, string), ConcurrentDictionary<string, bool>> _storage;
-
-        public InMemoryTransactionsRepository()
+        private class BlockTransactions
         {
-            _storage = new ConcurrentDictionary<(string, string), ConcurrentDictionary<string, bool>>();
+            public ConcurrentDictionary<string, TransferAmountTransactionExecutedEvent> TransferAmountTransactions { get; }
+            public ConcurrentDictionary<string, TransferCoinsTransactionExecutedEvent> TransferCoinsTransactions { get; }
+            public ConcurrentDictionary<string, TransactionFailedEvent> FailedTransactions { get; }
+
+            public BlockTransactions()
+            {
+                TransferAmountTransactions = new ConcurrentDictionary<string, TransferAmountTransactionExecutedEvent>();
+                TransferCoinsTransactions = new ConcurrentDictionary<string, TransferCoinsTransactionExecutedEvent>();
+                FailedTransactions = new ConcurrentDictionary<string, TransactionFailedEvent>();
+            }
+        }
+
+        private readonly ConcurrentDictionary<(string, string), BlockTransactions> _storage;
+        private readonly ILog _log;
+
+        public InMemoryTransactionsRepository(ILogFactory logFactory)
+        {
+            _log = logFactory.CreateLog(this);
+
+            _storage = new ConcurrentDictionary<(string, string), BlockTransactions>();
         }
 
         public Task SaveAsync(string blockchainType, TransferAmountTransactionExecutedEvent transaction)
         {
-            SaveTransaction(blockchainType, transaction.BlockId, transaction.TransactionId);
+            SaveTransaction
+            (
+                blockchainType,
+                transaction.BlockId,
+                transaction.TransactionId,
+                (key, blockTransactions) => blockTransactions.TransferAmountTransactions.TryAdd(key, transaction)
+            );
 
             return Task.CompletedTask;
         }
 
         public Task SaveAsync(string blockchainType, TransferCoinsTransactionExecutedEvent transaction)
         {
-            SaveTransaction(blockchainType, transaction.BlockId, transaction.TransactionId);
+            SaveTransaction
+            (
+                blockchainType,
+                transaction.BlockId,
+                transaction.TransactionId,
+                (key, blockTransactions) => blockTransactions.TransferCoinsTransactions.TryAdd(key, transaction)
+            );
 
             return Task.CompletedTask;
         }
 
         public Task SaveAsync(string blockchainType, TransactionFailedEvent transaction)
         {
-            SaveTransaction(blockchainType, transaction.BlockId, transaction.TransactionId);
+            SaveTransaction
+            (
+                blockchainType,
+                transaction.BlockId,
+                transaction.TransactionId,
+                (key, blockTransactions) => blockTransactions.FailedTransactions.TryAdd(key, transaction)
+            );
 
             return Task.CompletedTask;
         }
 
         public Task<int> CountInBlockAsync(string blockchainType, string blockId)
         {
-            if (!_storage.TryGetValue((blockchainType, blockId), out var set))
+            if (!_storage.TryGetValue((blockchainType, blockId), out var blockTransactions))
             {
                 return Task.FromResult(0);
             }
 
-            return Task.FromResult(set.Count);
+            var totalCount = blockTransactions.FailedTransactions.Count +
+                             blockTransactions.TransferAmountTransactions.Count +
+                             blockTransactions.TransferCoinsTransactions.Count;
+
+            return Task.FromResult(totalCount);
         }
 
-        private void SaveTransaction(string blockchainType, string blockId, string transactionId)
+        public Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(
+            string blockchainType, 
+            string blockId, 
+            string continuation)
         {
-            Console.WriteLine($"Transaction saved: {blockchainType}:{blockId}:{transactionId}");
+            if (_storage.TryGetValue((blockchainType, blockId), out var blockTransactions))
+            {
+                var transactions = blockTransactions.TransferCoinsTransactions.Values.ToArray();
+                var paginatedItems = new PaginatedItems<TransferCoinsTransactionExecutedEvent>
+                (
+                    null,
+                    transactions
+                );
+
+                return Task.FromResult(paginatedItems);
+            }
+
+            return Task.FromResult(PaginatedItems<TransferCoinsTransactionExecutedEvent>.Empty);
+        }
+
+        private void SaveTransaction(string blockchainType, string blockId, string transactionId, Action<string, BlockTransactions> addTransaction)
+        {
+            _log.Info($"Transaction saved: {blockchainType}:{blockId}:{transactionId}");
 
             _storage.AddOrUpdate(
                 (blockchainType, blockId),
                 key =>
                 {
-                    var set = new ConcurrentDictionary<string, bool>();
+                    var blockTransactions = new BlockTransactions();
 
-                    set.TryAdd(transactionId, false);
+                    addTransaction.Invoke(transactionId, blockTransactions);
 
-                    return set;
+                    return blockTransactions;
                 },
-                (key, set) =>
+                (key, blockTransactions) =>
                 {
-                    set.TryAdd(transactionId, false);
+                    addTransaction.Invoke(transactionId, blockTransactions);
 
-                    return set;
+                    return blockTransactions;
                 });
         }
     }

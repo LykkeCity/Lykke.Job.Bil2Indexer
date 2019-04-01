@@ -7,13 +7,13 @@ using Lykke.Job.Bil2Indexer.Domain.Services;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs
 {
-    public class RetryNotFoundBlockBackgroundJob
+    public class RetryNotFoundBlockJob
     {
         private readonly IBlocksReaderApiFactory _blocksReaderApiFactory;
         private readonly ICrawlersManager _crawlersManager;
         private readonly ICrawlersRepository _crawlersRepository;
 
-        public RetryNotFoundBlockBackgroundJob(
+        public RetryNotFoundBlockJob(
             IBlocksReaderApiFactory blocksReaderApiFactory,
             ICrawlersManager crawlersManager,
             ICrawlersRepository crawlersRepository)

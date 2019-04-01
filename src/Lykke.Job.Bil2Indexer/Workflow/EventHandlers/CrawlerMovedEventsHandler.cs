@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Lykke.Bil2.Client.BlocksReader;
 using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Bil2.Contract.BlocksReader.Commands;
 using Lykke.Bil2.RabbitMq.Publication;
@@ -10,13 +9,12 @@ using Lykke.Job.Bil2Indexer.Workflow.Events;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 {
-    public class CrawlingEventsHandler :
-        IMessageHandler<CrawlerMovedEvent>
+    public class CrawlerMovedEventsHandler : IMessageHandler<CrawlerMovedEvent>
     {
         private readonly IBlocksReaderApiFactory _blocksReaderApiFactory;
         private readonly ICrawlersManager _crawlersManager;
 
-        public CrawlingEventsHandler(
+        public CrawlerMovedEventsHandler(
             IBlocksReaderApiFactory blocksReaderApiFactory,
             ICrawlersManager crawlersManager)
         {

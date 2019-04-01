@@ -52,10 +52,10 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
                 await _crawlersRepository.SaveAsync(crawler);
             }
 
-            if (crawler.Configuration.CanProcess(crawler.ExpectedBlockNumber))
+            if (crawler.ExpectedBlockNumber == crawlerConfiguration.StartBlock)
             {
                 var blocksReaderApi = _blocksReaderApiFactory.Create(blockchainType);
-                
+
                 await blocksReaderApi.SendAsync(new ReadBlockCommand(crawler.ExpectedBlockNumber), crawler.GetCorrelationId().ToString());
             }
         }

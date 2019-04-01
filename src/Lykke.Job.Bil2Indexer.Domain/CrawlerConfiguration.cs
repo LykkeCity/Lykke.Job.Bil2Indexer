@@ -5,12 +5,12 @@ namespace Lykke.Job.Bil2Indexer.Domain
     public class CrawlerConfiguration : IEquatable<CrawlerConfiguration>
     {
         public long StartBlock { get; }
-        public long? StopBlock { get; }
+        public long? StopAssemblingBlock { get; }
 
-        public CrawlerConfiguration(long startBlock, long? stopBlock)
+        public CrawlerConfiguration(long startBlock, long? stopAssemblingBlock)
         {
             StartBlock = startBlock;
-            StopBlock = stopBlock;
+            StopAssemblingBlock = stopAssemblingBlock;
         }
 
         public static CrawlerConfiguration Parse(string configurationString)
@@ -25,7 +25,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             if (parts.Length != 2)
             {
                 throw new ArgumentException(
-                    $"Crawler configuration should be in the format '<startBlock>-<stopBlock>' or '<startBlock>-*'. Actual configurationString: {configurationString}",
+                    $"Crawler configuration should be in the format '<startBlock>-<stopAssemblingBlock>' or '<startBlock>-*'. Actual configurationString: {configurationString}",
                     configurationString);
             }
 
@@ -47,7 +47,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 if (!long.TryParse(parts[1], out var stopBlockValue))
                 {
                     throw new ArgumentException(
-                        $"Can't pars stop block as long and it's not '*'. Stop block: {parts[1]}. Actual configurationString: {configurationString}",
+                        $"Can't pars stop assembling block as long and it's not '*'. Stop assembling block: {parts[1]}. Actual configurationString: {configurationString}",
                         configurationString);
                 }
 
@@ -59,12 +59,12 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public bool CanProcess(long blockNumber)
         {
-            return blockNumber >= StartBlock && (!StopBlock.HasValue || blockNumber < StopBlock.Value);
+            return blockNumber >= StartBlock && (!StopAssemblingBlock.HasValue || blockNumber < StopAssemblingBlock.Value);
         }
 
         public override string ToString()
         {
-            return StopBlock.HasValue ? $"{StartBlock}-{StopBlock}" : $"{StartBlock}-*";
+            return StopAssemblingBlock.HasValue ? $"{StartBlock}-{StopAssemblingBlock}" : $"{StartBlock}-*";
         }
         
         public bool Equals(CrawlerConfiguration other)
@@ -77,7 +77,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             {
                 return true;
             }
-            return StartBlock == other.StartBlock && StopBlock == other.StopBlock;
+            return StartBlock == other.StartBlock && StopAssemblingBlock == other.StopAssemblingBlock;
         }
 
         public override bool Equals(object obj)
@@ -101,7 +101,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
         {
             unchecked
             {
-                return (StartBlock.GetHashCode() * 397) ^ StopBlock.GetHashCode();
+                return (StartBlock.GetHashCode() * 397) ^ StopAssemblingBlock.GetHashCode();
             }
         }
     }

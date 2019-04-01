@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Hangfire;
 using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Bil2.Contract.BlocksReader.Events;
+using Lykke.Bil2.Contract.Common;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -54,15 +55,13 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return;
             }
 
-            var blockHeader = new BlockHeader
+            var blockHeader = BlockHeader.StartAssembling
             (
+                evt.BlockId,
                 blockchainType,
                 evt.BlockNumber,
-                evt.BlockId,
                 evt.BlockMiningMoment,
-                evt.BlockSize,
-                evt.BlockTransactionsCount,
-                evt.PreviousBlockId
+                evt.BlockSize, evt.BlockTransactionsCount, evt.PreviousBlockId
             );
             
             var commandsSender = _commandsSenderFactory.Create();
@@ -96,7 +95,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
             var delay = _integrationSettingsProvider.Get(blockchainType).Indexer.NotFoundBlockRetryDelay;
 
-            BackgroundJob.Schedule<RetryNotFoundBlockBackgroundJob>
+            BackgroundJob.Schedule<RetryNotFoundBlockJob>
             (
                 job => job.RetryAsync(blockchainType, evt.BlockNumber, messageCorrelationId),
                 delay
@@ -130,10 +129,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         evt.TransactionId
                     )
                 );
+            
+            await _balanceActionsRepository.SaveAsync(blockchainType, actions);
 
             // TODO: save fee
-
-            await _balanceActionsRepository.SaveAsync(blockchainType, actions);
         }
 
         public async Task HandleAsync(string blockchainType, TransferCoinsTransactionExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -154,60 +153,23 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
             await _transactionsRepository.SaveAsync(blockchainType, evt);
 
-            // TODO: Should be done when block is assembled
-            // TODO: unspent coins in the same block should be checked first
+            var coins = evt.ReceivedCoins
+                .Select
+                (
+                    x => Coin.CreateUnspent
+                    (
+                        blockchainType,
+                        new CoinReference(evt.TransactionId, x.CoinNumber),
+                        x.Asset,
+                        x.Value,
+                        x.Address,
+                        x.AddressTag,
+                        x.AddressTagType,
+                        x.AddressNonce
+                    )
+                );
 
-            //foreach (var coinReference in evt.SpentCoins)
-            //{
-            //    // TODO: Request coins as batch
-
-            //    var coin = await _coinsRepository.GetToSpendAsync
-            //    (
-            //        blockchainType,
-            //        coinReference.TransactionId,
-            //        coinReference.CoinNumber,
-            //        // TODO: вынести в отдельную проверку
-            //        evt.TransactionId
-            //    );
-
-            //    // TODO: Batch
-
-            //    await _balanceActionsRepository.SaveAsync
-            //    (
-            //        blockchainType,
-            //        coin.Address,
-            //        coin.Asset,
-            //        -(Money) coin.Value,
-            //        blockHeader.Number,
-            //        evt.BlockId,
-            //        evt.TransactionId
-            //    );
-            //}
-
-            //// 0..100,101...1000,1001...*
-
-            //// TODO: Should be done when block is assembled
-
-            //foreach (var coinReference in evt.SpentCoins)
-            //{
-            //    // TODO: Batch
-
-            //    await _coinsRepository.SpendAsync
-            //    (
-            //        blockchainType,
-            //        coinReference.TransactionId,
-            //        coinReference.CoinNumber,
-            //        // TODO: вынести в отдельную проверку
-            //        evt.TransactionId
-            //    );
-            //}
-
-            await _coinsRepository.SaveAsync
-            (
-                blockchainType,
-                evt.TransactionId,
-                evt.ReceivedCoins
-            );
+            await _coinsRepository.SaveAsync(coins);
 
             var actions = evt.ReceivedCoins
                 .Where(c => c.Address != null)
@@ -224,9 +186,9 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     )
                 );
 
-            // TODO: Calc and save fee
-
             await _balanceActionsRepository.SaveAsync(blockchainType, actions);
+            
+            // TODO: Calc and save fee
         }
 
         public async Task HandleAsync(string blockchainType, TransactionFailedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -239,10 +201,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 // Disordered message, we should ignore it.
                 return;
             }
+            
+            await _transactionsRepository.SaveAsync(blockchainType, evt);
 
             // TODO: save fee
-
-            await _transactionsRepository.SaveAsync(blockchainType, evt);
         }
 
         public Task HandleAsync(string blockchainType, LastIrreversibleBlockUpdatedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)

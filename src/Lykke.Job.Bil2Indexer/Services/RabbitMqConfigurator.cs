@@ -32,8 +32,10 @@ namespace Lykke.Job.Bil2Indexer.Services
             _endpoint.DeclareExchange(EventsExchangeName);
 
             var eventsSubscriptions = new MessageSubscriptionsRegistry()
-                .Handle<BlockAssembledEvent>(o => { o.WithHandler<BlockBuildingEventsHandler>(); })
-                .Handle<CrawlerMovedEvent>(o => o.WithHandler<CrawlingEventsHandler>());
+                .Handle<BlockAssembledEvent>(o => { o.WithHandler<BlockAssembledEventsHandler>(); })
+                .Handle<BlockExecutedEvent>(o => o.WithHandler<BlockExecutionEventsHandler>())
+                .Handle<BlockPartiallyExecutedEvent>(o => o.WithHandler<BlockExecutionEventsHandler>())
+                .Handle<CrawlerMovedEvent>(o => o.WithHandler<CrawlerMovedEventsHandler>());
 
             _endpoint.Subscribe(
                 EventsExchangeName,
@@ -47,10 +49,11 @@ namespace Lykke.Job.Bil2Indexer.Services
             _endpoint.DeclareExchange(CommandsExchangeName);
 
             var commandsSubscriptions = new MessageSubscriptionsRegistry()
-                .Handle<MoveCrawlerCommand>(o => { o.WithHandler<CrawlingCommandsHandler>(); })
-                .Handle<RollbackBlockCommand>(o => { o.WithHandler<BlockBuildingCommandsHandler>(); })
-                .Handle<WaitForBlockAssemblingCommand>(o => { o.WithHandler<BlockBuildingCommandsHandler>(); });
-
+                .Handle<MoveCrawlerCommand>(o => { o.WithHandler<MoveCrawlerCommandsHandler>(); })
+                .Handle<RollbackBlockCommand>(o => { o.WithHandler<RollbackBlockCommandsHandler>(); })
+                .Handle<WaitForBlockAssemblingCommand>(o => { o.WithHandler<WaitForBlockAssemblingCommandsHandler>(); })
+                .Handle<ExecuteTransferCoinsBlockCommand>(o => { o.WithHandler<ExecuteTransferCoinsBlockCommandsHandler>(); });
+            
             _endpoint.Subscribe(
                 CommandsExchangeName,
                 "bil-v2.indexer",

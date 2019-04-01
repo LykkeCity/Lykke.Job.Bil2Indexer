@@ -52,7 +52,7 @@ namespace Lykke.Job.Bil2Indexer.Modules
                         .ToDictionary(
                             i => i.Type,
                             i => (IReadOnlyCollection<CrawlerConfiguration>) i.Indexer.ChainCrawlers
-                                .Select(cs => new CrawlerConfiguration(cs.StartBlock, cs.StopBlock))
+                                .Select(cs => new CrawlerConfiguration(cs.StartBlock, cs.StopAssemblingBlock))
                                 .ToArray());
 
                     return new CrawlersManager(

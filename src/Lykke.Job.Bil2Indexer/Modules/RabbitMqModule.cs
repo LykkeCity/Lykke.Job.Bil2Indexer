@@ -20,11 +20,14 @@ namespace Lykke.Job.Bil2Indexer.Modules
 
             
             builder.RegisterType<BlockReaderEventsHandler>().As<IBlockEventsHandler>();
-            builder.RegisterType<BlockBuildingEventsHandler>().AsSelf();
-            builder.RegisterType<CrawlingEventsHandler>().AsSelf();
+            builder.RegisterType<BlockAssembledEventsHandler>().AsSelf();
+            builder.RegisterType<BlockExecutionEventsHandler>().AsSelf();
+            builder.RegisterType<CrawlerMovedEventsHandler>().AsSelf();
 
-            builder.RegisterType<BlockBuildingCommandsHandler>().AsSelf();
-            builder.RegisterType<CrawlingCommandsHandler>().AsSelf();
+            builder.RegisterType<ExecuteTransferCoinsBlockCommandsHandler>().AsSelf();
+            builder.RegisterType<MoveCrawlerCommandsHandler>().AsSelf();
+            builder.RegisterType<RollbackBlockCommandsHandler>().AsSelf();
+            builder.RegisterType<WaitForBlockAssemblingCommandsHandler>().AsSelf();
         }
     }
 }

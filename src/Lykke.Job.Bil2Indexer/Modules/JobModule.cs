@@ -35,7 +35,7 @@ namespace Lykke.Job.Bil2Indexer.Modules
 
             builder.RegisterChaosKitty(null);
 
-            builder.RegisterType<RetryNotFoundBlockBackgroundJob>()
+            builder.RegisterType<RetryNotFoundBlockJob>()
                 .AsSelf();
 
             builder

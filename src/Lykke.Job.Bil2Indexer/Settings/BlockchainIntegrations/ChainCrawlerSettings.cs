@@ -17,6 +17,6 @@ namespace Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations
         /// </summary>
         [Optional]
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
-        public long? StopBlock { get; set; }
+        public long? StopAssemblingBlock { get; set; }
     }
 }

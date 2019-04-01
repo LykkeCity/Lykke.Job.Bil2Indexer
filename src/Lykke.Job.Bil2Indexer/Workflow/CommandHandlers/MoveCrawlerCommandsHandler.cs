@@ -11,13 +11,12 @@ using Lykke.Job.Bil2Indexer.Workflow.Events;
 namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 {
     [UsedImplicitly]
-    public class CrawlingCommandsHandler :
-        IMessageHandler<MoveCrawlerCommand>
+    public class MoveCrawlerCommandsHandler : IMessageHandler<MoveCrawlerCommand>
     {
         private readonly ICrawlersManager _crawlersManager;
         private readonly ICrawlersRepository _crawlersRepository;
 
-        public CrawlingCommandsHandler(
+        public MoveCrawlerCommandsHandler(
             ICrawlersManager crawlersManager,
             ICrawlersRepository crawlersRepository,
             IBlockHeadersRepository blockHeadersRepository)

@@ -11,13 +11,12 @@ using Lykke.Job.Bil2Indexer.Workflow.Events;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 {
-    public class BlockBuildingEventsHandler :
-        IMessageHandler<BlockAssembledEvent>
+    public class BlockAssembledEventsHandler : IMessageHandler<BlockAssembledEvent>
     {
         private readonly ICrawlersManager _crawlersManager;
         private readonly IBlockHeadersRepository _blockHeadersRepository;
 
-        public BlockBuildingEventsHandler(
+        public BlockAssembledEventsHandler(
             ICrawlersManager crawlersManager,
             IBlockHeadersRepository blockHeadersRepository)
         {
@@ -93,73 +92,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 NextBlockNumber = nextBlockNumber
             });
             
-            //
-
-            //if (await _blockFlagsRepository.IsSetAsync(evt.BlockchainType, evt.BlockId, BlockFlags.RolledBack))
-            //{
-            //    return;
-            //}
-
-            //var oldCompletedBlock = await _latestCompletedBlockRepository.GetOrDefaultAsync(evt.BlockchainType);
-            //var oldCompletedBlockNumber = oldCompletedBlock?.Number;
-            //var assembledBlockHeader = await _blockHeadersRepository.GetAsync(evt.BlockchainType, evt.BlockId);
-            //var assembledBlockNumber = assembledBlockHeader.Number;
-            //BlockHeader newCompletedBlockHeader = null;
-
-            //if (oldCompletedBlockNumber != null && oldCompletedBlockNumber < assembledBlockNumber - 1)
-            //{
-            //    for (var blockNumber = oldCompletedBlockNumber.Value + 1; blockNumber < assembledBlockNumber; ++blockNumber)
-            //    {
-            //        var blockHeader = await _blockHeadersRepository.GetOrDefaultAsync(evt.BlockchainType, blockNumber);
-
-            //        if (blockHeader == null)
-            //        {
-            //            break;
-            //        }
-
-            //        if (!await _blockFlagsRepository.IsSetAsync(evt.BlockchainType, blockHeader.Id, BlockFlags.Assembled) ||
-            //            await _blockFlagsRepository.IsSetAsync(evt.BlockchainType, blockHeader.Id, BlockFlags.RolledBack))
-            //        {
-            //            break;
-            //        }
-
-            //        newCompletedBlockHeader = blockHeader;
-
-            //        replyPublisher.Publish(new UpdateCompletedBlockCommand
-            //        {
-            //            BlockchainType = evt.BlockchainType,
-            //            NewCompletedBlockNumber = blockHeader.Number,
-            //            NewCompletedBlockId = blockHeader.Id,
-            //            OldCompletedBlockNumber = oldCompletedBlockNumber,
-            //            OldCompletedBlockId = oldCompletedBlock?.Id
-            //        });
-            //    }
-            //}
-            //else if(oldCompletedBlockNumber != null)
-            //{
-            //    newCompletedBlockHeader = assembledBlockHeader;
-            //}
-            //else
-            //{
-            //    var firstBlockNumber = _integrationSettingsProvider.Get(evt.BlockchainType).Capabilities.FirstBlockNumber;
-
-            //    if (assembledBlockHeader.Number == firstBlockNumber)
-            //    {
-            //        newCompletedBlockHeader = assembledBlockHeader;
-            //    }
-            //}
-
-            //if (newCompletedBlockHeader != null)
-            //{
-            //    replyPublisher.Publish(new UpdateCompletedBlockCommand
-            //    {
-            //        BlockchainType = evt.BlockchainType,
-            //        NewCompletedBlockNumber = newCompletedBlockHeader.Number,
-            //        NewCompletedBlockId = newCompletedBlockHeader.Id,
-            //        OldCompletedBlockNumber = oldCompletedBlockNumber,
-            //        OldCompletedBlockId = oldCompletedBlock?.Id
-            //    });
-            //}
+            replyPublisher.Publish(new ExecuteTransferCoinsBlockCommand
+            {
+                BlockchainType = evt.BlockchainType,
+                BlockId = newBlock.Id,
+                BlockVersion = newBlock.Version
+            });
         }
     }
 }
