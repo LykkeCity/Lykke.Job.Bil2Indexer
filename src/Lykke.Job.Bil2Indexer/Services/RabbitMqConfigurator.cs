@@ -52,7 +52,8 @@ namespace Lykke.Job.Bil2Indexer.Services
                 .Handle<MoveCrawlerCommand>(o => { o.WithHandler<MoveCrawlerCommandsHandler>(); })
                 .Handle<RollbackBlockCommand>(o => { o.WithHandler<RollbackBlockCommandsHandler>(); })
                 .Handle<WaitForBlockAssemblingCommand>(o => { o.WithHandler<WaitForBlockAssemblingCommandsHandler>(); })
-                .Handle<ExecuteTransferCoinsBlockCommand>(o => { o.WithHandler<ExecuteTransferCoinsBlockCommandsHandler>(); });
+                .Handle<ExecuteTransferCoinsBlockCommand>(o => { o.WithHandler<ExecuteTransferCoinsBlockCommandsHandler>(); })
+                .Handle<ExtendChainHeadCommand>(o => { o.WithHandler<ExtendChainHeadCommandsHandler>(); });
             
             _endpoint.Subscribe(
                 CommandsExchangeName,

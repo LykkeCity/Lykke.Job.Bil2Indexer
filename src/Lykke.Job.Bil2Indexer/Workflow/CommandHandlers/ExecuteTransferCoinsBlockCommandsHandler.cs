@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -9,7 +8,6 @@ using Lykke.Job.Bil2Indexer.Workflow.Events;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 {
-    [UsedImplicitly]
     public class ExecuteTransferCoinsBlockCommandsHandler : IMessageHandler<ExecuteTransferCoinsBlockCommand>
     {
         private readonly IBlockHeadersRepository _blockHeadersRepository;
@@ -49,7 +47,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             if (block.IsPartiallyExecuted)
             {
-                replyPublisher.Publish(new BlockExecutedEvent
+                replyPublisher.Publish(new BlockPartiallyExecutedEvent
                 {
                     BlockchainType = command.BlockchainType,
                     BlockId = command.BlockId,
@@ -58,7 +56,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             }
             else if(block.IsExecuted)
             {
-                replyPublisher.Publish(new BlockPartiallyExecutedEvent
+                replyPublisher.Publish(new BlockExecutedEvent
                 {
                     BlockchainType = command.BlockchainType,
                     BlockId = command.BlockId,

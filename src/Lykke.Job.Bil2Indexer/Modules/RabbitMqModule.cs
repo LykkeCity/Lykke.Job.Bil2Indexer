@@ -28,6 +28,7 @@ namespace Lykke.Job.Bil2Indexer.Modules
             builder.RegisterType<MoveCrawlerCommandsHandler>().AsSelf();
             builder.RegisterType<RollbackBlockCommandsHandler>().AsSelf();
             builder.RegisterType<WaitForBlockAssemblingCommandsHandler>().AsSelf();
+            builder.RegisterType<ExtendChainHeadCommandsHandler>().AsSelf();
         }
     }
 }

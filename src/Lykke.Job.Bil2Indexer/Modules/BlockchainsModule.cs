@@ -63,6 +63,15 @@ namespace Lykke.Job.Bil2Indexer.Modules
                 .As<ICrawlersManager>()
                 .SingleInstance();
 
+            builder.Register(c =>
+                {
+                    var firstBlockNumbers = _settings.BlockchainIntegrations.ToDictionary(i => i.Type, i => i.Capabilities.FirstBlockNumber);
+
+                    return new ChainHeadsManager(c.Resolve<IChainHeadsRepository>(), firstBlockNumbers);
+                })
+                .As<IChainHeadsManager>()
+                .SingleInstance();
+
             builder.Register(c => new IntegrationSettingsProvider(_settings.BlockchainIntegrations))
                 .AsSelf()
                 .SingleInstance();

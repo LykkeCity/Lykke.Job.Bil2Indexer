@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Lykke.Bil2.Contract.Common;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using Lykke.Numerics;
 
 namespace Lykke.Job.Bil2Indexer.AzureRepositories
 {

@@ -11,19 +11,22 @@ namespace Lykke.Job.Bil2Indexer.Controllers
         private readonly ICoinsRepository _coinsRepository;
         private readonly IBalanceActionsRepository _balanceActionsRepository;
         private readonly ITransactionsRepository _transactionsRepository;
+        private readonly IChainHeadsRepository _chainHeadsRepository;
 
         public MonitoringController(
             IBlockHeadersRepository blockHeadersRepository,
             ICrawlersRepository crawlersRepository,
             ICoinsRepository coinsRepository,
             IBalanceActionsRepository balanceActionsRepository,
-            ITransactionsRepository transactionsRepository)
+            ITransactionsRepository transactionsRepository,
+            IChainHeadsRepository chainHeadsRepository)
         {
             _blockHeadersRepository = blockHeadersRepository;
             _crawlersRepository = crawlersRepository;
             _coinsRepository = coinsRepository;
             _balanceActionsRepository = balanceActionsRepository;
             _transactionsRepository = transactionsRepository;
+            _chainHeadsRepository = chainHeadsRepository;
         }
 
         [HttpGet]

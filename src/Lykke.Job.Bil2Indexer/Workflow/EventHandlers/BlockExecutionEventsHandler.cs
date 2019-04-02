@@ -13,15 +13,34 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         IMessageHandler<BlockPartiallyExecutedEvent>
     {
         private readonly IBlockHeadersRepository _blockHeadersRepository;
+        private readonly IChainHeadsRepository _chainHeadsRepository;
 
-        public BlockExecutionEventsHandler(IBlockHeadersRepository blockHeadersRepository)
+        public BlockExecutionEventsHandler(
+            IBlockHeadersRepository blockHeadersRepository,
+            IChainHeadsRepository chainHeadsRepository)
         {
             _blockHeadersRepository = blockHeadersRepository;
+            _chainHeadsRepository = chainHeadsRepository;
         }
 
         public async Task HandleAsync(BlockExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             await ContinueExecutionChainAsync(evt.BlockchainType, evt.BlockNumber, headers, replyPublisher);
+
+            var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
+            
+            // TODO: Need to check if message is disordered and ignore/retry it
+
+            if (chainHead.CanExtendTo(evt.BlockNumber))
+            {
+                replyPublisher.Publish(new ExtendChainHeadCommand
+                {
+                    BlockchainType = evt.BlockchainType,
+                    NextBlockNumber = evt.BlockNumber,
+                    NextBlockId = evt.BlockId,
+                    ChainHeadVersion = chainHead.Version
+                });
+            }
         }
         
         public async Task HandleAsync(BlockPartiallyExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
