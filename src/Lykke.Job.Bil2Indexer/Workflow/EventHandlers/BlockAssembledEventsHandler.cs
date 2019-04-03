@@ -6,6 +6,8 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.Infrastructure;
+using Lykke.Job.Bil2Indexer.Services;
+using Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Job.Bil2Indexer.Workflow.Events;
 
@@ -15,13 +17,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
     {
         private readonly ICrawlersManager _crawlersManager;
         private readonly IBlockHeadersRepository _blockHeadersRepository;
+        private readonly IntegrationSettingsProvider _settingsProvider;
+        private readonly IChainHeadsRepository _chainHeadsRepository;
 
         public BlockAssembledEventsHandler(
             ICrawlersManager crawlersManager,
-            IBlockHeadersRepository blockHeadersRepository)
+            IBlockHeadersRepository blockHeadersRepository,
+            IntegrationSettingsProvider settingsProvider,
+            IChainHeadsRepository chainHeadsRepository)
         {
             _crawlersManager = crawlersManager;
             _blockHeadersRepository = blockHeadersRepository;
+            _settingsProvider = settingsProvider;
+            _chainHeadsRepository = chainHeadsRepository;
         }
 
         public async Task HandleAsync(BlockAssembledEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -91,13 +99,37 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 BlockchainType = evt.BlockchainType,
                 NextBlockNumber = nextBlockNumber
             });
-            
-            replyPublisher.Publish(new ExecuteTransferCoinsBlockCommand
+
+            var settings = _settingsProvider.Get(evt.BlockchainType);
+
+            if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
             {
-                BlockchainType = evt.BlockchainType,
-                BlockId = newBlock.Id,
-                BlockVersion = newBlock.Version
-            });
+                replyPublisher.Publish(new ExecuteTransferCoinsBlockCommand
+                {
+                    BlockchainType = evt.BlockchainType,
+                    BlockId = newBlock.Id,
+                    BlockVersion = newBlock.Version
+                });
+            }
+            else if(settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
+            {
+                var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
+
+                if (chainHead.CanExtendTo(newBlock.Number))
+                {
+                    replyPublisher.Publish(new ExtendChainHeadCommand
+                    {
+                        BlockchainType = evt.BlockchainType,
+                        NextBlockNumber = newBlock.Number,
+                        NextBlockId = newBlock.Id,
+                        ChainHeadVersion = chainHead.Version
+                    });
+                }
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException(nameof(settings.Capabilities.TransferModel), settings.Capabilities.TransferModel, "Unknown transfer model");
+            }
         }
     }
 }

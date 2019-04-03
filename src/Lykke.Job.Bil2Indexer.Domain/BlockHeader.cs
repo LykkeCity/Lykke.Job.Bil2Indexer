@@ -19,6 +19,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public string PreviousBlockId { get; }
         public BlockState State { get; private set; }
 
+        public bool IsAssembled => State == BlockState.Assembled;
+
         public bool IsAlreadyAssembled =>
             State == BlockState.Assembled ||
             State == BlockState.Executed ||
@@ -175,7 +177,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public override string ToString()
         {
-            return $"{BlockchainType}:{Id}({State}):{Number} <- {PreviousBlockId}";
+            return $"{BlockchainType}:{Number}:{Id}({State}) <- {PreviousBlockId}";
         }
     }
 }

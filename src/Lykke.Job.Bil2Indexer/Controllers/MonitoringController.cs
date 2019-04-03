@@ -1,4 +1,6 @@
-﻿using Lykke.Job.Bil2Indexer.Domain.Repositories;
+﻿using System.Linq;
+using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Job.Bil2Indexer.Controllers
@@ -6,6 +8,7 @@ namespace Lykke.Job.Bil2Indexer.Controllers
     [Route("api/[controller]")]
     public class MonitoringController : ControllerBase
     {
+        private readonly IntegrationSettingsProvider _settingsProvider;
         private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly ICrawlersRepository _crawlersRepository;
         private readonly ICoinsRepository _coinsRepository;
@@ -14,6 +17,7 @@ namespace Lykke.Job.Bil2Indexer.Controllers
         private readonly IChainHeadsRepository _chainHeadsRepository;
 
         public MonitoringController(
+            IntegrationSettingsProvider settingsProvider,
             IBlockHeadersRepository blockHeadersRepository,
             ICrawlersRepository crawlersRepository,
             ICoinsRepository coinsRepository,
@@ -21,6 +25,7 @@ namespace Lykke.Job.Bil2Indexer.Controllers
             ITransactionsRepository transactionsRepository,
             IChainHeadsRepository chainHeadsRepository)
         {
+            _settingsProvider = settingsProvider;
             _blockHeadersRepository = blockHeadersRepository;
             _crawlersRepository = crawlersRepository;
             _coinsRepository = coinsRepository;
@@ -32,7 +37,14 @@ namespace Lykke.Job.Bil2Indexer.Controllers
         [HttpGet]
         public IActionResult Check()
         {
-            return Ok();
+            var response = _settingsProvider.GetAll()
+                .Select(x => new
+                {
+                    BlockchainType = x.Key,
+                    Head = _chainHeadsRepository.GetAsync(x.Key).ConfigureAwait(false).GetAwaiter().GetResult()
+                });
+
+            return Ok(response);
         }
     }
 }

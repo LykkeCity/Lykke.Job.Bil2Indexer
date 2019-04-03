@@ -25,14 +25,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
         public async Task HandleAsync(BlockExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
-            await ContinueExecutionChainAsync(evt.BlockchainType, evt.BlockNumber, headers, replyPublisher);
+            var nextBlock = await GetNextBlockToExecuteOrDefaultAsync(evt.BlockchainType, evt.BlockNumber, headers);
+
+            if (nextBlock != null)
+            {
+                ContinueExecutionChain(nextBlock, replyPublisher);
+            }
 
             var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
-            
-            // TODO: Need to check if message is disordered and ignore/retry it
 
             if (chainHead.CanExtendTo(evt.BlockNumber))
             {
+                // Extends chain header up to to just executed block
+
                 replyPublisher.Publish(new ExtendChainHeadCommand
                 {
                     BlockchainType = evt.BlockchainType,
@@ -42,26 +47,27 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 });
             }
         }
-        
+
         public async Task HandleAsync(BlockPartiallyExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
-            await ContinueExecutionChainAsync(evt.BlockchainType, evt.BlockNumber, headers, replyPublisher);
+            var block = await GetNextBlockToExecuteOrDefaultAsync(evt.BlockchainType, evt.BlockNumber, headers);
+
+            if (block != null)
+            {
+                ContinueExecutionChain(block, replyPublisher);
+            }
         }
 
-        private async Task ContinueExecutionChainAsync(
-            string blockchainType, 
-            long blockNumber, 
-            MessageHeaders headers, 
-            IMessagePublisher replyPublisher)
+        private async Task<BlockHeader> GetNextBlockToExecuteOrDefaultAsync(string blockchainType, long blockNumber, MessageHeaders headers)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var nextBlockNumber = blockNumber + 1;
 
             if (messageCorrelationId.Configuration.CanProcess(nextBlockNumber))
             {
-                // If next block is within the crawler assembling range, then the block will be executed
-                // after assembling aborting execution chain.
-                return;
+                // If the next block is within the crawler assembling range, then the block will be executed
+                // after ending of the assembling.
+                return null;
             }
 
             // If the next block is out of the crawler assembling range, the crawler should
@@ -75,26 +81,23 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 // since block owning crawler will execute it them self and start new 
                 // execution chain.
 
-                return;
+                return null;
             }
 
-            if (block.IsPartiallyExecuted)
+            return block;
+        }
+
+        private static void ContinueExecutionChain(
+            BlockHeader block, 
+            IMessagePublisher replyPublisher)
+        {
+            // TODO: Some kind of RLE algorithm can be applied here to optimize searching of the next block to execute
+
+            if (block.IsPartiallyExecuted || block.IsExecuted)
             {
                 // If block is partially executed by previous crawlers, then given crawler
                 // should try it again, since probably required coins is exist now.
 
-                replyPublisher.Publish(new ExecuteTransferCoinsBlockCommand
-                {
-                    BlockchainType = blockchainType,
-                    BlockId = block.Id,
-                    BlockVersion = block.Version
-                });
-            }
-
-            // TODO: Some kind of RLE algorithm can be applied here to optimize searching of the next block to execute
-
-            if (block.IsExecuted)
-            {
                 // If block is executed by previous crawlers, then given crawler
                 // should pass it through the execution again, just to continue execution chain.
                 // Chain should be continued, since next blocks can be partially executed and
@@ -102,7 +105,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
                 replyPublisher.Publish(new ExecuteTransferCoinsBlockCommand
                 {
-                    BlockchainType = blockchainType,
+                    BlockchainType = block.BlockchainType,
                     BlockId = block.Id,
                     BlockVersion = block.Version
                 });

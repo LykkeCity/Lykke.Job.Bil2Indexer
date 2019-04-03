@@ -23,5 +23,10 @@ namespace Lykke.Job.Bil2Indexer.Services
 
             return settings;
         }
+
+        public IReadOnlyDictionary<string, BlockchainIntegrationSettings> GetAll()
+        {
+            return _integrationsSettings;
+        }
     }
 }

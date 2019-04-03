@@ -35,7 +35,8 @@ namespace Lykke.Job.Bil2Indexer.Services
                 .Handle<BlockAssembledEvent>(o => { o.WithHandler<BlockAssembledEventsHandler>(); })
                 .Handle<BlockExecutedEvent>(o => o.WithHandler<BlockExecutionEventsHandler>())
                 .Handle<BlockPartiallyExecutedEvent>(o => o.WithHandler<BlockExecutionEventsHandler>())
-                .Handle<CrawlerMovedEvent>(o => o.WithHandler<CrawlerMovedEventsHandler>());
+                .Handle<CrawlerMovedEvent>(o => o.WithHandler<CrawlerMovedEventsHandler>())
+                .Handle<ChainHeadExtendedEvent>(o => o.WithHandler<ChainHeadExtendedEventsHandler>());
 
             _endpoint.Subscribe(
                 EventsExchangeName,

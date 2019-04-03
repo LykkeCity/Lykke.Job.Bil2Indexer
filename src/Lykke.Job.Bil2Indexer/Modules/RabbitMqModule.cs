@@ -23,6 +23,7 @@ namespace Lykke.Job.Bil2Indexer.Modules
             builder.RegisterType<BlockAssembledEventsHandler>().AsSelf();
             builder.RegisterType<BlockExecutionEventsHandler>().AsSelf();
             builder.RegisterType<CrawlerMovedEventsHandler>().AsSelf();
+            builder.RegisterType<ChainHeadExtendedEventsHandler>().AsSelf();
 
             builder.RegisterType<ExecuteTransferCoinsBlockCommandsHandler>().AsSelf();
             builder.RegisterType<MoveCrawlerCommandsHandler>().AsSelf();
