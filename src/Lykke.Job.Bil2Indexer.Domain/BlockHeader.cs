@@ -36,6 +36,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public bool CanBeExecuted => State == BlockState.Assembled || State == BlockState.PartiallyExecuted;
 
+        public bool CanBeReverted => State == BlockState.Executed || State == BlockState.PartiallyExecuted;
+
         public BlockHeader(
             string id, 
             long version,
@@ -135,6 +137,35 @@ namespace Lykke.Job.Bil2Indexer.Domain
             State = BlockState.Executed;
         }
 
+        public async Task RevertExecutionAsync(
+            ITransactionsRepository transactionsRepository,
+            ICoinsRepository coinsRepository)
+        {
+            if (!CanBeReverted)
+            {
+                throw new InvalidOperationException($"Block can be reverted only in states: {BlockState.Executed} or {BlockState.PartiallyExecuted}, actual: {State}");
+            }
+
+            PaginatedItems<TransferCoinsTransactionExecutedEvent> transactions = null;
+
+            do
+            {
+                transactions = await transactionsRepository.GetTransferCoinsTransactionsOfBlockAsync
+                (
+                    BlockchainType,
+                    Id,
+                    transactions?.Continuation
+                );
+
+                foreach (var transaction in transactions.Items)
+                {
+                    await RevertTransactionExecutionAsync(coinsRepository, transaction);
+                }
+            } while (transactions.Continuation != null);
+
+            State = BlockState.RolledBack;
+        }
+
         private async Task<bool> ExecuteTransactionAsync(
             ICoinsRepository coinsRepository,
             IBalanceActionsRepository balanceActionsRepository,
@@ -173,6 +204,24 @@ namespace Lykke.Job.Bil2Indexer.Domain
             await balanceActionsRepository.SaveAsync(BlockchainType, actions);
 
             return true;
+        }
+
+        private async Task RevertTransactionExecutionAsync(
+            ICoinsRepository coinsRepository,
+            TransferCoinsTransactionExecutedEvent transaction)
+        {
+            var coinsToSpend = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
+
+            foreach (var coin in coinsToSpend)
+            {
+                coin.RevertSpendingBy(transaction.TransactionId);
+            }
+
+            await Task.WhenAll
+            (
+                coinsRepository.SaveAsync(coinsToSpend),
+                coinsRepository.TryRemoveReceivedInTransactionAsync(BlockchainType, transaction.TransactionId)
+            );
         }
 
         public override string ToString()

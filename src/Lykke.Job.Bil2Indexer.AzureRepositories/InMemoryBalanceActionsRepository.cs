@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Bil2.Contract.Common;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -9,11 +10,11 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
 {
     public class InMemoryBalanceActionsRepository : IBalanceActionsRepository
     {
-        private readonly ConcurrentDictionary<(string, Address, Asset), ConcurrentBag<BalanceAction>> _actions;
+        private readonly ConcurrentDictionary<(string, Address, Asset), List<BalanceAction>> _actions;
 
         public InMemoryBalanceActionsRepository()
         {
-            _actions = new ConcurrentDictionary<(string, Address, Asset), ConcurrentBag<BalanceAction>>();
+            _actions = new ConcurrentDictionary<(string, Address, Asset), List<BalanceAction>>();
         }
 
         public Task SaveAsync(string blockchainType, IEnumerable<BalanceAction> actions)
@@ -22,18 +23,34 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             {
                 _actions.AddOrUpdate(
                     (blockchainType, action.Address, action.Asset),
-                    key => new ConcurrentBag<BalanceAction>
+                    key => new List<BalanceAction>
                     {
                         action
                     },
                     (key, accountActions) =>
                     {
-                        accountActions.Add(action);
+                        lock (accountActions)
+                        {
+                            accountActions.Add(action);
+                        }
 
                         return accountActions;
                     });
             }
 
+            return Task.CompletedTask;
+        }
+
+        public Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId)
+        {
+            foreach (var actions in _actions.Where(x => x.Key.Item1 == blockchainType).Select(x => x.Value))
+            {
+                lock (actions)
+                {
+                    actions.RemoveAll(x => x.BlockId == blockId);
+                }
+            }
+            
             return Task.CompletedTask;
         }
     }

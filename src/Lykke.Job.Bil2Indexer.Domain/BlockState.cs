@@ -5,6 +5,7 @@
         Assembling,
         Assembled,
         Executed,
-        PartiallyExecuted
+        PartiallyExecuted,
+        RolledBack
     }
 }

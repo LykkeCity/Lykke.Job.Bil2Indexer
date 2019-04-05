@@ -11,19 +11,19 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
 {
     public class InMemoryBlockHeadersRepository : IBlockHeadersRepository
     {
-        private readonly ConcurrentDictionary<(string, long), BlockHeader> _blocks;
+        private readonly ConcurrentDictionary<(string, string), BlockHeader> _blocks;
         private readonly ILog _log;
 
         public InMemoryBlockHeadersRepository(ILogFactory logFactory)
         {
             _log = logFactory.CreateLog(this);
 
-            _blocks = new ConcurrentDictionary<(string, long), BlockHeader>();
+            _blocks = new ConcurrentDictionary<(string, string), BlockHeader>();
         }
 
         public Task SaveAsync(BlockHeader block)
         {
-            var key = (block.BlockchainType, block.Number);
+            var key = (block.BlockchainType, block.Id);
 
             _blocks.AddOrUpdate(
                 key,
@@ -64,14 +64,14 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
 
         public Task<BlockHeader> GetOrDefaultAsync(string blockchainType, long blockNumber)
         {
-            _blocks.TryGetValue((blockchainType, blockNumber), out var block);    
+            var block = _blocks.Values.SingleOrDefault(x => x.BlockchainType == blockchainType && x.Number == blockNumber);
 
             return Task.FromResult(block);
         }
 
         public Task<BlockHeader> GetOrDefaultAsync(string blockchainType, string blockId)
         {
-            var block = _blocks.Values.SingleOrDefault(x => x.BlockchainType == blockchainType && x.Id == blockId);
+            _blocks.TryGetValue((blockchainType, blockId), out var block);    
 
             return Task.FromResult(block);
         }
@@ -88,14 +88,10 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return block;
         }
 
-        public Task RemoveIfExistAsync(string blockchainType, string blockId)
+        public Task TryRemoveAsync(string blockchainType, string blockId)
         {
-            var block = _blocks.Values.SingleOrDefault(x => x.BlockchainType == blockchainType && x.Id == blockId);
-
-            if(block != null)
+            if (_blocks.TryRemove((blockchainType, blockId), out var block))
             {
-                _blocks.TryRemove((blockchainType, block.Number), out _);
-
                 _log.Info($"Block header removed {block}");
             }
 

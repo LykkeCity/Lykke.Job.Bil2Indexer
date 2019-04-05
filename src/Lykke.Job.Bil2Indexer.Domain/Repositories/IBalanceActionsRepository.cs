@@ -6,5 +6,6 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
     public interface IBalanceActionsRepository
     {
         Task SaveAsync(string blockchainType, IEnumerable<BalanceAction> actions);
+        Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId);
     }
 }

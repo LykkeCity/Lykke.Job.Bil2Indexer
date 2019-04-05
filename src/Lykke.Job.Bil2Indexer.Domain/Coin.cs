@@ -93,9 +93,21 @@ namespace Lykke.Job.Bil2Indexer.Domain
             SpentByTransactionId = transactionId;
         }
 
+        public void RevertSpendingBy(string transactionId)
+        {
+            if (IsSpent)
+            {
+                EnsureSpentBy(transactionId);
+            }
+
+            SpentByTransactionId = null;
+        }
+
         public override string ToString()
         {
-            return $"{BlockchainType}:{Id.TransactionId}:{Id.CoinNumber}";
+            return IsSpent 
+                ? $"{BlockchainType}:{Id.TransactionId}:{Id.CoinNumber} spent by {SpentByTransactionId}" 
+                : $"{BlockchainType}:{Id.TransactionId}:{Id.CoinNumber} unspent";
         }
 
         private void EnsureSpentBy(string transactionId)

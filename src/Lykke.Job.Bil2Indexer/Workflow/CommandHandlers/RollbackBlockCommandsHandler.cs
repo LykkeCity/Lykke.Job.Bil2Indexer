@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
 using Lykke.Job.Bil2Indexer.Contract.Events;
@@ -33,30 +34,32 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
         public async Task HandleAsync(RollbackBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
-            var removeBlockHeaderAndBalanceActionsTask = Task.WhenAll
-            (
-                _blockHeadersRepository.RemoveAsync(command.BlockchainType, command.BlockId),
-                _balanceActionsRepository.RemoveAllOfBlockActionsAsync(command.BlockchainType, command.BlockId)
-            );
+            // TODO: Ignore outdated/retry premature message
 
+            var removeBalanceActionsTask = _balanceActionsRepository.TryRemoveAllOfBlockAsync(command.BlockchainType, command.BlockId);
             var settings = _settingsProvider.Get(command.BlockchainType);
 
-            if (settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
+            if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
             {
-                // TODO: Remove tx
-            }
-            else if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
-            {
-                // TODO: Un-spend coins spent by tx
-                // TODO: Remove coins received by tx
-                // TODO: Remove tx
-            }
-            else
-            {
+                var blockHeader = await _blockHeadersRepository.GetAsync(command.BlockchainType, command.BlockId);
 
+                if (blockHeader != null && blockHeader.CanBeReverted)
+                {
+                    await blockHeader.RevertExecutionAsync(_transactionsRepository, _coinsRepository);
+                }
+            }
+            else if(settings.Capabilities.TransferModel != BlockchainTransferModel.Amount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(settings.Capabilities.TransferModel), settings.Capabilities.TransferModel, "");
             }
 
-            await removeBlockHeaderAndBalanceActionsTask;
+            await Task.WhenAll
+            (
+                _blockHeadersRepository.TryRemoveAsync(command.BlockchainType, command.BlockId),
+                _transactionsRepository.TryRemoveAllOfBlockAsync(command.BlockchainType, command.BlockId)
+            );
+
+            await removeBalanceActionsTask;
 
             replyPublisher.Publish(new BlockRolledBackEvent
             {

@@ -67,5 +67,17 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
 
             return Task.FromResult<IReadOnlyCollection<Coin>>(coins);
         }
+
+        public Task TryRemoveReceivedInTransactionAsync(string blockchainType, string transactionId)
+        {
+            var idsToRemove = _coins.Values.Where(x => x.Id.TransactionId == transactionId).Select(x => x.Id);
+
+            foreach (var id in idsToRemove)
+            {
+                _coins.TryRemove((blockchainType, id), out _);
+            }
+
+            return Task.CompletedTask;
+        }
     }
 }

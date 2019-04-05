@@ -13,5 +13,6 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
             string blockchainType, 
             string blockId, 
             string continuation);
+        Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId);
     }
 }

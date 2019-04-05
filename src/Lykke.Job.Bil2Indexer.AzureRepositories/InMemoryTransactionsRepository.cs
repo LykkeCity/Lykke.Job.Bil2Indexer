@@ -108,6 +108,16 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult(PaginatedItems<TransferCoinsTransactionExecutedEvent>.Empty);
         }
 
+        public Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId)
+        {
+            if (_storage.TryRemove((blockchainType, blockId), out _))
+            {
+                _log.Info($"Transaction of block: {blockchainType}:{blockId} removed");
+            }
+
+            return Task.CompletedTask;
+        }
+
         private void SaveTransaction(string blockchainType, string blockId, string transactionId, Action<string, BlockTransactions> addTransaction)
         {
             _log.Info($"Transaction saved: {blockchainType}:{blockId}:{transactionId}");
