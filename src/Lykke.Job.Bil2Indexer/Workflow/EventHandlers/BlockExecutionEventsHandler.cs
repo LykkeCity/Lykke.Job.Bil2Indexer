@@ -41,8 +41,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 replyPublisher.Publish(new ExtendChainHeadCommand
                 {
                     BlockchainType = evt.BlockchainType,
-                    NextBlockNumber = evt.BlockNumber,
-                    NextBlockId = evt.BlockId,
+                    ToBlockNumber = evt.BlockNumber,
+                    ToBlockId = evt.BlockId,
                     ChainHeadVersion = chainHead.Version
                 });
             }

@@ -20,8 +20,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         {
             var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
 
-            if (!(chainHead.CanExtendTo(command.NextBlockNumber) ||
-                chainHead.IsOnBlock(command.NextBlockNumber)))
+            if (!(chainHead.CanExtendTo(command.ToBlockNumber) ||
+                chainHead.IsOnBlock(command.ToBlockNumber)))
             {
                 // TODO: Not sure yet what to do here. Probably we need to check block header state.
                 // We need to determine somehow if this message is outdated or premature and ignore or 
@@ -29,19 +29,21 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 return;
             }
 
-            if (chainHead.CanExtendTo(command.NextBlockNumber))
+            if (chainHead.CanExtendTo(command.ToBlockNumber))
             {
-                chainHead.ExtendTo(command.NextBlockNumber, command.NextBlockId);
+                chainHead.ExtendTo(command.ToBlockNumber, command.ToBlockId);
 
                 await _chainHeadsRepository.SaveAsync(chainHead);
             }
+
+            // TODO: Update balance snapshots
 
             replyPublisher.Publish(new ChainHeadExtendedEvent
             {
                 BlockchainType = command.BlockchainType,
                 ChainHeadSequence = chainHead.Version,
-                BlockNumber = command.NextBlockNumber,
-                BlockId = command.NextBlockId
+                ToBlockNumber = command.ToBlockNumber,
+                ToBlockId = command.ToBlockId
             });
         }
     }

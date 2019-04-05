@@ -84,6 +84,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     rollbackBlock.Invoke(nextBlock);
                 }
 
+                // TODO: BlockAssembledEvent should be generated again and unwrap this loop to independent messages?
+
                 currentBlock = nextBlock;
             }
 

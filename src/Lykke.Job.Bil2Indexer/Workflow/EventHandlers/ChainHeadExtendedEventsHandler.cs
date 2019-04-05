@@ -34,7 +34,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
                 var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
-                var nextBlockNumber = evt.BlockNumber + 1;
+                var nextBlockNumber = evt.ToBlockNumber + 1;
 
                 if (messageCorrelationId.Configuration.CanProcess(nextBlockNumber))
                 {
@@ -62,8 +62,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 replyPublisher.Publish(new ExtendChainHeadCommand
                 {
                     BlockchainType = evt.BlockchainType,
-                    NextBlockNumber = nextBlock.Number,
-                    NextBlockId = nextBlock.Id,
+                    ToBlockNumber = nextBlock.Number,
+                    ToBlockId = nextBlock.Id,
                     ChainHeadVersion = chainHead.Version
                 });
             }

@@ -42,7 +42,18 @@ namespace Lykke.Job.Bil2Indexer.Domain
         {
             if (!CanExtendTo(blockNumber))
             {
-                throw new InvalidOperationException($"Chain head can be grown to the block {blockNumber}:{blockId}. Expected block number {BlockNumber + 1}. Current block is {BlockNumber}");
+                throw new InvalidOperationException($"Chain head can't be extended to the block {blockNumber}:{blockId}. Expected block number {BlockNumber + 1}. Current block is {BlockNumber}");
+            }
+
+            BlockNumber = blockNumber;
+            BlockId = blockId;
+        }
+
+        public void ReduceTo(long blockNumber, string blockId)
+        {
+            if (!CanReduceTo(blockNumber))
+            {
+                throw new InvalidOperationException($"Chain head can't be reduced to the block {blockNumber}:{blockId}. Expected block number {BlockNumber - 1}. Current block is {BlockNumber}. First block number {FirstBlockNumber}");
             }
 
             BlockNumber = blockNumber;
@@ -57,6 +68,16 @@ namespace Lykke.Job.Bil2Indexer.Domain
             }
 
             if (BlockNumber.HasValue && BlockNumber == blockNumber - 1)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool CanReduceTo(long blockNumber)
+        {
+            if (BlockNumber.HasValue && BlockNumber == blockNumber + 1 && blockNumber >= FirstBlockNumber)
             {
                 return true;
             }

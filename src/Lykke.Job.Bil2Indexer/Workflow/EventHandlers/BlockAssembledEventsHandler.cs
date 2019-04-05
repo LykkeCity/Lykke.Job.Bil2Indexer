@@ -100,6 +100,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 NextBlockNumber = nextBlockNumber
             });
 
+            // TODO: Should be published only on forward movement?
+
             var settings = _settingsProvider.Get(evt.BlockchainType);
 
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
@@ -120,8 +122,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     replyPublisher.Publish(new ExtendChainHeadCommand
                     {
                         BlockchainType = evt.BlockchainType,
-                        NextBlockNumber = newBlock.Number,
-                        NextBlockId = newBlock.Id,
+                        ToBlockNumber = newBlock.Number,
+                        ToBlockId = newBlock.Id,
                         ChainHeadVersion = chainHead.Version
                     });
                 }
