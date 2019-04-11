@@ -12,5 +12,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lykke.Job.Bil2Indexer.DomainServices\Lykke.Job.Bil2Indexer.DomainServices.csproj" />
     <ProjectReference Include="..\..\src\Lykke.Job.Bil2Indexer.Domain\Lykke.Job.Bil2Indexer.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Lykke.Job.Bil2Indexer.SqlRepositories\Lykke.Job.Bil2Indexer.SqlRepositories.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Properties\launchSettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
