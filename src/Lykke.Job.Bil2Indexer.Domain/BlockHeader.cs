@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Bil2.Contract.BlocksReader.Events;
+using Lykke.Bil2.Contract.Common;
+using Lykke.Job.Bil2Indexer.Domain.Infrastructure;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Numerics;
+using Lykke.Numerics.Linq;
 
 namespace Lykke.Job.Bil2Indexer.Domain
 {
@@ -105,7 +109,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public async Task ExecuteAsync(
             ITransactionsRepository transactionsRepository,
             ICoinsRepository coinsRepository,
-            IBalanceActionsRepository balanceActionsRepository)
+            IBalanceActionsRepository balanceActionsRepository,
+            IFeeEnvelopesRepository feeEnvelopesRepository)
         {
             if (!CanBeExecuted)
             {
@@ -123,15 +128,18 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     transactions?.Continuation
                 );
 
-                foreach (var transaction in transactions.Items)
-                {
-                    if (!await ExecuteTransactionAsync(coinsRepository, balanceActionsRepository, transaction))
-                    {
-                        State = BlockState.PartiallyExecuted;
+                var allTransactionsExecuted = await transactions.Items.ForEachAsync
+                (
+                    degreeOfParallelism: 8,
+                    body: transaction => ExecuteTransactionAsync(coinsRepository, balanceActionsRepository, feeEnvelopesRepository, transaction)
+                );
 
-                        return;
-                    }
+                if (!allTransactionsExecuted)
+                {
+                    State = BlockState.PartiallyExecuted;
+                    return;
                 }
+
             } while (transactions.Continuation != null);
 
             State = BlockState.Executed;
@@ -157,18 +165,19 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     transactions?.Continuation
                 );
 
-                foreach (var transaction in transactions.Items)
-                {
-                    await RevertTransactionExecutionAsync(coinsRepository, transaction);
-                }
+                await transactions.Items.ForEachAsync
+                (
+                    degreeOfParallelism: 8,
+                    body: transaction => RevertTransactionExecutionAsync(coinsRepository, transaction)
+                );
             } while (transactions.Continuation != null);
 
             State = BlockState.RolledBack;
         }
 
-        private async Task<bool> ExecuteTransactionAsync(
-            ICoinsRepository coinsRepository,
+        private async Task<bool> ExecuteTransactionAsync(ICoinsRepository coinsRepository,
             IBalanceActionsRepository balanceActionsRepository,
+            IFeeEnvelopesRepository feeEnvelopesRepository,
             TransferCoinsTransactionExecutedEvent transaction)
         {
             var coinsToSpend = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
@@ -179,13 +188,34 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 return false;
             }
 
+            await Task.WhenAll
+            (
+                SpendCoinsAsync(coinsRepository, transaction, coinsToSpend),
+                SaveBalanceActionsAsync(balanceActionsRepository, transaction, coinsToSpend),
+                SaveFeesAsync(feeEnvelopesRepository, transaction, coinsToSpend)
+            );
+
+            return true;
+        }
+
+        private static async Task SpendCoinsAsync(
+            ICoinsRepository coinsRepository,
+            TransferCoinsTransactionExecutedEvent transaction,
+            IReadOnlyCollection<Coin> coinsToSpend)
+        {
             foreach (var coin in coinsToSpend)
             {
                 coin.SpendBy(transaction.TransactionId);
             }
 
             await coinsRepository.SaveAsync(coinsToSpend);
+        }
 
+        private async Task SaveBalanceActionsAsync(
+            IBalanceActionsRepository balanceActionsRepository,
+            TransferCoinsTransactionExecutedEvent transaction,
+            IReadOnlyCollection<Coin> coinsToSpend)
+        {
             var actions = coinsToSpend
                 .Where(c => c.Address != null)
                 .Select
@@ -202,12 +232,62 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 );
 
             await balanceActionsRepository.SaveAsync(BlockchainType, actions);
+        }
 
-            return true;
+        private async Task SaveFeesAsync(
+            IFeeEnvelopesRepository feeEnvelopesRepository,
+            TransferCoinsTransactionExecutedEvent transaction, 
+            IReadOnlyCollection<Coin> coinsToSpend)
+        {
+            var assetReceivedAmount = transaction.ReceivedCoins
+                .GroupBy(x => x.Asset)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Value));
+
+            var assetSpentAmount = coinsToSpend
+                .GroupBy(x => x.Asset)
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Value));
+
+            var fees = transaction.ReceivedCoins
+                .Select(x => x.Asset)
+                .Union(coinsToSpend.Select(x => x.Asset))
+                .Select(asset =>
+                {
+                    assetReceivedAmount.TryGetValue(asset, out var receivedAmount);
+                    assetSpentAmount.TryGetValue(asset, out var spentAmount);
+
+                    var amount = spentAmount > receivedAmount
+                        ? spentAmount - receivedAmount
+                        : 0;
+
+                    return new FeeEnvelope
+                    (
+                        BlockchainType,
+                        Id,
+                        transaction.TransactionId,
+                        new Fee
+                        (
+                            asset,
+                            amount
+                        )
+                    );
+                });
+
+            await feeEnvelopesRepository.SaveAsync(fees);
         }
 
         private async Task RevertTransactionExecutionAsync(
             ICoinsRepository coinsRepository,
+            TransferCoinsTransactionExecutedEvent transaction)
+        {
+            await Task.WhenAll
+            (
+                RevertSpentCoinsAsync(coinsRepository, transaction),
+                coinsRepository.TryRemoveReceivedInTransactionAsync(BlockchainType, transaction.TransactionId)
+            );
+        }
+
+        private async Task RevertSpentCoinsAsync(
+            ICoinsRepository coinsRepository, 
             TransferCoinsTransactionExecutedEvent transaction)
         {
             var coinsToSpend = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
@@ -217,11 +297,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 coin.RevertSpendingBy(transaction.TransactionId);
             }
 
-            await Task.WhenAll
-            (
-                coinsRepository.SaveAsync(coinsToSpend),
-                coinsRepository.TryRemoveReceivedInTransactionAsync(BlockchainType, transaction.TransactionId)
-            );
+            await coinsRepository.SaveAsync(coinsToSpend);
         }
 
         public override string ToString()

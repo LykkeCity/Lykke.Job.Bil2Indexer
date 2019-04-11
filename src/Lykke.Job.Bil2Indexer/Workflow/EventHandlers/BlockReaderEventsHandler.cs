@@ -25,6 +25,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         private readonly ITransactionsRepository _transactionsRepository;
         private readonly IBalanceActionsRepository _balanceActionsRepository;
         private readonly ICoinsRepository _coinsRepository;
+        private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
 
         public BlockReaderEventsHandler(
             ICommandsSenderFactory commandsSenderFactory,
@@ -33,7 +34,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             ICrawlersManager crawlersManager,
             ITransactionsRepository transactionsRepository,
             IBalanceActionsRepository balanceActionsRepository,
-            ICoinsRepository coinsRepository)
+            ICoinsRepository coinsRepository,
+            IFeeEnvelopesRepository feeEnvelopesRepository)
         {
             _commandsSenderFactory = commandsSenderFactory;
             _blockHeadersRepository = blockHeadersRepository;
@@ -42,6 +44,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             _transactionsRepository = transactionsRepository;
             _balanceActionsRepository = balanceActionsRepository;
             _coinsRepository = coinsRepository;
+            _feeEnvelopesRepository = feeEnvelopesRepository;
         }
 
         public async Task HandleAsync(string blockchainType, BlockHeaderReadEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -113,7 +116,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return;
             }
 
-            await _transactionsRepository.SaveAsync(blockchainType, evt);
+            var saveTransactionTask = _transactionsRepository.SaveAsync(blockchainType, evt);
 
             var actions = evt.BalanceChanges
                 .Where(x => x.Address != null)
@@ -130,9 +133,26 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     )
                 );
             
-            await _balanceActionsRepository.SaveAsync(blockchainType, actions);
+            var saveBalanceActionsTask = _balanceActionsRepository.SaveAsync(blockchainType, actions);
 
-            // TODO: save fee
+            var fees = evt.Fees
+                .Select
+                (
+                    x => new FeeEnvelope
+                    (
+                        blockchainType,
+                        evt.BlockId,
+                        evt.TransactionId,
+                        x
+                    )
+                );
+
+            await Task.WhenAll
+            (
+                saveTransactionTask,
+                saveBalanceActionsTask,
+                _feeEnvelopesRepository.SaveAsync(fees)
+            );
         }
 
         public async Task HandleAsync(string blockchainType, TransferCoinsTransactionExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -151,7 +171,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return;
             }
 
-            await _transactionsRepository.SaveAsync(blockchainType, evt);
+            var saveTransactionTask = _transactionsRepository.SaveAsync(blockchainType, evt);
 
             var coins = evt.ReceivedCoins
                 .Select
@@ -169,7 +189,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     )
                 );
 
-            await _coinsRepository.SaveAsync(coins);
+            var saveCoinsTask = _coinsRepository.SaveAsync(coins);
 
             var actions = evt.ReceivedCoins
                 .Where(c => c.Address != null)
@@ -186,9 +206,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     )
                 );
 
-            await _balanceActionsRepository.SaveAsync(blockchainType, actions);
-            
-            // TODO: Calc and save fee
+            await Task.WhenAll
+            (
+                saveTransactionTask,
+                saveCoinsTask,
+                _balanceActionsRepository.SaveAsync(blockchainType, actions)
+            );
         }
 
         public async Task HandleAsync(string blockchainType, TransactionFailedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -202,9 +225,25 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return;
             }
             
-            await _transactionsRepository.SaveAsync(blockchainType, evt);
+            var saveTransactionTask = _transactionsRepository.SaveAsync(blockchainType, evt);
 
-            // TODO: save fee
+            var fees = evt.Fees
+                .Select
+                (
+                    x => new FeeEnvelope
+                    (
+                        blockchainType,
+                        evt.BlockId,
+                        evt.TransactionId,
+                        x
+                    )
+                );
+
+            await Task.WhenAll
+            (
+                saveTransactionTask,
+                _feeEnvelopesRepository.SaveAsync(fees)
+            );
         }
 
         public Task HandleAsync(string blockchainType, LastIrreversibleBlockUpdatedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)

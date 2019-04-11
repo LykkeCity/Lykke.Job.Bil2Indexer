@@ -16,6 +16,7 @@ namespace Lykke.Job.Bil2Indexer.Modules
             builder.RegisterType<InMemoryCrawlersRepository>().As<ICrawlersRepository>().SingleInstance();
             builder.RegisterType<InMemoryTransactionsRepository>().As<ITransactionsRepository>().SingleInstance();
             builder.RegisterType<InMemoryChainHeadsRepository>().As<IChainHeadsRepository>().SingleInstance();
+            builder.RegisterType<InMemoryFeeEnvelopesRepository>().As<IFeeEnvelopesRepository>().SingleInstance();
         }
     }
 }

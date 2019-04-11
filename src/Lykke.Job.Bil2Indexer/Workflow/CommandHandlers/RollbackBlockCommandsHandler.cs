@@ -17,19 +17,22 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private readonly ITransactionsRepository _transactionsRepository;
         private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly IntegrationSettingsProvider _settingsProvider;
+        private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
 
         public RollbackBlockCommandsHandler(
             IBalanceActionsRepository balanceActionsRepository,
             ICoinsRepository coinsRepository,
             ITransactionsRepository transactionsRepository,
             IBlockHeadersRepository blockHeadersRepository,
-            IntegrationSettingsProvider settingsProvider)
+            IntegrationSettingsProvider settingsProvider,
+            IFeeEnvelopesRepository feeEnvelopesRepository)
         {
             _balanceActionsRepository = balanceActionsRepository;
             _coinsRepository = coinsRepository;
             _transactionsRepository = transactionsRepository;
             _blockHeadersRepository = blockHeadersRepository;
             _settingsProvider = settingsProvider;
+            _feeEnvelopesRepository = feeEnvelopesRepository;
         }
 
         public async Task HandleAsync(RollbackBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -37,6 +40,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             // TODO: Ignore outdated/retry premature message
 
             var removeBalanceActionsTask = _balanceActionsRepository.TryRemoveAllOfBlockAsync(command.BlockchainType, command.BlockId);
+            var removeFeeEnvelopesTask = _feeEnvelopesRepository.TryRemoveAllOfBlockAsync(command.BlockchainType, command.BlockId);
             var settings = _settingsProvider.Get(command.BlockchainType);
 
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
@@ -55,11 +59,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             await Task.WhenAll
             (
+                removeBalanceActionsTask,
+                removeFeeEnvelopesTask,
                 _blockHeadersRepository.TryRemoveAsync(command.BlockchainType, command.BlockId),
                 _transactionsRepository.TryRemoveAllOfBlockAsync(command.BlockchainType, command.BlockId)
             );
-
-            await removeBalanceActionsTask;
 
             replyPublisher.Publish(new BlockRolledBackEvent
             {
