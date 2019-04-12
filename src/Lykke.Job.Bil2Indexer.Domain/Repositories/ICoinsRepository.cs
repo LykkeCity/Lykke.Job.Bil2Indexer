@@ -8,6 +8,7 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
     {
         Task SaveAsync(IEnumerable<Coin> coins);
         Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IEnumerable<CoinReference> ids);
+        Task<IReadOnlyCollection<Coin>> GetReceivedInTransactionAsync(string blockchainType, string transactionId);
         Task TryRemoveReceivedInTransactionAsync(string blockchainType, string transactionId);
     }
 }

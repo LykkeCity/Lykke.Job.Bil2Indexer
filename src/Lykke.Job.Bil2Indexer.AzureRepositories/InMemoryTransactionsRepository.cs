@@ -108,6 +108,46 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult(PaginatedItems<TransferCoinsTransactionExecutedEvent>.Empty);
         }
 
+        public Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransactionFailedEvent> GetFailedTransactionAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransactionFailedEvent> GetFailedTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId)
         {
             if (_storage.TryRemove((blockchainType, blockId), out _))
