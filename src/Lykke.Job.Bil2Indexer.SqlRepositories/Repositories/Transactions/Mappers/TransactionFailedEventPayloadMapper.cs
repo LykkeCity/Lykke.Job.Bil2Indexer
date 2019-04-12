@@ -1,0 +1,41 @@
+﻿using System.Linq;
+using Common;
+using Lykke.Bil2.Contract.BlocksReader.Events;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props.Payloads;
+
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
+{
+    public static class TransactionFailedEventPayloadMapper
+    {
+        public static TransactionEntity MapToDbEntity(this TransactionFailedEvent source, string blockchainType)
+        {
+            return new TransactionEntity
+            {
+                BlockId = source.BlockId,
+                BlockchainType =  blockchainType,
+                Payload = new TransactionFailedEventPayload
+                {
+                    Fees = source.Fees,
+                    ErrorCode = source.ErrorCode,
+                    ErrorMessage = source.ErrorMessage
+
+                }.ToJson(),
+                TransactionId = source.TransactionId,
+                Type = TransactionType.TransactionFailed
+            };
+        }
+
+        public static TransactionFailedEvent MapToFailed(this TransactionEntity source)
+        {
+            var payload = source.Payload.DeserializeJson<TransactionFailedEventPayload>();
+
+            return new TransactionFailedEvent(blockId: source.BlockId,
+                transactionId: source.TransactionId,
+                transactionNumber: source.TransactionNumber,
+                errorCode: payload.ErrorCode,
+                errorMessage: payload.ErrorMessage,
+                fees: payload.Fees?.ToList());
+        }
+    }
+}

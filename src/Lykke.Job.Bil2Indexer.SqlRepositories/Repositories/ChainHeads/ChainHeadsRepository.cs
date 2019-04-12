@@ -6,7 +6,7 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
 {
     public class ChainHeadsRepository:IChainHeadsRepository
     {

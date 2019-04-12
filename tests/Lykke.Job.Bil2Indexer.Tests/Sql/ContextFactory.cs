@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -40,12 +38,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 }
             }
         }
-
-        public static StateDataContext CreateStateDataContext()
-        {
-            return new StateDataContext(Environment.GetEnvironmentVariable("PosgresConnString"));
-        }
-
+        
         public static string GetPosgresTestsConnString()
         {
             return Environment.GetEnvironmentVariable("PosgresConnString");

@@ -2,7 +2,8 @@
 using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads;
 using NUnit.Framework;
 
 namespace Lykke.Job.Bil2Indexer.Tests.Sql
