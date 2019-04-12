@@ -59,9 +59,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                     
                     var existed = await db.Transactions.SingleAsync(p =>
                         p.BlockchainType == transaction.BlockchainType &&
-                        p.TransactionId == transaction.TransactionId &&
-                        p.TransactionNumber == transaction.TransactionNumber);
+                        p.TransactionId == transaction.TransactionId);
 
+                    existed.TransactionNumber = transaction.TransactionNumber;
                     existed.BlockId = transaction.BlockId;
                     existed.Payload = transaction.Payload;
                     existed.Type = transaction.Type;
@@ -74,7 +74,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
         private bool IsConstraintViolationException(DbUpdateException e)
         {
             const string constraintViolationErrorCode = "23505";
-            const string uniqueConstraintName = "transactions_btype_transaction_id_transaction_number_uind";
+            const string uniqueConstraintName = "transactions_btype_transaction_id_uind";
 
             if (e.InnerException is PostgresException pgEx)
             {
@@ -88,11 +88,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             return false;
         }
 
-        public Task<int> CountInBlockAsync(string blockchainType, string blockId)
+        public async Task<int> CountInBlockAsync(string blockchainType, string blockId)
         {
             using (var db = new TransactionsDataContext(_posgresConnString))
             {
-                return db.Transactions
+                return await db.Transactions
                     .Where(p => p.BlockchainType == blockchainType && p.BlockId == blockId)
                     .CountAsync();
             }
@@ -100,60 +100,54 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
         public async Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
         {
-            var result = await GetPagedAsync(blockchainType, blockId, continuation);
-
-            return new PaginatedItems<TransferCoinsTransactionExecutedEvent>(result.nextContinuation, 
-                result.entities.Select(p => p.MapToCoinExecuted()).ToList());
+            return await GetPagedAsync(blockchainType, blockId, continuation, p => p.MapToCoinExecuted());
         }
 
         public async Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
         {
-            var result = await GetPagedAsync(blockchainType, blockId, continuation);
-
-            return new PaginatedItems<TransferAmountTransactionExecutedEvent>(result.nextContinuation,
-                result.entities.Select(p => p.MapToTransferExecuted()).ToList());
+            return await GetPagedAsync(blockchainType, blockId, continuation, p => p.MapToTransferAmountExecuted());
         }
 
         public async Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
         {
-            var result = await GetPagedAsync(blockchainType, blockId, continuation);
-
-            return new PaginatedItems<TransactionFailedEvent>(result.nextContinuation,
-                result.entities.Select(p => p.MapToFailed()).ToList());
+            return await GetPagedAsync(blockchainType, blockId, continuation, p => p.MapToFailed());
         }
 
-        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType, string transactionId)
+        public async Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType, string transactionId)
         {
-            throw new NotImplementedException();
+            return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToCoinExecuted())
+                   ?? throw new ArgumentException($"Unable to find transaction {blockchainType} : {transactionId}");
         }
 
-        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionAsync(string blockchainType, string transactionId)
+        public async Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionAsync(string blockchainType, string transactionId)
         {
-            throw new NotImplementedException();
+            return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToTransferAmountExecuted())
+                   ?? throw new ArgumentException($"Unable to find transaction {blockchainType} : {transactionId}");
         }
 
-        public Task<TransactionFailedEvent> GetFailedTransactionAsync(string blockchainType, string transactionId)
+        public async Task<TransactionFailedEvent> GetFailedTransactionAsync(string blockchainType, string transactionId)
         {
-            throw new NotImplementedException();
+            return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToFailed())
+                   ?? throw new ArgumentException($"Unable to find transaction {blockchainType} : {transactionId}");
         }
 
-        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        public async Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionOrDefaultAsync(string blockchainType, string transactionId)
         {
-            throw new NotImplementedException();
+            return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToCoinExecuted());
         }
 
-        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        public async Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionOrDefaultAsync(string blockchainType, string transactionId)
         {
-            throw new NotImplementedException();
+            return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToTransferAmountExecuted());
         }
 
-        public Task<TransactionFailedEvent> GetFailedTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        public async Task<TransactionFailedEvent> GetFailedTransactionOrDefaultAsync(string blockchainType, string transactionId)
         {
-            throw new NotImplementedException();
+            return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToFailed());
         }
 
-        private async Task<(IReadOnlyCollection<TransactionEntity> entities, string nextContinuation)> GetPagedAsync(
-            string blockchainType, string blockId, string continuation)
+        private async Task<PaginatedItems<T>> GetPagedAsync<T>(
+            string blockchainType, string blockId, string continuation, Func<TransactionEntity, T> map)
         {
             const int take = 50;
 
@@ -173,15 +167,26 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
                 var nextContinuation = entities.Count < take ? null : (skip + entities.Count).ToString();
 
-                return (entities, nextContinuation);
+                return new PaginatedItems<T>(nextContinuation, entities.Select(map).ToList());
             }
         }
 
-        public Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId)
+        private async Task<T> GetOrDefaultAsync<T>(string blockchainType, string transactionId, Func<TransactionEntity, T> map) where T:class 
         {
             using (var db = new TransactionsDataContext(_posgresConnString))
             {
-                return db.Transactions
+                var entity = await db.Transactions.SingleOrDefaultAsync(p =>
+                    p.BlockchainType == blockchainType && p.TransactionId == transactionId);
+
+                return entity != null ? map(entity) : null;
+            }
+        }
+
+        public async Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId)
+        {
+            using (var db = new TransactionsDataContext(_posgresConnString))
+            {
+                await db.Transactions
                     .Where(p => p.BlockchainType == blockchainType && p.BlockId == blockId)
                     .DeleteAsync();
             }

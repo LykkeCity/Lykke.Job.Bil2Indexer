@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Common;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
@@ -28,6 +29,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
 
         public static TransferCoinsTransactionExecutedEvent MapToCoinExecuted(this TransactionEntity source)
         {
+            if (source.Type != TransactionType.TransferCoinsTransactionExecuted)
+            {
+                throw new ArgumentException($"Unable to cast {source.TransactionId} of {source.Type} to {nameof(TransferCoinsTransactionExecutedEvent)}");
+            }
+
             var payload = source.Payload.DeserializeJson<TransferCoinsTransactionExecutedPayload>();
 
             return new TransferCoinsTransactionExecutedEvent(blockId: source.BlockId,

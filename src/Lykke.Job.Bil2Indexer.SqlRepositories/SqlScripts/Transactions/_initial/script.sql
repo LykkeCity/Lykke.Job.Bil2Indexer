@@ -16,6 +16,8 @@ create table transactions
 create index transactions_blockchain_type_block_id_index
     on transactions (blockchain_type, block_id);
 
-create unique index transactions_btype_transaction_id_transaction_number_uind
-    on transactions (blockchain_type, transaction_id, transaction_number);
+create unique index transactions_btype_transaction_id_uind
+    on transactions (blockchain_type, transaction_id);
+
+
 COMMIT;
