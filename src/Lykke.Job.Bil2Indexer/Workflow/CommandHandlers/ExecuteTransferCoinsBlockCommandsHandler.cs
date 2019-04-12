@@ -14,17 +14,20 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private readonly ITransactionsRepository _transactionsRepository;
         private readonly ICoinsRepository _coinsRepository;
         private readonly IBalanceActionsRepository _balanceActionsRepository;
+        private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
 
         public ExecuteTransferCoinsBlockCommandsHandler(
             IBlockHeadersRepository blockHeadersRepository,
             ITransactionsRepository transactionsRepository,
             ICoinsRepository coinsRepository,
-            IBalanceActionsRepository balanceActionsRepository)
+            IBalanceActionsRepository balanceActionsRepository,
+            IFeeEnvelopesRepository feeEnvelopesRepository)
         {
             _blockHeadersRepository = blockHeadersRepository;
             _transactionsRepository = transactionsRepository;
             _coinsRepository = coinsRepository;
             _balanceActionsRepository = balanceActionsRepository;
+            _feeEnvelopesRepository = feeEnvelopesRepository;
         }
 
         public async Task HandleAsync(ExecuteTransferCoinsBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -40,8 +43,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             if (block.CanBeExecuted)
             {
-                await block.ExecuteAsync(_transactionsRepository, _coinsRepository, _balanceActionsRepository);
-             
+                await block.ExecuteAsync(_transactionsRepository, _coinsRepository, _balanceActionsRepository, _feeEnvelopesRepository);
+
                 await _blockHeadersRepository.SaveAsync(block);
             }
 

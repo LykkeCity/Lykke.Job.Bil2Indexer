@@ -68,6 +68,11 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult<IReadOnlyCollection<Coin>>(coins);
         }
 
+        public Task<IReadOnlyCollection<Coin>> GetReceivedInTransactionAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task TryRemoveReceivedInTransactionAsync(string blockchainType, string transactionId)
         {
             var idsToRemove = _coins.Values.Where(x => x.Id.TransactionId == transactionId).Select(x => x.Id);
