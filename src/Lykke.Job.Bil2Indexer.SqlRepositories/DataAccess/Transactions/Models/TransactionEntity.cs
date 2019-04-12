@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models
@@ -6,7 +7,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models
     [Table("transactions")]
     public class TransactionEntity
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Key]
         [Column("id")]
         public Guid Id { get; set; }
 

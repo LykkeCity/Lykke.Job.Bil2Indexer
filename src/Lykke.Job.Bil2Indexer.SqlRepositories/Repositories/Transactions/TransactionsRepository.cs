@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
@@ -53,6 +54,19 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 catch (DbUpdateException e) when (IsConstraintViolationException(e))
                 {
                     _log.Info("Transaction already exists. Skipping", context: transaction, exception: e);
+
+                    db.Entry(transaction).State = EntityState.Detached;
+                    
+                    var existed = await db.Transactions.SingleAsync(p =>
+                        p.BlockchainType == transaction.BlockchainType &&
+                        p.TransactionId == transaction.TransactionId &&
+                        p.TransactionNumber == transaction.TransactionNumber);
+
+                    existed.BlockId = transaction.BlockId;
+                    existed.Payload = transaction.Payload;
+                    existed.Type = transaction.Type;
+
+                    await db.SaveChangesAsync();
                 }
             }
         }
@@ -60,7 +74,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
         private bool IsConstraintViolationException(DbUpdateException e)
         {
             const string constraintViolationErrorCode = "23505";
-            const string uniqueConstraintName = "transactions_blockchain_type_transaction_id_transaction_id_uind";
+            const string uniqueConstraintName = "transactions_btype_transaction_id_transaction_number_uind";
 
             if (e.InnerException is PostgresException pgEx)
             {
@@ -86,6 +100,61 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
         public async Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
         {
+            var result = await GetPagedAsync(blockchainType, blockId, continuation);
+
+            return new PaginatedItems<TransferCoinsTransactionExecutedEvent>(result.nextContinuation, 
+                result.entities.Select(p => p.MapToCoinExecuted()).ToList());
+        }
+
+        public async Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
+        {
+            var result = await GetPagedAsync(blockchainType, blockId, continuation);
+
+            return new PaginatedItems<TransferAmountTransactionExecutedEvent>(result.nextContinuation,
+                result.entities.Select(p => p.MapToTransferExecuted()).ToList());
+        }
+
+        public async Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
+        {
+            var result = await GetPagedAsync(blockchainType, blockId, continuation);
+
+            return new PaginatedItems<TransactionFailedEvent>(result.nextContinuation,
+                result.entities.Select(p => p.MapToFailed()).ToList());
+        }
+
+        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransactionFailedEvent> GetFailedTransactionAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransactionFailedEvent> GetFailedTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        private async Task<(IReadOnlyCollection<TransactionEntity> entities, string nextContinuation)> GetPagedAsync(
+            string blockchainType, string blockId, string continuation)
+        {
             const int take = 50;
 
             var skip = 0;
@@ -104,7 +173,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
                 var nextContinuation = entities.Count < take ? null : (skip + entities.Count).ToString();
 
-                return new PaginatedItems<TransferCoinsTransactionExecutedEvent>(nextContinuation, entities.Select(p => p.MapToCoinExecuted()).ToList());
+                return (entities, nextContinuation);
             }
         }
 
@@ -112,7 +181,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
         {
             using (var db = new TransactionsDataContext(_posgresConnString))
             {
-                return db.Transactions.Where(p => p.BlockchainType == blockchainType && p.BlockId == blockId)
+                return db.Transactions
+                    .Where(p => p.BlockchainType == blockchainType && p.BlockId == blockId)
                     .DeleteAsync();
             }
         }
