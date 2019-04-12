@@ -45,6 +45,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Service.Bil2IndexerGr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Service.Bil2IndexerGrpcApi.Client", "clients\Lykke.Service.Bil2IndexerGrpcApi.Client\Lykke.Service.Bil2IndexerGrpcApi.Client.csproj", "{06BA118A-7C75-4010-8A05-A2E472FAB75B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "6. Tools", "6. Tools", "{3396D322-753C-4152-A653-F5B6F5315F7E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lykke.Job.Bil2Indexer.VerifyingTool", "tools\Lykke.Job.Bil2Indexer.VerifyingTool\Lykke.Job.Bil2Indexer.VerifyingTool.csproj", "{62C22D19-D59D-45FF-ACAF-44999BBF9763}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -95,6 +99,10 @@ Global
 		{06BA118A-7C75-4010-8A05-A2E472FAB75B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06BA118A-7C75-4010-8A05-A2E472FAB75B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{06BA118A-7C75-4010-8A05-A2E472FAB75B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62C22D19-D59D-45FF-ACAF-44999BBF9763}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62C22D19-D59D-45FF-ACAF-44999BBF9763}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62C22D19-D59D-45FF-ACAF-44999BBF9763}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62C22D19-D59D-45FF-ACAF-44999BBF9763}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -111,6 +119,7 @@ Global
 		{9B3DED52-D4EB-49F4-9FAC-4AA1EDE047AA} = {5CB24F19-99A9-4E3B-BFC5-AC0F24641102}
 		{378E20B6-68F6-47EF-A7D9-B7B2ACABF58A} = {EE7F3159-E06C-497F-96D4-DB2A6B03A6AB}
 		{06BA118A-7C75-4010-8A05-A2E472FAB75B} = {5CB24F19-99A9-4E3B-BFC5-AC0F24641102}
+		{62C22D19-D59D-45FF-ACAF-44999BBF9763} = {3396D322-753C-4152-A653-F5B6F5315F7E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EB6C0EF4-AA6A-444D-8603-3669F73A58BC}
