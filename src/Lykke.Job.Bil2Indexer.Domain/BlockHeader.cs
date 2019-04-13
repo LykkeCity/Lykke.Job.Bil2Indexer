@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -118,9 +119,12 @@ namespace Lykke.Job.Bil2Indexer.Domain
             }
 
             PaginatedItems<TransferCoinsTransactionExecutedEvent> transactions = null;
-
+            var spendCoinsTask = default(Task);
+            
             do
             {
+                var coinsToSpend = new ConcurrentBag<CoinReference>();
+
                 transactions = await transactionsRepository.GetTransferCoinsTransactionsOfBlockAsync
                 (
                     BlockchainType,
@@ -128,17 +132,43 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     transactions?.Continuation
                 );
 
-                var allTransactionsExecuted = await transactions.Items.ForEachAsync
+                var isAllTransactionsExecuted = await transactions.Items.ForEachAsync
                 (
                     degreeOfParallelism: 8,
-                    body: transaction => ExecuteTransactionAsync(coinsRepository, balanceActionsRepository, feeEnvelopesRepository, transaction)
-                );
+                    body: async transaction =>
+                    {
+                        var coinsToSpendByTransaction = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
+                        var isExecuted = await ExecuteTransactionAsync
+                        (
+                            coinsToSpendByTransaction,
+                            balanceActionsRepository,
+                            feeEnvelopesRepository,
+                            transaction
+                        );
 
-                if (!allTransactionsExecuted)
+                        if (isExecuted)
+                        {
+                            foreach (var coin in coinsToSpendByTransaction.Where(x => !x.IsSpent))
+                            {
+                                coinsToSpend.Add(coin.Id);
+                            }
+                        }
+
+                        return isExecuted;
+                    });
+
+                if (spendCoinsTask != default(Task))
+                {
+                    await spendCoinsTask;
+                }
+
+                if (!isAllTransactionsExecuted)
                 {
                     State = BlockState.PartiallyExecuted;
                     return;
                 }
+
+                spendCoinsTask = coinsRepository.SpendAsync(BlockchainType, coinsToSpend);
 
             } while (transactions.Continuation != null);
 
@@ -165,22 +195,26 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     transactions?.Continuation
                 );
 
-                await transactions.Items.ForEachAsync
-                (
-                    degreeOfParallelism: 8,
-                    body: transaction => RevertTransactionExecutionAsync(coinsRepository, transaction)
-                );
-            } while (transactions.Continuation != null);
+                var coinsToRevertSpending = transactions.Items.SelectMany(t => t.SpentCoins);
+                var transactionIds = transactions.Items.Select(t => t.TransactionId);
 
+                await Task.WhenAll
+                (
+                    coinsRepository.RemoveIfExistAsync(BlockchainType, transactionIds),
+                    coinsRepository.RevertSpendingAsync(BlockchainType, coinsToRevertSpending)
+                );
+                
+            } while (transactions.Continuation != null);
+            
             State = BlockState.RolledBack;
         }
 
-        private async Task<bool> ExecuteTransactionAsync(ICoinsRepository coinsRepository,
+        private async Task<bool> ExecuteTransactionAsync(
+            IReadOnlyCollection<Coin> coinsToSpend,
             IBalanceActionsRepository balanceActionsRepository,
             IFeeEnvelopesRepository feeEnvelopesRepository,
             TransferCoinsTransactionExecutedEvent transaction)
         {
-            var coinsToSpend = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
             var missedCoins = transaction.SpentCoins.Except(coinsToSpend.Select(x => x.Id));
 
             if (missedCoins.Any())
@@ -190,25 +224,11 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
             await Task.WhenAll
             (
-                SpendCoinsAsync(coinsRepository, transaction, coinsToSpend),
                 SaveBalanceActionsAsync(balanceActionsRepository, transaction, coinsToSpend),
                 SaveFeesAsync(feeEnvelopesRepository, transaction, coinsToSpend)
             );
 
             return true;
-        }
-
-        private static async Task SpendCoinsAsync(
-            ICoinsRepository coinsRepository,
-            TransferCoinsTransactionExecutedEvent transaction,
-            IReadOnlyCollection<Coin> coinsToSpend)
-        {
-            foreach (var coin in coinsToSpend)
-            {
-                coin.SpendBy(transaction.TransactionId);
-            }
-
-            await coinsRepository.SaveAsync(coinsToSpend);
         }
 
         private async Task SaveBalanceActionsAsync(
@@ -273,31 +293,6 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 });
 
             await feeEnvelopesRepository.SaveAsync(fees);
-        }
-
-        private async Task RevertTransactionExecutionAsync(
-            ICoinsRepository coinsRepository,
-            TransferCoinsTransactionExecutedEvent transaction)
-        {
-            await Task.WhenAll
-            (
-                RevertSpentCoinsAsync(coinsRepository, transaction),
-                coinsRepository.TryRemoveReceivedInTransactionAsync(BlockchainType, transaction.TransactionId)
-            );
-        }
-
-        private async Task RevertSpentCoinsAsync(
-            ICoinsRepository coinsRepository, 
-            TransferCoinsTransactionExecutedEvent transaction)
-        {
-            var coinsToSpend = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
-
-            foreach (var coin in coinsToSpend)
-            {
-                coin.RevertSpendingBy(transaction.TransactionId);
-            }
-
-            await coinsRepository.SaveAsync(coinsToSpend);
         }
 
         public override string ToString()

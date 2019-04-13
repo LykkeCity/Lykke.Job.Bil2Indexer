@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,32 +21,75 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
         {
             foreach (var coin in coins)
             {
-                _coins.AddOrUpdate(
-                    (coin.BlockchainType, coin.Id),
-                    key => coin,
-                    (key, oldValue) =>
-                    {
-                        if (oldValue.Version != coin.Version)
-                        {
-                            throw new InvalidOperationException($"Optimistic concurrency: coin versions mismatch. Expected version {oldValue.Version}, actual {coin.Version}. Coin {coin}.");
-                        }
+                _coins.TryAdd((coin.BlockchainType, coin.Id), coin);
+            }
 
-                        var newCoin = new Coin
-                        (
-                            coin.BlockchainType,
-                            coin.Id,
-                            coin.Version + 1,
-                            coin.Asset,
-                            coin.Value,
-                            coin.Address,
-                            coin.AddressTag,
-                            coin.AddressTagType,
-                            coin.AddressNonce,
-                            coin.SpentByTransactionId
-                        );
+            return Task.CompletedTask;
+        }
 
-                        return newCoin;
-                    });
+        public Task SpendAsync(string blockchainType, IEnumerable<CoinReference> ids)
+        {
+            foreach (var id in ids)
+            {
+                var key = (blockchainType, id);
+
+                if (!_coins.TryGetValue(key, out var oldValue))
+                {
+                    continue;
+                }
+
+                _coins.TryUpdate
+                (
+                    key,
+                    new Coin
+                    (
+                        oldValue.BlockchainType,
+                        oldValue.Id,
+                        oldValue.Version + 1,
+                        oldValue.Asset,
+                        oldValue.Value,
+                        oldValue.Address,
+                        oldValue.AddressTag,
+                        oldValue.AddressTagType,
+                        oldValue.AddressNonce,
+                        true
+                    ),
+                    oldValue
+                );
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task RevertSpendingAsync(string blockchainType, IEnumerable<CoinReference> ids)
+        {
+            foreach (var id in ids)
+            {
+                var key = (blockchainType, id);
+
+                if (!_coins.TryGetValue(key, out var oldValue))
+                {
+                    continue;
+                }
+
+                _coins.TryUpdate
+                (
+                    key,
+                    new Coin
+                    (
+                        oldValue.BlockchainType,
+                        oldValue.Id,
+                        oldValue.Version + 1,
+                        oldValue.Asset,
+                        oldValue.Value,
+                        oldValue.Address,
+                        oldValue.AddressTag,
+                        oldValue.AddressTagType,
+                        oldValue.AddressNonce,
+                        false
+                    ),
+                    oldValue
+                );
             }
 
             return Task.CompletedTask;
@@ -68,14 +110,11 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult<IReadOnlyCollection<Coin>>(coins);
         }
 
-        public Task<IReadOnlyCollection<Coin>> GetReceivedInTransactionAsync(string blockchainType, string transactionId)
+        public Task RemoveIfExistAsync(string blockchainType, IEnumerable<string> receivedInTransactionIds)
         {
-            throw new NotImplementedException();
-        }
+            var transactionIds = receivedInTransactionIds.ToHashSet();
 
-        public Task TryRemoveReceivedInTransactionAsync(string blockchainType, string transactionId)
-        {
-            var idsToRemove = _coins.Values.Where(x => x.Id.TransactionId == transactionId).Select(x => x.Id);
+            var idsToRemove = _coins.Values.Where(x => transactionIds.Contains(x.Id.TransactionId)).Select(x => x.Id);
 
             foreach (var id in idsToRemove)
             {
