@@ -1,5 +1,5 @@
 ﻿using JetBrains.Annotations;
-using Lykke.Bil2.Contract.Common;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Numerics;
 
 namespace Lykke.Job.Bil2Indexer.Domain
@@ -8,7 +8,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
     {
         public string BlockchainType { get; }
 
-        public CoinReference Id { get; }
+        public CoinId Id { get; }
 
         public long Version { get; }
 
@@ -32,7 +32,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public Coin(
             string blockchainType,
-            CoinReference id,
+            CoinId id,
             long version,
             Asset asset,
             UMoney value,
@@ -56,7 +56,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public static Coin CreateUnspent(
             string blockchainType,
-            CoinReference id,
+            CoinId id,
             Asset asset,
             UMoney value,
             Address address,
@@ -82,8 +82,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public override string ToString()
         {
             return IsSpent 
-                ? $"{BlockchainType}:{Id.TransactionId}:{Id.CoinNumber} spent" 
-                : $"{BlockchainType}:{Id.TransactionId}:{Id.CoinNumber} unspent";
+                ? $"{BlockchainType}:{Id} spent" 
+                : $"{BlockchainType}:{Id} unspent";
         }
     }
 }

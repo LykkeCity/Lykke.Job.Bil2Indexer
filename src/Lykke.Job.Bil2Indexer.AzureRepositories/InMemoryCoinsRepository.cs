@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Lykke.Bil2.Contract.Common;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
@@ -10,11 +10,11 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
 {
     public class InMemoryCoinsRepository : ICoinsRepository
     {
-        private readonly ConcurrentDictionary<(string, CoinReference), Coin> _coins;
+        private readonly ConcurrentDictionary<(string, CoinId), Coin> _coins;
 
         public InMemoryCoinsRepository()
         {
-            _coins = new ConcurrentDictionary<(string, CoinReference), Coin>();
+            _coins = new ConcurrentDictionary<(string, CoinId), Coin>();
         }
 
         public Task SaveAsync(IEnumerable<Coin> coins)
@@ -27,7 +27,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.CompletedTask;
         }
 
-        public Task SpendAsync(string blockchainType, IEnumerable<CoinReference> ids)
+        public Task SpendAsync(string blockchainType, IEnumerable<CoinId> ids)
         {
             foreach (var id in ids)
             {
@@ -61,7 +61,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.CompletedTask;
         }
 
-        public Task RevertSpendingAsync(string blockchainType, IEnumerable<CoinReference> ids)
+        public Task RevertSpendingAsync(string blockchainType, IEnumerable<CoinId> ids)
         {
             foreach (var id in ids)
             {
@@ -95,7 +95,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.CompletedTask;
         }
 
-        public Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IEnumerable<CoinReference> ids)
+        public Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IEnumerable<CoinId> ids)
         {
             var coins = ids
                 .Select(id =>

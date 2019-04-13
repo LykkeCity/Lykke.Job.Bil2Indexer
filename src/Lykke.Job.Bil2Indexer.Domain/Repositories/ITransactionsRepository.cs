@@ -12,14 +12,17 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
         Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(
             string blockchainType, 
             string blockId, 
+            int limit,
             string continuation);
         Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(
             string blockchainType, 
             string blockId, 
+            int limit,
             string continuation);
         Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(
             string blockchainType, 
             string blockId, 
+            int limit,
             string continuation);
         Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType, string transactionId);
         Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionAsync(string blockchainType, string transactionId);

@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Lykke.Bil2.Contract.Common;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
@@ -82,7 +82,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
 
             if (fee == null)
             {
-                throw new InvalidOperationException($"Fee {blockchainType}:{transactionId}:{asset.Id}({asset.Address}) not found");
+                throw new InvalidOperationException($"Fee {blockchainType}:{transactionId}:{asset} not found");
             }
 
             return fee;

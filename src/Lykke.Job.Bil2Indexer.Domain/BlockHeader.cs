@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Bil2.Contract.BlocksReader.Events;
-using Lykke.Bil2.Contract.Common;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain.Infrastructure;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Numerics;
@@ -123,12 +123,13 @@ namespace Lykke.Job.Bil2Indexer.Domain
             
             do
             {
-                var coinsToSpend = new ConcurrentBag<CoinReference>();
+                var coinsToSpend = new ConcurrentBag<CoinId>();
 
                 transactions = await transactionsRepository.GetTransferCoinsTransactionsOfBlockAsync
                 (
                     BlockchainType,
-                    Id,
+                    Id, 
+                    500,
                     transactions?.Continuation
                 );
 
@@ -192,6 +193,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 (
                     BlockchainType,
                     Id,
+                    500,
                     transactions?.Continuation
                 );
 

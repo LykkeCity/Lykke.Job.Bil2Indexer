@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Hangfire;
 using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Bil2.Contract.BlocksReader.Events;
-using Lykke.Bil2.Contract.Common;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
@@ -179,7 +179,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     x => Coin.CreateUnspent
                     (
                         blockchainType,
-                        new CoinReference(evt.TransactionId, x.CoinNumber),
+                        new CoinId(evt.TransactionId, x.CoinNumber),
                         x.Asset,
                         x.Value,
                         x.Address,
