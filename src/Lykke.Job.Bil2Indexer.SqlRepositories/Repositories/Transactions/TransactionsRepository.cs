@@ -61,10 +61,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                         p.BlockchainType == transaction.BlockchainType &&
                         p.TransactionId == transaction.TransactionId);
 
-                    existed.TransactionNumber = transaction.TransactionNumber;
-                    existed.BlockId = transaction.BlockId;
-                    existed.Payload = transaction.Payload;
-                    existed.Type = transaction.Type;
+                    transaction.Id = existed.Id;
+
+                    var entry = db.Entry(existed);
+                    entry.CurrentValues.SetValues(transaction);
 
                     await db.SaveChangesAsync();
                 }
