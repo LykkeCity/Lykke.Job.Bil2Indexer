@@ -9,10 +9,16 @@
   <ItemGroup>
     <PackageReference Include="Lykke.Bil2.Ripple.Client" Version="1.0.0-beta.15" />
     <PackageReference Include="Lykke.Logs" Version="7.2.1" />
+    <PackageReference Include="QBitNinja.Client" Version="1.0.3.47" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lykke.Job.Bil2Indexer.AzureRepositories\Lykke.Job.Bil2Indexer.AzureRepositories.csproj" />
+    <ProjectReference Include="..\..\src\Lykke.Job.Bil2Indexer\Lykke.Job.Bil2Indexer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="BlockchainAdapters\" />
   </ItemGroup>
 
 </Project>
