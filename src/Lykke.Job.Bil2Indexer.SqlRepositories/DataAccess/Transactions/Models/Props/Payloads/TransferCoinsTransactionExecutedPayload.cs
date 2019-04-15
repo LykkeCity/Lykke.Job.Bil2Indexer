@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
 using Lykke.Bil2.Contract.BlocksReader.Events;
-using Lykke.Bil2.Contract.Common;
+using Lykke.Bil2.SharedDomain;
 using Newtonsoft.Json;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props.Payloads
@@ -12,7 +12,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.P
         public IEnumerable<ReceivedCoin> ReceivedCoins { get; set; }
 
         [JsonProperty("spentCoins")]
-        public IEnumerable<CoinReference> SpentCoins { get; set; }
+        public IEnumerable<CoinId> SpentCoins { get; set; }
 
         [CanBeNull]
         [JsonProperty("fees")]

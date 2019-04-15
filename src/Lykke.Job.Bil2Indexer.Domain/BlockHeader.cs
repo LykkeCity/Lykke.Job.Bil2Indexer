@@ -197,8 +197,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     transactions?.Continuation
                 );
 
-                var coinsToRevertSpending = transactions.Items.SelectMany(t => t.SpentCoins);
-                var transactionIds = transactions.Items.Select(t => t.TransactionId);
+                var coinsToRevertSpending = transactions.Items.SelectMany(t => t.SpentCoins).ToList();
+                var transactionIds = transactions.Items.Select(t => t.TransactionId).ToList();
 
                 await Task.WhenAll
                 (

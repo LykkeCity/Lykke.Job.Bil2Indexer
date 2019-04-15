@@ -187,9 +187,9 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         x.AddressTagType,
                         x.AddressNonce
                     )
-                );
+                ).ToList();
 
-            var saveCoinsTask = _coinsRepository.SaveAsync(coins);
+            var saveCoinsTask = _coinsRepository.AddIfNotExistAsync(coins);
 
             var actions = evt.ReceivedCoins
                 .Where(c => c.Address != null)

@@ -17,7 +17,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             _coins = new ConcurrentDictionary<(string, CoinId), Coin>();
         }
 
-        public Task SaveAsync(IEnumerable<Coin> coins)
+        public Task AddIfNotExistAsync(IReadOnlyCollection<Coin> coins)
         {
             foreach (var coin in coins)
             {
@@ -27,7 +27,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.CompletedTask;
         }
 
-        public Task SpendAsync(string blockchainType, IEnumerable<CoinId> ids)
+        public Task SpendAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
             foreach (var id in ids)
             {
@@ -45,7 +45,6 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
                     (
                         oldValue.BlockchainType,
                         oldValue.Id,
-                        oldValue.Version + 1,
                         oldValue.Asset,
                         oldValue.Value,
                         oldValue.Address,
@@ -61,7 +60,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.CompletedTask;
         }
 
-        public Task RevertSpendingAsync(string blockchainType, IEnumerable<CoinId> ids)
+        public Task RevertSpendingAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
             foreach (var id in ids)
             {
@@ -79,7 +78,6 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
                     (
                         oldValue.BlockchainType,
                         oldValue.Id,
-                        oldValue.Version + 1,
                         oldValue.Asset,
                         oldValue.Value,
                         oldValue.Address,
@@ -95,7 +93,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.CompletedTask;
         }
 
-        public Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IEnumerable<CoinId> ids)
+        public Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
             var coins = ids
                 .Select(id =>
@@ -110,7 +108,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult<IReadOnlyCollection<Coin>>(coins);
         }
 
-        public Task RemoveIfExistAsync(string blockchainType, IEnumerable<string> receivedInTransactionIds)
+        public Task RemoveIfExistAsync(string blockchainType, IReadOnlyCollection<string> receivedInTransactionIds)
         {
             var transactionIds = receivedInTransactionIds.ToHashSet();
 

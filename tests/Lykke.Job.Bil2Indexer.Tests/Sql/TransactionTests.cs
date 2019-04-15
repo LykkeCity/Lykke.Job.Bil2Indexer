@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Common;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.Contract.Common;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions;
 using Lykke.Logs;
 using Lykke.Numerics;
@@ -124,7 +125,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                     BuildRandmonReceivedCoin(),
                     BuildRandmonReceivedCoin()
 
-                }, new List<CoinReference>()
+                }, new List<CoinId>()
                 {
                     BuildRandmomSpentCoin(),
                     BuildRandmomSpentCoin(),
@@ -146,20 +147,21 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 new UMoney(new BigInteger(rnd.Next()), 12));
         }
 
-        private CoinReference BuildRandmomSpentCoin()
+        private CoinId BuildRandmomSpentCoin()
         {
             var rnd = new Random();
 
-            return new CoinReference(Guid.NewGuid().ToString(), rnd.Next());
+            return new CoinId(Guid.NewGuid().ToString(), rnd.Next());
         }
 
         private Fee BuildRandmomFee()
         {
             var rnd = new Random();
-
+            
             return new Fee(new Asset(new AssetId(Guid.NewGuid().ToString())),
                 new UMoney(new BigInteger(rnd.Next()), 123));
         }
+
         private TransactionsRepository BuildRepo()
         {
             return new TransactionsRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);

@@ -1,19 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Z.EntityFramework.Plus;
-
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 {
     public class TransactionsRepository: ITransactionsRepository
@@ -54,7 +51,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 }
                 catch (DbUpdateException e) when (IsConstraintViolationException(e))
                 {
-                    _log.Info("Transaction already exists. Skipping", context: transaction, exception: e);
+                    _log.Info("Transaction already exists. Updating", context: transaction, exception: e);
 
                     db.Entry(transaction).State = EntityState.Detached;
                     
@@ -99,17 +96,17 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             }
         }
 
-        public async Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
+        public async Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(string blockchainType, string blockId, int limit, string continuation)
         {
             return await GetPagedAsync(blockchainType, blockId, continuation, p => p.MapToCoinExecuted());
         }
 
-        public async Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
+        public async Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(string blockchainType, string blockId, int limit, string continuation)
         {
             return await GetPagedAsync(blockchainType, blockId, continuation, p => p.MapToTransferAmountExecuted());
         }
 
-        public async Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
+        public async Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType, string blockId, int limit, string continuation)
         {
             return await GetPagedAsync(blockchainType, blockId, continuation, p => p.MapToFailed());
         }

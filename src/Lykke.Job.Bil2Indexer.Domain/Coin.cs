@@ -9,9 +9,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public string BlockchainType { get; }
 
         public CoinId Id { get; }
-
-        public long Version { get; }
-
+        
         public Asset Asset { get; }
 
         public UMoney Value { get; }
@@ -33,7 +31,6 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public Coin(
             string blockchainType,
             CoinId id,
-            long version,
             Asset asset,
             UMoney value,
             Address address,
@@ -44,7 +41,6 @@ namespace Lykke.Job.Bil2Indexer.Domain
         {
             BlockchainType = blockchainType;
             Id = id;
-            Version = version;
             Asset = asset;
             Value = value;
             Address = address;
@@ -68,7 +64,6 @@ namespace Lykke.Job.Bil2Indexer.Domain
             (
                 blockchainType: blockchainType,
                 id: id,
-                version: 0,
                 asset: asset,
                 value: value,
                 address: address,

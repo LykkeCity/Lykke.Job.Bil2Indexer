@@ -69,7 +69,7 @@
 //            if (blockExpectation == null)
 //            {
 //                blockExpectation = new BlockExpectation(_startBlock);
-//                await _crawlersRepository.SaveAsync(_blockchainType, Id, blockExpectation);
+//                await _crawlersRepository.AddIfNotExistAsync(_blockchainType, Id, blockExpectation);
 //            }
             
 //            await _blocksReaderApi.SendAsync(new ReadBlockCommand(blockExpectation.Number));
@@ -125,8 +125,8 @@
 
 //            await Task.WhenAll
 //            (
-//                _blockHeadersRepository.SaveAsync(block),
-//                _crawlersRepository.SaveAsync(TODO, Id, nextBlockExpectation)
+//                _blockHeadersRepository.AddIfNotExistAsync(block),
+//                _crawlersRepository.AddIfNotExistAsync(TODO, Id, nextBlockExpectation)
 //            );
 
 //            _chaosKitty.Meow(block.Id);
@@ -193,14 +193,14 @@
 
 //            var removePreviousBlockTask = _blockHeadersRepository.RemoveAsync(previousBlock);
 //            var markPreviousBlockAsNotProcessedTask = _blocksDeduplicationRepository.MarkAsNotProcessedAsync(previousBlock.Id);
-//            var saveBlockTask = _blockHeadersRepository.SaveAsync(block);
+//            var saveBlockTask = _blockHeadersRepository.AddIfNotExistAsync(block);
 
 //            await Task.WhenAll
 //            (
 //                removePreviousBlockTask,
 //                markPreviousBlockAsNotProcessedTask,
 //                saveBlockTask,
-//                _crawlersRepository.SaveAsync(TODO, Id, nextBlockToRead)
+//                _crawlersRepository.AddIfNotExistAsync(TODO, Id, nextBlockToRead)
 //            );
 
 //            _chaosKitty.Meow(block.Id);
