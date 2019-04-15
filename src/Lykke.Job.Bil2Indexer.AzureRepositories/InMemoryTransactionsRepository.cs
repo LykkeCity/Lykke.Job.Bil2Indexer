@@ -89,8 +89,9 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
         }
 
         public Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(
-            string blockchainType, 
-            string blockId, 
+            string blockchainType,
+            string blockId,
+            int limit,
             string continuation)
         {
             if (_storage.TryGetValue((blockchainType, blockId), out var blockTransactions))
@@ -108,12 +109,14 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult(PaginatedItems<TransferCoinsTransactionExecutedEvent>.Empty);
         }
 
-        public Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
+        public Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(
+            string blockchainType, string blockId, int limit, string continuation)
         {
             throw new NotImplementedException();
         }
 
-        public Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType, string blockId, string continuation)
+        public Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType,
+            string blockId, int limit, string continuation)
         {
             throw new NotImplementedException();
         }

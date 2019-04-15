@@ -1,6 +1,4 @@
-﻿using Lykke.Job.Bil2Indexer.Domain;
-
-namespace Lykke.Job.Bil2Indexer.Workflow.Commands
+﻿namespace Lykke.Job.Bil2Indexer.Workflow.Commands
 {
     public class RollbackBlockCommand
     {

@@ -3,7 +3,6 @@ using Lykke.Job.Bil2Indexer.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using Lykke.Logs;
 using Lykke.Logs.Loggers.LykkeSlack;
 using Lykke.Sdk;
 

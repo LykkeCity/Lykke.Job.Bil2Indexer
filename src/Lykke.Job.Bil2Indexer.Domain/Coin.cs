@@ -1,6 +1,5 @@
-﻿using System;
-using JetBrains.Annotations;
-using Lykke.Bil2.Contract.Common;
+﻿using JetBrains.Annotations;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Numerics;
 
 namespace Lykke.Job.Bil2Indexer.Domain
@@ -9,7 +8,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
     {
         public string BlockchainType { get; }
 
-        public CoinReference Id { get; }
+        public CoinId Id { get; }
 
         public long Version { get; }
 
@@ -29,14 +28,11 @@ namespace Lykke.Job.Bil2Indexer.Domain
         [CanBeNull]
         public long? AddressNonce { get; }
 
-        [CanBeNull]
-        public string SpentByTransactionId { get; private set; }
-
-        private bool IsSpent => SpentByTransactionId != null;
+        public bool IsSpent { get; private set; }
 
         public Coin(
             string blockchainType,
-            CoinReference id,
+            CoinId id,
             long version,
             Asset asset,
             UMoney value,
@@ -44,7 +40,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             AddressTag addressTag,
             AddressTagType? addressTagType,
             long? addressNonce,
-            string spentByTransactionId)
+            bool isSpent)
         {
             BlockchainType = blockchainType;
             Id = id;
@@ -55,12 +51,12 @@ namespace Lykke.Job.Bil2Indexer.Domain
             AddressTag = addressTag;
             AddressTagType = addressTagType;
             AddressNonce = addressNonce;
-            SpentByTransactionId = spentByTransactionId;
+            IsSpent = isSpent;
         }
 
         public static Coin CreateUnspent(
             string blockchainType,
-            CoinReference id,
+            CoinId id,
             Asset asset,
             UMoney value,
             Address address,
@@ -79,43 +75,15 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 addressTag: addressTag,
                 addressTagType: addressTagType,
                 addressNonce: addressNonce,
-                spentByTransactionId: null
+                isSpent: false
             );
-        }
-
-        public void SpendBy(string transactionId)
-        {
-            if (IsSpent)
-            {
-                EnsureSpentBy(transactionId);
-            }
-
-            SpentByTransactionId = transactionId;
-        }
-
-        public void RevertSpendingBy(string transactionId)
-        {
-            if (IsSpent)
-            {
-                EnsureSpentBy(transactionId);
-            }
-
-            SpentByTransactionId = null;
         }
 
         public override string ToString()
         {
             return IsSpent 
-                ? $"{BlockchainType}:{Id.TransactionId}:{Id.CoinNumber} spent by {SpentByTransactionId}" 
-                : $"{BlockchainType}:{Id.TransactionId}:{Id.CoinNumber} unspent";
-        }
-
-        private void EnsureSpentBy(string transactionId)
-        {
-            if(SpentByTransactionId != transactionId)
-            {
-                throw new InvalidOperationException($"Coin {this} can't be spent by transaction {transactionId}, because it already was spent by transaction {SpentByTransactionId}.");
-            }
+                ? $"{BlockchainType}:{Id} spent" 
+                : $"{BlockchainType}:{Id} unspent";
         }
     }
 }
