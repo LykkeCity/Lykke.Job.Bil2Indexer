@@ -7,6 +7,7 @@ using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers;
 using Microsoft.EntityFrameworkCore;

@@ -1,7 +1,7 @@
 ﻿using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions
 {
     public class TransactionsDataContext : DbContext
     {
