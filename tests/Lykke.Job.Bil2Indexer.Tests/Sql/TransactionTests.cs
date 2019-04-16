@@ -23,7 +23,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var evt = BuildRandomTransferCoinsTransactionExecutedEvent();
 
             var btype = Guid.NewGuid().ToString();
-            await repo.SaveAsync(btype, evt);
+            await repo.AddIfNotExistsAsync(btype, evt);
 
             var retrieved = await repo.GetTransferCoinsTransactionAsync(btype, evt.TransactionId);
 
@@ -43,8 +43,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var evt2 = BuildRandomTransferCoinsTransactionExecutedEvent(evt.TransactionId);
 
             var btype = Guid.NewGuid().ToString();
-            await repo.SaveAsync(btype, evt);
-            await repo.SaveAsync(btype, evt2);
+            await repo.AddIfNotExistsAsync(btype, evt);
+            await repo.AddIfNotExistsAsync(btype, evt2);
 
             var retrieved = await repo.GetTransferCoinsTransactionAsync(btype, evt.TransactionId);
 
@@ -69,7 +69,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var evt = BuildRandomTransferCoinsTransactionExecutedEvent();
 
             var btype = Guid.NewGuid().ToString();
-            await repo.SaveAsync(btype, evt);
+            await repo.AddIfNotExistsAsync(btype, evt);
 
             var retrieved = await repo.GetTransferCoinsTransactionOrDefaultAsync(btype, evt.TransactionId);
             
@@ -96,7 +96,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             {
                 var evt = BuildRandomTransferCoinsTransactionExecutedEvent(blockId: blockId);
 
-                await repo.SaveAsync(btype, evt);
+                await repo.AddIfNotExistsAsync(btype, evt);
 
                 ctr++;
             } while (ctr<insertedCount);

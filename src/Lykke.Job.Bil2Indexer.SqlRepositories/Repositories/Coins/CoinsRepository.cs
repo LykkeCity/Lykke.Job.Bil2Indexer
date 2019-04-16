@@ -117,9 +117,15 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
             }
         }
 
-        public Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds)
+        public async Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds)
         {
-            throw new NotImplementedException();
+            var ids = receivedInTransactionIds.Select(p => p.ToString()).ToList();
+
+            using (var db = new BlockchainDataContext(_posgresConnString))
+            {
+                await db.Coins.Where(p => ids.Any(x => x == p.TransactionId))
+                    .UpdateAsync(p => new CoinEntity {IsDeleted = true});
+            }
         }
 
         private Expression<Func<CoinEntity, bool>> BuildPredicate(string blockchainType, IReadOnlyCollection<CoinId> ids)

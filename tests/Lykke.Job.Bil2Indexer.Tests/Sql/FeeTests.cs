@@ -38,9 +38,9 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var repo = new FeeEnvelopesRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
 
-            await repo.SaveAsync(fees);
-            await repo.SaveAsync(fees);
-            await repo.SaveAsync(fees);
+            await repo.AddIfNotExistsAsync(fees);
+            await repo.AddIfNotExistsAsync(fees);
+            await repo.AddIfNotExistsAsync(fees);
 
 
             foreach (var feeEnvelope in fees)
