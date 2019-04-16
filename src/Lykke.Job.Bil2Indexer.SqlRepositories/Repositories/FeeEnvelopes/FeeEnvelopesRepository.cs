@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Numerics;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.SharedDomain;
@@ -12,7 +11,7 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
-using Lykke.Numerics;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Z.EntityFramework.Plus;
 
@@ -172,14 +171,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         private static FeeEnvelope Map(FeeEnvelopeEntity source)
         {
-            var money =  UMoney.Round(UMoney.Parse(source.Value.ToString(CultureInfo.InvariantCulture)
-                .Replace(",", ".")), 
-                source.ValueScale);
-
             return new FeeEnvelope(source.BlockchainType, 
                 source.BlockId, 
                 source.TransactionId, 
-                new Fee(new Asset(source.AssetId, source.AssetAddress), money));
+                new Fee(new Asset(source.AssetId, source.AssetAddress), 
+                    MoneyHelper.BuildUMoney(source.Value.ToString(CultureInfo.InvariantCulture), 
+                        source.ValueScale)));
         }
 
 
