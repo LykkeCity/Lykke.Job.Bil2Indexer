@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Lykke.Bil2.SharedDomain;
 
 namespace Lykke.Job.Bil2Indexer.Domain.Repositories
 {
@@ -6,8 +7,8 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
     {
         Task SaveAsync(BlockHeader block);
         Task<BlockHeader> GetOrDefaultAsync(string blockchainType, long blockNumber);
-        Task<BlockHeader> GetOrDefaultAsync(string blockchainType, string blockId);
-        Task<BlockHeader> GetAsync(string blockchainType, string blockId);
-        Task TryRemoveAsync(string blockchainType, string blockId);
+        Task<BlockHeader> GetOrDefaultAsync(string blockchainType, BlockId blockId);
+        Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId);
+        Task TryRemoveAsync(string blockchainType, BlockId blockId);
     }
 }

@@ -20,7 +20,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             _blocksFees = new ConcurrentDictionary<(string, string), ConcurrentDictionary<Asset, FeeEnvelope>>();
         }
 
-        public Task SaveAsync(IEnumerable<FeeEnvelope> fees)
+        public Task AddIfNotExistsAsync(IEnumerable<FeeEnvelope> fees)
         {
             foreach (var fee in fees)
             {
@@ -64,7 +64,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.CompletedTask;
         }
 
-        public Task<FeeEnvelope> GetOrDefaultAsync(string blockchainType, string transactionId, Asset asset)
+        public Task<FeeEnvelope> GetOrDefaultAsync(string blockchainType, TransactionId transactionId, Asset asset)
         {
             if (_transactionsFees.TryGetValue((blockchainType, transactionId), out var transactionFees))
             {
@@ -76,7 +76,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult(default(FeeEnvelope));
         }
 
-        public Task<FeeEnvelope> GetAsync(string blockchainType, string transactionId, Asset asset)
+        public Task<FeeEnvelope> GetAsync(string blockchainType, TransactionId transactionId, Asset asset)
         {
             var fee = GetOrDefaultAsync(blockchainType, transactionId, asset);
 
@@ -88,17 +88,19 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return fee;
         }
 
-        public Task<PaginatedItems<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, string transactionId, long limit, string continuation)
+        public Task<IReadOnlyCollection<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType,
+            TransactionId transactionId)
         {
             if (_transactionsFees.TryGetValue((blockchainType, transactionId), out var transactionFees))
             {
-                return Task.FromResult(PaginatedItems.From(null, transactionFees.Values.ToArray()));
+                return Task.FromResult<IReadOnlyCollection<FeeEnvelope>>(transactionFees.Values.ToArray());
             }
 
-            return Task.FromResult(PaginatedItems<FeeEnvelope>.Empty);
+            return Task.FromResult<IReadOnlyCollection<FeeEnvelope>>(Array.Empty<FeeEnvelope>());
         }
 
-        public Task<PaginatedItems<FeeEnvelope>> GetBlockFeesAsync(string blockchainType, string blockId, long limit, string continuation)
+        public Task<PaginatedItems<FeeEnvelope>> GetBlockFeesAsync(string blockchainType, BlockId blockId, long limit,
+            string continuation)
         {
             if (_blocksFees.TryGetValue((blockchainType, blockId), out var blockFees))
             {
@@ -108,7 +110,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult(PaginatedItems<FeeEnvelope>.Empty);
         }
 
-        public Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId)
+        public Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
             if (_blocksFees.TryGetValue((blockchainType, blockId), out var blockFees))
             {

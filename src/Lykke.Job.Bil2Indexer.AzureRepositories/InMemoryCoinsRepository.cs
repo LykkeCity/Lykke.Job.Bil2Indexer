@@ -17,7 +17,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             _coins = new ConcurrentDictionary<(string, CoinId), Coin>();
         }
 
-        public Task SaveAsync(IEnumerable<Coin> coins)
+        public Task AddIfNotExistsAsync(IEnumerable<Coin> coins)
         {
             foreach (var coin in coins)
             {
@@ -45,7 +45,6 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
                     (
                         oldValue.BlockchainType,
                         oldValue.Id,
-                        oldValue.Version + 1,
                         oldValue.Asset,
                         oldValue.Value,
                         oldValue.Address,
@@ -79,7 +78,6 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
                     (
                         oldValue.BlockchainType,
                         oldValue.Id,
-                        oldValue.Version + 1,
                         oldValue.Asset,
                         oldValue.Value,
                         oldValue.Address,
@@ -110,11 +108,9 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult<IReadOnlyCollection<Coin>>(coins);
         }
 
-        public Task RemoveIfExistAsync(string blockchainType, IEnumerable<string> receivedInTransactionIds)
+        public Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds)
         {
-            var transactionIds = receivedInTransactionIds.ToHashSet();
-
-            var idsToRemove = _coins.Values.Where(x => transactionIds.Contains(x.Id.TransactionId)).Select(x => x.Id);
+            var idsToRemove = _coins.Values.Where(x => receivedInTransactionIds.Contains(x.Id.TransactionId)).Select(x => x.Id);
 
             foreach (var id in idsToRemove)
             {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.Contract.BlocksReader.Events;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
@@ -35,7 +36,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             _storage = new ConcurrentDictionary<(string, string), BlockTransactions>();
         }
 
-        public Task SaveAsync(string blockchainType, TransferAmountTransactionExecutedEvent transaction)
+        public Task AddIfNotExistsAsync(string blockchainType, TransferAmountTransactionExecutedEvent transaction)
         {
             SaveTransaction
             (
@@ -48,7 +49,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.CompletedTask;
         }
 
-        public Task SaveAsync(string blockchainType, TransferCoinsTransactionExecutedEvent transaction)
+        public Task AddIfNotExistsAsync(string blockchainType, TransferCoinsTransactionExecutedEvent transaction)
         {
             SaveTransaction
             (
@@ -61,7 +62,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.CompletedTask;
         }
 
-        public Task SaveAsync(string blockchainType, TransactionFailedEvent transaction)
+        public Task AddIfNotExistsAsync(string blockchainType, TransactionFailedEvent transaction)
         {
             SaveTransaction
             (
@@ -74,7 +75,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.CompletedTask;
         }
 
-        public Task<int> CountInBlockAsync(string blockchainType, string blockId)
+        public Task<int> CountInBlockAsync(string blockchainType, BlockId blockId)
         {
             if (!_storage.TryGetValue((blockchainType, blockId), out var blockTransactions))
             {
@@ -90,7 +91,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
 
         public Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(
             string blockchainType,
-            string blockId,
+            BlockId blockId,
             int limit,
             string continuation)
         {
@@ -110,48 +111,54 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
         }
 
         public Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(
-            string blockchainType, string blockId, int limit, string continuation)
+            string blockchainType, BlockId blockId, int limit, string continuation)
         {
             throw new NotImplementedException();
         }
 
         public Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType,
-            string blockId, int limit, string continuation)
+            BlockId blockId, int limit, string continuation)
         {
             throw new NotImplementedException();
         }
 
-        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType, string transactionId)
+        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType,
+            TransactionId transactionId)
         {
             throw new NotImplementedException();
         }
 
-        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionAsync(string blockchainType, string transactionId)
+        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionAsync(string blockchainType,
+            TransactionId transactionId)
         {
             throw new NotImplementedException();
         }
 
-        public Task<TransactionFailedEvent> GetFailedTransactionAsync(string blockchainType, string transactionId)
+        public Task<TransactionFailedEvent> GetFailedTransactionAsync(string blockchainType,
+            TransactionId transactionId)
         {
             throw new NotImplementedException();
         }
 
-        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionOrDefaultAsync(
+            string blockchainType, TransactionId transactionId)
         {
             throw new NotImplementedException();
         }
 
-        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionOrDefaultAsync(
+            string blockchainType, TransactionId transactionId)
         {
             throw new NotImplementedException();
         }
 
-        public Task<TransactionFailedEvent> GetFailedTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        public Task<TransactionFailedEvent> GetFailedTransactionOrDefaultAsync(string blockchainType,
+            TransactionId transactionId)
         {
             throw new NotImplementedException();
         }
 
-        public Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId)
+        public Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
             if (_storage.TryRemove((blockchainType, blockId), out _))
             {
