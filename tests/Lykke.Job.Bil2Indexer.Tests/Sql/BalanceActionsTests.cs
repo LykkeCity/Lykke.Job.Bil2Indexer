@@ -37,6 +37,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             await repo.AddIfNotExistAsync(bType, actions);
             await repo.AddIfNotExistAsync(bType, actions);
+
+            var t = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);
         }
 
         private BalanceAction BuildRandomBalanceAction(Asset asset, Address address, int scale)

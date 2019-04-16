@@ -13,8 +13,4 @@
     <ProjectReference Include="..\Lykke.Job.Bil2Indexer.Domain\Lykke.Job.Bil2Indexer.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DataAccess\FeeEnvelopes\Models\" />
-  </ItemGroup>
-
 </Project>

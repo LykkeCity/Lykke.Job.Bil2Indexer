@@ -90,9 +90,24 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             }
         }
 
-        public Task<Money> GetBalanceAsync(string blockchainType, Address address, Asset asset, long atBlockNumber)
+        public async Task<Money> GetBalanceAsync(string blockchainType, Address address, Asset asset, long atBlockNumber)
         {
-            throw new NotImplementedException();
+            using (var db = new BlockchainDataContext(_posgresConnstring))
+            {
+                var queryRes = (await db.BalanceActions.Where(p =>
+                        p.BlockchainType == blockchainType 
+                        && p.BlockNumber <= atBlockNumber 
+                        && p.Address == address 
+                        && p.AssetId == asset.Id)
+                    .GroupBy(p=>p.AssetId)
+                    .Select(p => new
+                    {
+                        Sum = p.Sum(x => x.Value).ToString(),
+                        Scale = p.First().ValueScale
+                    }).ToListAsync()).FirstOrDefault();
+
+                return queryRes != null ? Money.Parse(queryRes.Sum) : Money.Parse("0");
+            }
         }
 
         public Task<IReadOnlyDictionary<Asset, Money>> GetBalancesAsync(string blockchainType, Address address, long atBlockNumber)
@@ -111,6 +126,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 BlockId = source.BlockId,
                 BlockNumber = source.BlockNumber,
                 ValueScale = source.Amount.Scale,
+                Value = 1,
                 //Value = ??
                 Address = source.Address,
             };

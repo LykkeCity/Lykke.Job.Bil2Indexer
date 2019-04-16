@@ -61,7 +61,7 @@ create unique index balance_actions_blockchain_type_asset_id_transaction_id_uind
     on balance_actions (blockchain_type, asset_id, transaction_id);
 
 create index balance_actions_blockchain_type_address_block_number_asset_id_v
-    on balance_actions (blockchain_type asc, address asc, block_number desc, asset_id asc, value asc);
+    on balance_actions (blockchain_type asc, address asc, block_number desc, asset_id asc, value);
 
 
     
