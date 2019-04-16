@@ -63,6 +63,15 @@ create unique index balance_actions_blockchain_type_asset_id_transaction_id_uind
 create index balance_actions_blockchain_type_address_block_number_asset_id_v
     on balance_actions (blockchain_type asc, address asc, block_number desc, asset_id asc, value);
 
+create table assets
+(
+	blockchain_type text not null,
+	id text not null,
+	scale int not null,
+	constraint assets_pk
+		primary key (blockchain_type, id)
+);
+
 
     
 COMMIT;

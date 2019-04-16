@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes;
+using Lykke.Job.Bil2Indexer.Tests.Sql.Mocks;
 using Lykke.Logs;
 using Lykke.Numerics;
 using NUnit.Framework;

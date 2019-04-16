@@ -43,7 +43,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 {
                     await db.SaveChangesAsync();
                 }
-                catch (DbUpdateException e)
+                catch (DbUpdateException e) when (e.IsConstraintViolationException())
                 {
                     string BuildId(string bType, string transactionId, string assetId)
                     {

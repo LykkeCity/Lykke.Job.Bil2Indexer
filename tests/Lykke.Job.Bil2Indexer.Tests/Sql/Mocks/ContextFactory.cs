@@ -4,7 +4,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Lykke.Job.Bil2Indexer.Tests.Sql
+namespace Lykke.Job.Bil2Indexer.Tests.Sql.Mocks
 {
     public static class ContextFactory
     {
