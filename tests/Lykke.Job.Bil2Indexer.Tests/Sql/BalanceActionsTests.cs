@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
@@ -30,16 +31,22 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var max = 99;
             var ctr = 0;
 
+            var sum = Money.Parse("0");
             do
             {
-                actions.Add(BuildRandomBalanceAction(asset, address, scale));
+                var act = BuildRandomBalanceAction(asset, address, scale);
+                actions.Add(act);
+
+                sum = Money.Add(sum, act.Amount);
                 ctr++;
             } while (ctr<=max);
 
             await repo.AddIfNotExistsAsync(bType, actions);
             await repo.AddIfNotExistsAsync(bType, actions);
 
-            var t = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);
+            var retrievedSum = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);
+
+            Assert.AreEqual(sum, retrievedSum);
         }
 
         private BalanceAction BuildRandomBalanceAction(Asset asset, Address address, int scale)

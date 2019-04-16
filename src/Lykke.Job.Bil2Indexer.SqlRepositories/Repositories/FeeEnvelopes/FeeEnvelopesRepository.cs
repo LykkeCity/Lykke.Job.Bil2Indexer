@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
@@ -171,10 +172,14 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         private static FeeEnvelope Map(FeeEnvelopeEntity source)
         {
+            var money =  UMoney.Round(UMoney.Parse(source.Value.ToString(CultureInfo.InvariantCulture)
+                .Replace(",", ".")), 
+                source.ValueScale);
+
             return new FeeEnvelope(source.BlockchainType, 
                 source.BlockId, 
                 source.TransactionId, 
-                new Fee(new Asset(source.AssetId, source.AssetAddress), new UMoney(new BigInteger(source.Value), source.ValueScale)));
+                new Fee(new Asset(source.AssetId, source.AssetAddress), money));
         }
 
 
@@ -187,7 +192,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 AssetAddress = source.Fee.Asset.Address,
                 AssetId = source.Fee.Asset.Id,
                 BlockId = source.BlockId,
-                ValueScale = source.Fee.Amount.Scale
+                ValueScale = source.Fee.Amount.Scale,
+                Value = (decimal) source.Fee.Amount
             };
         }
 

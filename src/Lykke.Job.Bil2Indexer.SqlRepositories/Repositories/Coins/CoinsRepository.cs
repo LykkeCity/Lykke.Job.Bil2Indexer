@@ -144,7 +144,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         private static CoinEntity Map(Coin source)
         {
-            //throw new ArgumentException("Value mapping");
 
             return new CoinEntity
             {
@@ -158,7 +157,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                 AssetAddress = source.Asset.Address,
                 IsSpent = source.IsSpent,
                 AssetId = source.Asset.Id,
-                ValueScale = source.Value.Scale
+                ValueScale = source.Value.Scale,
+                Value = (decimal) source.Value
             };
 
 

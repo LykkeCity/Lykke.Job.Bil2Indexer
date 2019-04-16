@@ -107,7 +107,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                         Scale = p.First().ValueScale
                     }).ToListAsync()).FirstOrDefault();
 
-                return queryRes != null ? Money.Parse(queryRes.Sum) : Money.Parse("0");
+                return queryRes != null ? Money.Round(Money.Parse(queryRes.Sum.Replace(",", ".")), queryRes.Scale) : Money.Parse("0");
             }
         }
 
@@ -132,8 +132,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 BlockId = source.BlockId,
                 BlockNumber = source.BlockNumber,
                 ValueScale = source.Amount.Scale,
-                Value = 1,
-                //Value = ??
+                Value = (decimal) source.Amount,
                 Address = source.AccountId.Address,
             };
         }

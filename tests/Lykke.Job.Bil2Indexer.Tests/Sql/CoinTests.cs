@@ -129,8 +129,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.AreEqual(a.Asset, b.Asset);
             Assert.AreEqual(a.IsSpent, b.IsSpent);
             Assert.AreEqual(a.BlockchainType, b.BlockchainType);
-            //Assert.AreEqual(a.Value, b.Value);
-
+            Assert.AreEqual(a.Value, b.Value);
         }
 
         private Coin GenerateRandom(string blockchainType)
