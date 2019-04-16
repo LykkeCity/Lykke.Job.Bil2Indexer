@@ -24,7 +24,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var address = BuildRandmomAddress();
             var asset = BuildRandmomAsset();
-            var scale = 8;
+            var scale = new Random().Next(0, 15);
             var bType = Guid.NewGuid().ToString();
             
             var actions = new List<BalanceAction>();
