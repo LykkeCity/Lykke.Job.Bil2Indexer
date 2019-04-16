@@ -116,7 +116,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             throw new NotImplementedException();
         }
 
-        public Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetBalancesAsync(string blockchainType, ISet<TransactionId> transactionIds, long atBlockNumber)
+        public Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetSomeOfBalancesAsync(
+            string blockchainType, 
+            ISet<TransactionId> transactionIds)
         {
             throw new NotImplementedException();
         }
