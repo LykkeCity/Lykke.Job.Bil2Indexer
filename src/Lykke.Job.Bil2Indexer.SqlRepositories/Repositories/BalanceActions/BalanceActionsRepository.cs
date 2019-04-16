@@ -126,12 +126,13 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                     {
                         Sum = p.Sum(x => x.Value).ToString(CultureInfo.InvariantCulture),
                         Scale = p.First().ValueScale,
-                        p.First().AssetId
+                        p.First().AssetId,
+                        p.First().AssetAddress
                     }).ToListAsync();
 
 
                 return queryRes.ToDictionary(
-                        p => new Asset(new AssetId(p.AssetId)), 
+                        p => new Asset(new AssetId(p.AssetId), new AssetAddress(p.AssetAddress)), 
                         p => MoneyHelper.BuildMoney(p.Sum, p.Scale));
             }
         }
