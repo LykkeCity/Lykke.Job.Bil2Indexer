@@ -1,11 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <Version>1.0.0</Version>
     <Authors>Lykke</Authors>
     <Company>Lykke</Company>
-    <Description>Contract for the Lykke.Job.Bil2Indexer</Description>
+    <Description>Client for the Lykke.Service.Bil2Indexer</Description>
     <PackageLicenseUrl>https://github.com/LykkeCity/Lykke.Job.Bil2Indexer/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/LykkeCity/Lykke.Job.Bil2Indexer</PackageProjectUrl>
     <PackageIconUrl>https://avatars3.githubusercontent.com/u/14153330?v=3&amp;amp;s=200</PackageIconUrl>
@@ -15,25 +14,28 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netcoreapp2.2\Lykke.Job.Bil2Indexer.Contract.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netcoreapp2.2\Lykke.Service.Bil2Indexer.Contract.xml</DocumentationFile>
     <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netcoreapp2.2\Lykke.Job.Bil2Indexer.Contract.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netcoreapp2.2\Lykke.Service.Bil2Indexer.Contract.xml</DocumentationFile>
     <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup Label="dotnet pack instructions">
-    <Content Include="$(OutputPath)Lykke.Job.Bil2Indexer.Contract.pdb">
+    <Content Include="$(OutputPath)Lykke.Service.Bil2Indexer.Contract.pdb">
       <Pack>true</Pack>
       <PackagePath>lib/netcoreapp2.2</PackagePath>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2018.3.0" />
-    <PackageReference Include="Lykke.Bil2.SharedDomain" Version="1.0.0-beta.6" />
+    <PackageReference Include="Lykke.HttpClientGenerator" Version="2.5.0" />
+    <PackageReference Include="Lykke.SettingsReader" Version="5.1.0" />
+    <PackageReference Include="Refit" Version="4.6.107" />
   </ItemGroup>
-
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
 </Project>
