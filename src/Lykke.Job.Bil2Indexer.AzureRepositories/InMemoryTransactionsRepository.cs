@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
@@ -116,10 +117,10 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             throw new NotImplementedException();
         }
 
-        public Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType,
+        public async Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType,
             BlockId blockId, int limit, string continuation)
         {
-            throw new NotImplementedException();
+            return new PaginatedItems<TransactionFailedEvent>(null, new List<TransactionFailedEvent>(){});
         }
 
         public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType,
