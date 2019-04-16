@@ -36,7 +36,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         }
 
         [Test]
-        public async Task CanUpdate()
+        public async Task DoNotUpdates()
         {
             var repo = BuildRepo();
 
@@ -49,16 +49,10 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var retrieved = await repo.GetTransferCoinsTransactionAsync(btype, evt.TransactionId);
 
-            Assert.AreNotEqual(evt.BlockId, retrieved.BlockId);
-            Assert.AreNotEqual(evt.Fees.ToJson(), retrieved.Fees.ToJson());
-            Assert.AreNotEqual(evt.ReceivedCoins.ToJson(), retrieved.ReceivedCoins.ToJson());
-            Assert.AreNotEqual(evt.SpentCoins.ToJson(), retrieved.SpentCoins.ToJson());
-
-            Assert.AreEqual(evt2.BlockId, retrieved.BlockId);
-            Assert.AreEqual(evt2.TransactionId, retrieved.TransactionId);
-            Assert.AreEqual(evt2.Fees.ToJson(), retrieved.Fees.ToJson());
-            Assert.AreEqual(evt2.ReceivedCoins.ToJson(), retrieved.ReceivedCoins.ToJson());
-            Assert.AreEqual(evt2.SpentCoins.ToJson(), retrieved.SpentCoins.ToJson());
+            Assert.AreEqual(evt.BlockId, retrieved.BlockId);
+            Assert.AreEqual(evt.Fees.ToJson(), retrieved.Fees.ToJson());
+            Assert.AreEqual(evt.ReceivedCoins.ToJson(), retrieved.ReceivedCoins.ToJson());
+            Assert.AreEqual(evt.SpentCoins.ToJson(), retrieved.SpentCoins.ToJson());
         }
 
 

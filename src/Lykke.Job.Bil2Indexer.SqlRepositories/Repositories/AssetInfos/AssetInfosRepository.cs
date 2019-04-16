@@ -75,7 +75,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
             {
                 var entities = await db.AssetInfos
                     .Where(p => p.BlockchainType == blockchainType
-                                      && stringIds.Any(x=>x==p.Id))
+                                      && stringIds.Any(x => x == p.Id))
                     .ToListAsync();
 
                 return entities.Select(Map).ToList();
