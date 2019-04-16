@@ -20,4 +20,5 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ProjectExtensions><VisualStudio><UserProperties Properties_4launchSettings_1json__JSONSchema="http://json.schemastore.org/openfin" /></VisualStudio></ProjectExtensions>
 </Project>

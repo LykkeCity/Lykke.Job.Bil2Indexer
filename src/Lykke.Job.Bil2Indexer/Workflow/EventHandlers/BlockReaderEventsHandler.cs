@@ -133,7 +133,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     )
                 );
             
-            var saveBalanceActionsTask = _balanceActionsRepository.SaveAsync(blockchainType, actions);
+            var saveBalanceActionsTask = _balanceActionsRepository.AddIfNotExistAsync(blockchainType, actions);
 
             var fees = evt.Fees
                 .Select
@@ -145,7 +145,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         evt.TransactionId,
                         x
                     )
-                );
+                ).ToList();
 
             await Task.WhenAll
             (
@@ -210,7 +210,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             (
                 saveTransactionTask,
                 saveCoinsTask,
-                _balanceActionsRepository.SaveAsync(blockchainType, actions)
+                _balanceActionsRepository.AddIfNotExistAsync(blockchainType, actions)
             );
         }
 
@@ -242,7 +242,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             await Task.WhenAll
             (
                 saveTransactionTask,
-                _feeEnvelopesRepository.SaveAsync(fees)
+                _feeEnvelopesRepository.SaveAsync(fees.ToList())
             );
         }
 

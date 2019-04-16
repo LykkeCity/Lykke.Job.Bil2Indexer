@@ -22,7 +22,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var retrieved1 = await repo.GetOrDefaultAsync(source1.BlockchainType, source1.Number);
             AssertEquals(source1, retrieved1);
 
-            var retrieved2= await repo.GetOrDefaultAsync(source1.BlockchainType, source1.Id);
+            var retrieved2 = await repo.GetOrDefaultAsync(source1.BlockchainType, source1.Id);
             AssertEquals(source1, retrieved2);
 
             await repo.SaveAsync(retrieved1);

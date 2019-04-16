@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
 using Common;
 using Lykke.Bil2.Contract.BlocksReader.Events;
-using Lykke.Bil2.Contract.Common;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions;
 using Lykke.Logs;
 using Lykke.Numerics;
-using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 
 namespace Lykke.Job.Bil2Indexer.Tests.Sql

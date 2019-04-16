@@ -6,7 +6,7 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
 {
     public interface IFeeEnvelopesRepository
     {
-        Task SaveAsync(IEnumerable<FeeEnvelope> fees);
+        Task SaveAsync(IReadOnlyCollection<FeeEnvelope> fees);
         Task<FeeEnvelope> GetOrDefaultAsync(string blockchainType, string transactionId, Asset asset);
         Task<FeeEnvelope> GetAsync(string blockchainType, string transactionId, Asset asset);
         Task<PaginatedItems<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, string transactionId, long limit, string continuation);

@@ -18,7 +18,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             _actions = new ConcurrentDictionary<(string, Address, Asset), List<BalanceAction>>();
         }
 
-        public Task SaveAsync(string blockchainType, IEnumerable<BalanceAction> actions)
+        public Task AddIfNotExistAsync(string blockchainType, IEnumerable<BalanceAction> actions)
         {
             foreach (var action in actions)
             {

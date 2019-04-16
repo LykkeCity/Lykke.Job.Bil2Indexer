@@ -20,7 +20,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             _blocksFees = new ConcurrentDictionary<(string, string), ConcurrentDictionary<Asset, FeeEnvelope>>();
         }
 
-        public Task SaveAsync(IEnumerable<FeeEnvelope> fees)
+        public Task SaveAsync(IReadOnlyCollection<FeeEnvelope> fees)
         {
             foreach (var fee in fees)
             {

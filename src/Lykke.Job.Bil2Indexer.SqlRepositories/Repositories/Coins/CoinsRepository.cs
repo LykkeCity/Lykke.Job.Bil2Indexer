@@ -10,7 +10,7 @@ using Lykke.Bil2.SharedDomain;
 using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Coins;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Coins.Models;
 using Lykke.Numerics;
 using Microsoft.EntityFrameworkCore;
@@ -32,10 +32,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task AddIfNotExistAsync(IReadOnlyCollection<Coin> coins)
         {
-            using (var db = new CoinsDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnString))
             {
                 var dbEntities = coins.Select(Map).ToList();
 
+                //TODO use COPY instead of insert
                 await db.Coins.AddRangeAsync(dbEntities);
 
                 try
@@ -52,13 +53,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                             .ToListAsync())
                         .Select(p => new CoinId(p.TransactionId, p.CoinNumber))
                         .ToDictionary(p => p);
+                    
+                    var dbEntitiesDic = dbEntities.ToDictionary(p => new CoinId(p.TransactionId, p.CoinNumber));
 
-                    var notFoundIds = ids.Where(p => existedIds.ContainsKey(p)).ToList();
-
-                    foreach (var coinEntity in dbEntities
-                        .Where(p => notFoundIds.Contains(new CoinId(p.TransactionId, p.CoinNumber))))
+                    foreach (var dbEntity in dbEntitiesDic.Where(p => existedIds.ContainsKey(p.Key)))
                     {
-                        db.Entry(coinEntity).State = EntityState.Detached;
+                        db.Entry(dbEntity.Value).State = EntityState.Detached;
                     }
 
                     await db.SaveChangesAsync();
@@ -68,7 +68,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task SpendAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            using (var db = new CoinsDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnString))
             {
                 var foundCount = await db.Coins.Where(BuildPredicate(blockchainType, ids)).UpdateAsync(p => new CoinEntity { IsSpent = true });
 
@@ -88,7 +88,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task RevertSpendingAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            using (var db = new CoinsDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnString))
             {
                 var foundCount = await db.Coins.Where(BuildPredicate(blockchainType, ids)).UpdateAsync(p => new CoinEntity {IsSpent = false});
 
@@ -108,7 +108,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            using (var db = new CoinsDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnString))
             {
                 return (await db.Coins.Where(BuildPredicate(blockchainType, ids))
                         .Where(p => !p.IsDeleted).ToListAsync())
@@ -119,7 +119,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task RemoveIfExistAsync(string blockchainType, IReadOnlyCollection<string> receivedInTransactionIds)
         {
-            using (var db = new CoinsDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnString))
             {
                 await db.Coins.Where(p => 
                     p.BlockchainType == blockchainType && receivedInTransactionIds.Any(x => x == p.TransactionId))
@@ -157,7 +157,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                 AssetAddress = source.Asset.Address,
                 IsSpent = source.IsSpent,
                 AssetId = source.Asset.Id,
-                ValueScale = source.Value.Scale,
+                ValueScale = source.Value.Scale
             };
 
 

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

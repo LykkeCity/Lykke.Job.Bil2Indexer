@@ -253,7 +253,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     )
                 );
 
-            await balanceActionsRepository.SaveAsync(BlockchainType, actions);
+            await balanceActionsRepository.AddIfNotExistAsync(BlockchainType, actions);
         }
 
         private async Task SaveFeesAsync(
@@ -292,7 +292,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                             amount
                         )
                     );
-                });
+                }).ToList();
 
             await feeEnvelopesRepository.SaveAsync(fees);
         }
