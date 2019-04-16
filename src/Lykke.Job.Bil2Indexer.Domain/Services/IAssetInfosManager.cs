@@ -2,8 +2,8 @@
 
 namespace Lykke.Job.Bil2Indexer.Domain.Services
 {
-    public interface IChainHeadsManager
+    public interface IAssetInfosManager
     {
-        Task StartAsync();
+        Task EnsureAdded(AssetInfo asset);
     }
 }
