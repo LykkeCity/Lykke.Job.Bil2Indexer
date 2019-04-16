@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.SharedDomain;
+using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain.Infrastructure;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Numerics;
@@ -14,14 +15,14 @@ namespace Lykke.Job.Bil2Indexer.Domain
 {
     public class BlockHeader
     {
-        public string Id { get; }
+        public BlockId Id { get; }
         public long Version { get; }
         public string BlockchainType { get; }
         public long Number { get; }
         public DateTime MinedAt { get; }
         public int Size { get; }
         public int TransactionsCount { get; }
-        public string PreviousBlockId { get; }
+        public BlockId PreviousBlockId { get; }
         public BlockState State { get; private set; }
 
         public bool IsAssembled => State == BlockState.Assembled;
@@ -44,14 +45,14 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public bool CanBeReverted => State == BlockState.Executed || State == BlockState.PartiallyExecuted;
 
         public BlockHeader(
-            string id, 
+            BlockId id, 
             long version,
             string blockchainType, 
             long number, 
             DateTime minedAt, 
             int size,
             int transactionsCount, 
-            string previousBlockId,
+            BlockId previousBlockId,
             BlockState state)
         {
             Id = id;
@@ -66,13 +67,13 @@ namespace Lykke.Job.Bil2Indexer.Domain
         }
 
         public static BlockHeader StartAssembling(
-            string id, 
+            BlockId id, 
             string blockchainType, 
             long number, 
             DateTime minedAt, 
             int size,
             int transactionsCount, 
-            string previousBlockId)
+            BlockId previousBlockId)
         {
             return new BlockHeader
             (
@@ -198,7 +199,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 );
 
                 var coinsToRevertSpending = transactions.Items.SelectMany(t => t.SpentCoins).ToList();
-                var transactionIds = transactions.Items.Select(t => t.TransactionId).ToList();
+                var transactionIds = transactions.Items.Select(t => t.TransactionId).ToHashSet();
 
                 await Task.WhenAll
                 (
@@ -244,16 +245,15 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 (
                     x => new BalanceAction
                     (
-                        x.Address,
-                        x.Asset,
+                        new AccountId(x.Address, x.Asset),
                         -(Money) x.Value,
                         Number,
                         Id,
                         transaction.TransactionId
                     )
-                );
+                ).ToList();
 
-            await balanceActionsRepository.AddIfNotExistAsync(BlockchainType, actions);
+            await balanceActionsRepository.AddIfNotExistsAsync(BlockchainType, actions);
         }
 
         private async Task SaveFeesAsync(
@@ -294,7 +294,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     );
                 }).ToList();
 
-            await feeEnvelopesRepository.SaveAsync(fees);
+            await feeEnvelopesRepository.AddIfNotExistsAsync(fees);
         }
 
         public override string ToString()

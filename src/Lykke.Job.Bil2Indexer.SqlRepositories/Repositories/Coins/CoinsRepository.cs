@@ -30,7 +30,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
             _log = logFactory.CreateLog(this);
         }
 
-        public async Task AddIfNotExistAsync(IReadOnlyCollection<Coin> coins)
+        public async Task AddIfNotExistsAsync(IReadOnlyCollection<Coin> coins)
         {
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
@@ -65,7 +65,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                 }
             }
         }
-
+        
         public async Task SpendAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
             using (var db = new BlockchainDataContext(_posgresConnString))
@@ -117,14 +117,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
             }
         }
 
-        public async Task RemoveIfExistAsync(string blockchainType, IReadOnlyCollection<string> receivedInTransactionIds)
+        public Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
-            {
-                await db.Coins.Where(p => 
-                    p.BlockchainType == blockchainType && receivedInTransactionIds.Any(x => x == p.TransactionId))
-                    .UpdateAsync(p => new CoinEntity { IsDeleted = true });
-            }
+            throw new NotImplementedException();
         }
 
         private Expression<Func<CoinEntity, bool>> BuildPredicate(string blockchainType, IReadOnlyCollection<CoinId> ids)

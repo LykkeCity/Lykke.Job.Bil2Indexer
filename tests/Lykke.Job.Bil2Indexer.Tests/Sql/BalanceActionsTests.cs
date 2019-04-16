@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
+using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions;
 using Lykke.Logs;
@@ -35,8 +36,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 ctr++;
             } while (ctr<=max);
 
-            await repo.AddIfNotExistAsync(bType, actions);
-            await repo.AddIfNotExistAsync(bType, actions);
+            await repo.AddIfNotExistsAsync(bType, actions);
+            await repo.AddIfNotExistsAsync(bType, actions);
 
             var t = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);
         }
@@ -44,7 +45,9 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         private BalanceAction BuildRandomBalanceAction(Asset asset, Address address, int scale)
         {
             var rdm = new Random();
-            return new BalanceAction(address, asset, new Money(new BigInteger(rdm.Next()), scale ), rdm.Next(1, 99999), Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
+            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(rdm.Next()), scale),
+                rdm.Next(1, 123333), new BlockId(Guid.NewGuid().ToString()),
+                new TransactionId(Guid.NewGuid().ToString()));
         }
         private Asset BuildRandmomAsset()
         {

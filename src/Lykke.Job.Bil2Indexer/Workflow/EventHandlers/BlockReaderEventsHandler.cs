@@ -7,12 +7,14 @@ using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
 using Lykke.Bil2.SharedDomain;
+using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
+using TransactionFailedEvent = Lykke.Bil2.Contract.BlocksReader.Events.TransactionFailedEvent;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 {
@@ -116,7 +118,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return;
             }
 
-            var saveTransactionTask = _transactionsRepository.SaveAsync(blockchainType, evt);
+            var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
 
             var actions = evt.BalanceChanges
                 .Where(x => x.Address != null)
@@ -124,16 +126,15 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 (
                     x => new BalanceAction
                     (
-                        x.Address,
-                        x.Asset,
+                        new AccountId(x.Address, x.Asset),
                         x.Value,
                         crawler.ExpectedBlockNumber,
                         evt.BlockId,
                         evt.TransactionId
                     )
-                );
+                ).ToList();
             
-            var saveBalanceActionsTask = _balanceActionsRepository.AddIfNotExistAsync(blockchainType, actions);
+            var saveBalanceActionsTask = _balanceActionsRepository.AddIfNotExistsAsync(blockchainType, actions);
 
             var fees = evt.Fees
                 .Select
@@ -151,7 +152,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             (
                 saveTransactionTask,
                 saveBalanceActionsTask,
-                _feeEnvelopesRepository.SaveAsync(fees)
+                _feeEnvelopesRepository.AddIfNotExistsAsync(fees)
             );
         }
 
@@ -171,7 +172,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return;
             }
 
-            var saveTransactionTask = _transactionsRepository.SaveAsync(blockchainType, evt);
+            var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
 
             var coins = evt.ReceivedCoins
                 .Select
@@ -189,7 +190,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     )
                 ).ToList();
 
-            var saveCoinsTask = _coinsRepository.AddIfNotExistAsync(coins);
+            var saveCoinsTask = _coinsRepository.AddIfNotExistsAsync(coins);
 
             var actions = evt.ReceivedCoins
                 .Where(c => c.Address != null)
@@ -197,20 +198,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 (
                     x => new BalanceAction
                     (
-                        x.Address,
-                        x.Asset,
+                        new AccountId(x.Address, x.Asset),
                         x.Value,
                         crawler.ExpectedBlockNumber,
                         evt.BlockId,
                         evt.TransactionId
                     )
-                );
+                ).ToList();
 
             await Task.WhenAll
             (
                 saveTransactionTask,
                 saveCoinsTask,
-                _balanceActionsRepository.AddIfNotExistAsync(blockchainType, actions)
+                _balanceActionsRepository.AddIfNotExistsAsync(blockchainType, actions)
             );
         }
 
@@ -225,7 +225,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return;
             }
             
-            var saveTransactionTask = _transactionsRepository.SaveAsync(blockchainType, evt);
+            var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
 
             var fees = evt.Fees
                 .Select
@@ -237,12 +237,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         evt.TransactionId,
                         x
                     )
-                );
+                ).ToList();
 
             await Task.WhenAll
             (
                 saveTransactionTask,
-                _feeEnvelopesRepository.SaveAsync(fees.ToList())
+                _feeEnvelopesRepository.AddIfNotExistsAsync(fees)
             );
         }
 

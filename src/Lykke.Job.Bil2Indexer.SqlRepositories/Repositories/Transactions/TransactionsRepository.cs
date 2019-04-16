@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.Contract.BlocksReader.Events;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions;
@@ -24,22 +25,22 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             _log = logFactory.CreateLog(this);
         }
 
-        public Task SaveAsync(string blockchainType, TransferAmountTransactionExecutedEvent transaction)
+        public Task AddIfNotExistsAsync(string blockchainType, TransferAmountTransactionExecutedEvent transaction)
         {
-            return SaveAsync(transaction.MapToDbEntity(blockchainType));
+            return AddIfNotExistsAsync(transaction.MapToDbEntity(blockchainType));
         }
 
-        public Task SaveAsync(string blockchainType, TransferCoinsTransactionExecutedEvent transaction)
+        public Task AddIfNotExistsAsync(string blockchainType, TransferCoinsTransactionExecutedEvent transaction)
         {
-            return SaveAsync(transaction.MapToDbEntity(blockchainType));
+            return AddIfNotExistsAsync(transaction.MapToDbEntity(blockchainType));
         }
 
-        public Task SaveAsync(string blockchainType, TransactionFailedEvent transaction)
+        public Task AddIfNotExistsAsync(string blockchainType, TransactionFailedEvent transaction)
         {
-            return SaveAsync(transaction.MapToDbEntity(blockchainType));
+            return AddIfNotExistsAsync(transaction.MapToDbEntity(blockchainType));
         }
 
-        private async Task SaveAsync(TransactionEntity transaction)
+        private async Task AddIfNotExistsAsync(TransactionEntity transaction)
         {
             using (var db = new TransactionsDataContext(_posgresConnString))
             {
@@ -86,7 +87,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             return false;
         }
 
-        public async Task<int> CountInBlockAsync(string blockchainType, string blockId)
+        public async Task<int> CountInBlockAsync(string blockchainType, BlockId blockId)
         {
             using (var db = new TransactionsDataContext(_posgresConnString))
             {
@@ -96,50 +97,50 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             }
         }
 
-        public async Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(string blockchainType, string blockId, int limit, string continuation)
+        public async Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(string blockchainType, BlockId blockId, int limit, string continuation)
         {
             return await GetPagedAsync(blockchainType, blockId, continuation, p => p.MapToCoinExecuted());
         }
 
-        public async Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(string blockchainType, string blockId, int limit, string continuation)
+        public async Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(string blockchainType, BlockId blockId, int limit, string continuation)
         {
             return await GetPagedAsync(blockchainType, blockId, continuation, p => p.MapToTransferAmountExecuted());
         }
 
-        public async Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType, string blockId, int limit, string continuation)
+        public async Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType, BlockId blockId, int limit, string continuation)
         {
             return await GetPagedAsync(blockchainType, blockId, continuation, p => p.MapToFailed());
         }
 
-        public async Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType, string transactionId)
+        public async Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType, TransactionId transactionId)
         {
             return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToCoinExecuted())
                    ?? throw new ArgumentException($"Unable to find transaction {blockchainType} : {transactionId}");
         }
 
-        public async Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionAsync(string blockchainType, string transactionId)
+        public async Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionAsync(string blockchainType, TransactionId transactionId)
         {
             return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToTransferAmountExecuted())
                    ?? throw new ArgumentException($"Unable to find transaction {blockchainType} : {transactionId}");
         }
 
-        public async Task<TransactionFailedEvent> GetFailedTransactionAsync(string blockchainType, string transactionId)
+        public async Task<TransactionFailedEvent> GetFailedTransactionAsync(string blockchainType, TransactionId transactionId)
         {
             return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToFailed())
                    ?? throw new ArgumentException($"Unable to find transaction {blockchainType} : {transactionId}");
         }
 
-        public async Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        public async Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionOrDefaultAsync(string blockchainType, TransactionId transactionId)
         {
             return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToCoinExecuted());
         }
 
-        public async Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        public async Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionOrDefaultAsync(string blockchainType, TransactionId transactionId)
         {
             return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToTransferAmountExecuted());
         }
 
-        public async Task<TransactionFailedEvent> GetFailedTransactionOrDefaultAsync(string blockchainType, string transactionId)
+        public async Task<TransactionFailedEvent> GetFailedTransactionOrDefaultAsync(string blockchainType, TransactionId transactionId)
         {
             return await GetOrDefaultAsync(blockchainType, transactionId, p => p.MapToFailed());
         }
@@ -180,7 +181,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             }
         }
 
-        public async Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId)
+        public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
             using (var db = new TransactionsDataContext(_posgresConnString))
             {

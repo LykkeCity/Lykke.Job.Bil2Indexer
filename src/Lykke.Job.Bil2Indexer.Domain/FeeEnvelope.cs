@@ -5,14 +5,14 @@ namespace Lykke.Job.Bil2Indexer.Domain
     public class FeeEnvelope
     {
         public string BlockchainType { get; }
-        public string BlockId { get; }
-        public string TransactionId { get; }
+        public BlockId BlockId { get; }
+        public TransactionId TransactionId { get; }
         public Fee Fee { get; }
 
         public FeeEnvelope(
             string blockchainType,
-            string blockId,
-            string transactionId,
+            BlockId blockId,
+            TransactionId transactionId,
             Fee fee)
         {
             BlockchainType = blockchainType;

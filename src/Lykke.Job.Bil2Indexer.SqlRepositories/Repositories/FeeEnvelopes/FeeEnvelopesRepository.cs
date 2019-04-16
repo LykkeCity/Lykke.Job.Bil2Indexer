@@ -29,7 +29,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             _log = logFactory.CreateLog(this);
         }
 
-        public async Task SaveAsync(IReadOnlyCollection<FeeEnvelope> fees)
+        public async Task AddIfNotExistsAsync(IReadOnlyCollection<FeeEnvelope> fees)
         {
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
@@ -79,7 +79,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             }
         }
 
-        public async Task<FeeEnvelope> GetOrDefaultAsync(string blockchainType, string transactionId, Asset asset)
+        public async Task<FeeEnvelope> GetOrDefaultAsync(string blockchainType, TransactionId transactionId, Asset asset)
         {
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
@@ -92,7 +92,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             }
         }
 
-        public async Task<FeeEnvelope> GetAsync(string blockchainType, string transactionId, Asset asset)
+        public async Task<FeeEnvelope> GetAsync(string blockchainType, TransactionId transactionId, Asset asset)
         {
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
@@ -110,23 +110,22 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             }
         }
 
-        public Task<PaginatedItems<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, string transactionId, long limit, string continuation)
+
+        public Task<IReadOnlyCollection<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, TransactionId transactionId)
         {
-            return GetPaged(fee => fee.BlockchainType == blockchainType 
-                                   && fee.TransactionId == transactionId, 
-                limit,
-                continuation);
+            return GetAllAsync(fee => fee.BlockchainType == blockchainType 
+                                   && fee.TransactionId == transactionId);
         }
 
-        public Task<PaginatedItems<FeeEnvelope>> GetBlockFeesAsync(string blockchainType, string blockId, long limit, string continuation)
+        public Task<PaginatedItems<FeeEnvelope>> GetBlockFeesAsync(string blockchainType, BlockId blockId, long limit, string continuation)
         {
-            return GetPaged(fee => fee.BlockchainType == blockchainType
+            return GetPagedAsync(fee => fee.BlockchainType == blockchainType
                                    && fee.BlockId == blockId, 
-                limit,
-                continuation);
+                    limit,
+                    continuation);
         }
 
-        public async Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId)
+        public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
@@ -136,7 +135,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             }
         }
 
-        private async Task<PaginatedItems<FeeEnvelope>> GetPaged(Expression<Func<FeeEnvelopeEntity, bool>> predicate,
+        private async Task<PaginatedItems<FeeEnvelope>> GetPagedAsync(Expression<Func<FeeEnvelopeEntity, bool>> predicate,
             long limit, string continuation)
         {
             using (var db = new BlockchainDataContext(_posgresConnString))
@@ -156,6 +155,17 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 var nextContinuation = entities.Count < limit ? null : (skip + entities.Count).ToString();
 
                 return new PaginatedItems<FeeEnvelope>(nextContinuation, entities.Select(Map).ToList());
+            }
+        }
+
+        private async Task<IReadOnlyCollection<FeeEnvelope>> GetAllAsync(Expression<Func<FeeEnvelopeEntity, bool>> predicate)
+        {
+            using (var db = new BlockchainDataContext(_posgresConnString))
+            {
+                var entities = await db.FeeEnvelopes.Where(predicate)
+                    .ToListAsync();
+
+                return entities.Select(p => Map(p)).ToList();
             }
         }
 

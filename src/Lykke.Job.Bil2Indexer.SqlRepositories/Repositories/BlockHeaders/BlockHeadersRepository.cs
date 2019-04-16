@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
@@ -59,7 +60,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             }
         }
 
-        public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, string blockId)
+        public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, BlockId blockId)
         {
             using (var db = new StateDataContext(_posgresConnString))
             {
@@ -70,7 +71,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             }
         }
 
-        public async Task<BlockHeader> GetAsync(string blockchainType, string blockId)
+        public async Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
             using (var db = new StateDataContext(_posgresConnString))
             {
@@ -86,7 +87,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             }
         }
 
-        public async Task TryRemoveAsync(string blockchainType, string blockId)
+        public async Task TryRemoveAsync(string blockchainType, BlockId blockId)
         {
             using (var db = new StateDataContext(_posgresConnString))
             {

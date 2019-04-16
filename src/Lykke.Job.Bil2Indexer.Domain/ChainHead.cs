@@ -1,4 +1,5 @@
 ﻿using System;
+using Lykke.Bil2.SharedDomain;
 
 namespace Lykke.Job.Bil2Indexer.Domain
 {
@@ -8,14 +9,14 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public long Version { get; }
         public long FirstBlockNumber { get; }
         public long? BlockNumber { get; private set; }
-        public string BlockId { get; private set; }
+        public BlockId BlockId { get; private set; }
 
         public ChainHead(
             string blockchainType,
             long firstBlockNumber,
             long version,
             long? blockNumber,
-            string blockId)
+            BlockId blockId)
         {
             BlockchainType = blockchainType;
             FirstBlockNumber = firstBlockNumber;
@@ -38,7 +39,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             );
         }
 
-        public void ExtendTo(long blockNumber, string blockId)
+        public void ExtendTo(long blockNumber, BlockId blockId)
         {
             if (!CanExtendTo(blockNumber))
             {
@@ -49,7 +50,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             BlockId = blockId;
         }
 
-        public void ReduceTo(long blockNumber, string blockId)
+        public void ReduceTo(long blockNumber, BlockId blockId)
         {
             if (!CanReduceTo(blockNumber))
             {

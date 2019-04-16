@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -11,14 +12,14 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
 {
     public class InMemoryBlockHeadersRepository : IBlockHeadersRepository
     {
-        private readonly ConcurrentDictionary<(string, string), BlockHeader> _blocks;
+        private readonly ConcurrentDictionary<(string, BlockId), BlockHeader> _blocks;
         private readonly ILog _log;
 
         public InMemoryBlockHeadersRepository(ILogFactory logFactory)
         {
             _log = logFactory.CreateLog(this);
 
-            _blocks = new ConcurrentDictionary<(string, string), BlockHeader>();
+            _blocks = new ConcurrentDictionary<(string, BlockId), BlockHeader>();
         }
 
         public Task SaveAsync(BlockHeader block)
@@ -69,14 +70,14 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult(block);
         }
 
-        public Task<BlockHeader> GetOrDefaultAsync(string blockchainType, string blockId)
+        public Task<BlockHeader> GetOrDefaultAsync(string blockchainType, BlockId blockId)
         {
             _blocks.TryGetValue((blockchainType, blockId), out var block);    
 
             return Task.FromResult(block);
         }
 
-        public async Task<BlockHeader> GetAsync(string blockchainType, string blockId)
+        public async Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
             var block = await GetOrDefaultAsync(blockchainType, blockId);
 
@@ -88,7 +89,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return block;
         }
 
-        public Task TryRemoveAsync(string blockchainType, string blockId)
+        public Task TryRemoveAsync(string blockchainType, BlockId blockId)
         {
             if (_blocks.TryRemove((blockchainType, blockId), out var block))
             {

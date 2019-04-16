@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Common.Log;
+using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
@@ -27,8 +28,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             _log = logFactory.CreateLog(this);
         }
 
-        public async Task AddIfNotExistAsync(string blockchainType, 
-            IEnumerable<BalanceAction> actions)
+        public async Task AddIfNotExistsAsync(string blockchainType,
+            IReadOnlyCollection<BalanceAction> actions)
         {
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
@@ -80,7 +81,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             }
         }
 
-        public async Task TryRemoveAllOfBlockAsync(string blockchainType, string blockId)
+        public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
@@ -115,20 +116,25 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             throw new NotImplementedException();
         }
 
+        public Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetBalancesAsync(string blockchainType, ISet<TransactionId> transactionIds, long atBlockNumber)
+        {
+            throw new NotImplementedException();
+        }
+
         private static BalanceActionEntity Map(BalanceAction source, string blockchainType)
         {
             return new BalanceActionEntity
             {
                 BlockchainType = blockchainType,
                 TransactionId = source.TransactionId,
-                AssetAddress = source.Asset.Address,
-                AssetId = source.Asset.Id,
+                AssetAddress = source.AccountId.Asset.Address,
+                AssetId = source.AccountId.Asset.Id,
                 BlockId = source.BlockId,
                 BlockNumber = source.BlockNumber,
                 ValueScale = source.Amount.Scale,
                 Value = 1,
                 //Value = ??
-                Address = source.Address,
+                Address = source.AccountId.Address,
             };
         }
     }
