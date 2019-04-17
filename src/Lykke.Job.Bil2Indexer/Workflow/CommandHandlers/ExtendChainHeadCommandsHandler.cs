@@ -149,6 +149,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     }
 
                     var transactionAccountSpentCoins = transactionSpentCoins
+                        .Where(x => x.Address != null)
                         .GroupBy(x => new AccountId(x.Address, x.Asset))
                         .ToDictionary
                         (
@@ -166,9 +167,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                                         nonce: x.AddressNonce
                                     )
                                 )
+                                .ToArray()
                         );
 
                     var transactionAccountReceivedCoins = transaction.ReceivedCoins
+                        .Where(x => x.Address != null)
                         .GroupBy(x => new AccountId(x.Address, x.Asset))
                         .ToDictionary
                         (
@@ -194,11 +197,20 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                         {
                             var accountId = accountBalance.Key;
                             var balance = accountBalance.Value;
-                            var spentCoins = transactionAccountSpentCoins[accountId].ToArray();
-                            var receivedCoins = transactionAccountReceivedCoins[accountId].ToArray();
+
+                            if (!transactionAccountSpentCoins.TryGetValue(accountId, out var spentCoins))
+                            {
+                                spentCoins = Array.Empty<SpentCoin>();
+                            }
+
+                            if (!transactionAccountReceivedCoins.TryGetValue(accountId, out var receivedCoins))
+                            {
+                                receivedCoins = Array.Empty<Contract.ReceivedCoin>();
+                            }
+
                             var spentAmount = spentCoins.Sum(x => x.Value);
                             var receivedAmount = receivedCoins.Sum(x => x.Value);
-                            var oldBalance = balance - spentAmount + receivedAmount;
+                            var oldBalance = balance + spentAmount - receivedAmount;
 
                             return new BalanceUpdate
                             (
@@ -261,6 +273,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     }
 
                     var transactionAccountTransfers = transaction.BalanceChanges
+                        .Where(x => x.Address != null)
                         .GroupBy(x => new AccountId(x.Address, x.Asset))
                         .ToDictionary
                         (
