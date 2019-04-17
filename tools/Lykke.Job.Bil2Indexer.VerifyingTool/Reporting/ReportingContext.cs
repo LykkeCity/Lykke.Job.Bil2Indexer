@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,25 +20,51 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
         public ReportingContext(string filePath)
         {
-            _fileStream = new FileStream(filePath, FileMode.OpenOrCreate);
+            try
+            {
+                File.Delete(filePath);
+            }
+            catch{}
+
+            _fileStream = new FileStream(filePath, FileMode.Append);
+            _root = new List<dynamic>();
+
+            CurrentReportObject = _root;
         }
 
-        public dynamic CurrentReportObject;
-        //public ReportingContextScope CurrentScope { get; }
+        public dynamic CurrentReportObject { get; private set; }
 
         public async Task FlushAsync()
         {
-            var text = Newtonsoft.Json.JsonConvert.SerializeObject(_root);
-            await WriteLineAsync(text);
+            StringBuilder sb = new StringBuilder();
+            var rootList = _root.FirstOrDefault();
+
+            if (rootList is List<dynamic>)
+            {
+                foreach (var item in rootList)
+                {
+                    var text = Newtonsoft.Json.JsonConvert.SerializeObject(item, Formatting.Indented);
+                    sb.AppendLine(text);
+                }
+            }
+            else
+            {
+                var text = Newtonsoft.Json.JsonConvert.SerializeObject(rootList, Formatting.Indented);
+                sb.AppendLine(text);
+            }
+
+            await WriteLineAsync(sb.ToString());
+
             _scopeStack.Clear();
             _root = new List<dynamic>();
+            CurrentReportObject = _root;
         }
 
         public async Task WriteLineAsync(string text)
         {
             byte[] buffer = Encoding.UTF8.GetBytes(text);
 
-            await _fileStream.WriteAsync(buffer, (int)_fileStream.Position, buffer.Length);
+            await _fileStream.WriteAsync(buffer, 0, buffer.Length);
         }
 
         public void Dispose()
@@ -53,7 +81,9 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
             if (!string.IsNullOrEmpty(scopeName))
             {
-                previous[scopeName] = CurrentReportObject;
+                var dict = (IDictionary<string, object>)previous;
+
+                dict[scopeName] = CurrentReportObject;
             }
             else
             {
@@ -61,7 +91,6 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
             }
         }
 
-        //TODO: How to create reporting scope
         public void StartScope(string scopeName = null)
         {
             var previous = CurrentReportObject;
@@ -71,7 +100,9 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
             if (!string.IsNullOrEmpty(scopeName))
             {
-                previous[scopeName] = CurrentReportObject;
+                var dict = (IDictionary<string, object>) previous;
+
+                dict[scopeName] = CurrentReportObject;
             }
             else
             {

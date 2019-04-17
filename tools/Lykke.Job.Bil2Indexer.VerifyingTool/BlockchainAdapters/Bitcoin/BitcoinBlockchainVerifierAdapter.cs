@@ -28,7 +28,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Bitcoin
             _ninjaClient = new QBitNinjaClient(ninjaUrl, network);
         }
 
-        public async Task<(IEnumerable<TransferCoinsTransactionExecutedEvent> coinTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)> GetTransactionsForBlockAsync(BigInteger blockNumber)
+        public async Task<(IEnumerable<TransferCoinsTransactionExecutedEvent> coinTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)> GetCoinTransactionsForBlockAsync(BigInteger blockNumber)
         {
             var listTransfered = new List<TransferCoinsTransactionExecutedEvent>();
 
@@ -71,12 +71,17 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Bitcoin
             return (listTransfered, new TransactionFailedEvent[] { });
         }
 
+        public Task<(IEnumerable<TransferAmountTransactionExecutedEvent> amountTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)> GetAmountTransactionsForBlockAsync(BigInteger blockNumber)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<BlockHeader> GetBlockAsync(BigInteger blockNumber)
         {
             var block = await _ninjaClient.GetBlock(BlockFeature.Parse(blockNumber.ToString()), false, false);
             var blockHash = block.Block.Header.GetHash().ToString();
             var version = block.Block.Header.Version;
-            var size = 0;
+            var size = block.Block.GetSerializedSize();
             var transactionCount = block.Block.Transactions.Count;
             var previousBlockId = block.Block.Header.HashPrevBlock.ToString();
 

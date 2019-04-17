@@ -10,7 +10,12 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters
     {
         Task<(IEnumerable<TransferCoinsTransactionExecutedEvent> coinTransfers, IEnumerable<TransactionFailedEvent>
                 failedTransfers)>
-            GetTransactionsForBlockAsync(BigInteger blockNumber);
+            GetCoinTransactionsForBlockAsync(BigInteger blockNumber);
+
+
+        Task<(IEnumerable<TransferAmountTransactionExecutedEvent> amountTransfers, IEnumerable<TransactionFailedEvent>
+                failedTransfers)>
+            GetAmountTransactionsForBlockAsync(BigInteger blockNumber);
 
         Task<BlockHeader> GetBlockAsync(BigInteger blockNumber);
     }
