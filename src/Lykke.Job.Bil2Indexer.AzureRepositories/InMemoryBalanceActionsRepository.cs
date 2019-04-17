@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
@@ -52,7 +53,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
                     actions.RemoveAll(x => x.BlockId == blockId);
                 }
             }
-            
+
             return Task.CompletedTask;
         }
 
@@ -66,11 +67,34 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             throw new System.NotImplementedException();
         }
 
-        public Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetSomeOfBalancesAsync(
+        public async Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetSomeOfBalancesAsync(
             string blockchainType,
             ISet<TransactionId> transactionIds)
         {
-            throw new System.NotImplementedException();
+            var result = new Dictionary<TransactionId, Dictionary<AccountId, Money>>();
+            var filtered = _actions
+                .Where(x => x.Key.Item1 == blockchainType &&
+                            x.Value.Count(y => transactionIds.Contains(y.TransactionId)) != 0);
+
+            foreach (var item in filtered)
+            {
+                foreach (var accountAction in item.Value)
+                {
+                    if (!result.TryGetValue(accountAction.TransactionId, out var accountMoneyDict))
+                    {
+                        result[accountAction.TransactionId] = new Dictionary<AccountId, Money>()
+                        {
+                            { accountAction.AccountId, accountAction.Amount}
+                        };
+                    }
+                    else
+                    {
+                        accountMoneyDict[accountAction.AccountId] = accountAction.Amount;
+                    }
+                }
+            }
+
+            return result.ToDictionary(x => x.Key, y => (IReadOnlyDictionary<AccountId, Money>)y.Value);
         }
     }
 }

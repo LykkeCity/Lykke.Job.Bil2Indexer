@@ -45,9 +45,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Service.Bil2IndexerGr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Service.Bil2IndexerGrpcApi.Client", "clients\Lykke.Service.Bil2IndexerGrpcApi.Client\Lykke.Service.Bil2IndexerGrpcApi.Client.csproj", "{06BA118A-7C75-4010-8A05-A2E472FAB75B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "6. Tools", "6. Tools", "{3396D322-753C-4152-A653-F5B6F5315F7E}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "7. Tools", "7. Tools", "{3396D322-753C-4152-A653-F5B6F5315F7E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lykke.Job.Bil2Indexer.VerifyingTool", "tools\Lykke.Job.Bil2Indexer.VerifyingTool\Lykke.Job.Bil2Indexer.VerifyingTool.csproj", "{62C22D19-D59D-45FF-ACAF-44999BBF9763}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Job.Bil2Indexer.VerifyingTool", "tools\Lykke.Job.Bil2Indexer.VerifyingTool\Lykke.Job.Bil2Indexer.VerifyingTool.csproj", "{62C22D19-D59D-45FF-ACAF-44999BBF9763}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

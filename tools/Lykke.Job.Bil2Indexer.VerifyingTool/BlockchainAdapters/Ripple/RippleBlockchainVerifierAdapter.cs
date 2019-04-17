@@ -3,12 +3,9 @@ using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.Ripple.Client;
 using Lykke.Bil2.Ripple.Client.Api.Ledger;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Bil2.SharedDomain.Extensions;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Numerics;
 using Microsoft.Extensions.DependencyInjection;
-using NBitcoin;
-using QBitNinja.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,26 +29,24 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
             _rippleApi = serviceCollection.BuildServiceProvider().GetRequiredService<IRippleApi>();
         }
 
-        public async Task<(IEnumerable<TransferCoinsTransactionExecutedEvent> coinTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)> 
+        public async Task<(IEnumerable<TransferCoinsTransactionExecutedEvent> coinTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)>
             GetCoinTransactionsForBlockAsync(BigInteger blockNumber)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<(IEnumerable<TransferAmountTransactionExecutedEvent> amountTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)> 
+        public async Task<(IEnumerable<TransferAmountTransactionExecutedEvent> amountTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)>
             GetAmountTransactionsForBlockAsync(BigInteger blockNumber)
         {
             List<TransferAmountTransactionExecutedEvent> transfers = new List<TransferAmountTransactionExecutedEvent>();
             List<TransactionFailedEvent> failedTransfers = new List<TransactionFailedEvent>();
             var block = await _rippleApi.Post(new BinaryLedgerWithTransactionsRequest((uint)blockNumber));
             var result = block.Result;
-            var ledger = result.Ledger.Parse();
 
             foreach (var transaction in result.Ledger.Transactions)
             {
-                    var tx = transaction.Parse();
+                var tx = transaction.Parse();
                 var txNumber = (int)(tx.Metadata.TransactionIndex + 1);
-                var txRaw = transaction.TxBlob.ToBase58();
                 var txFee = new[]
                 {
                     new Fee
@@ -80,8 +75,8 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
                                 pair.address == tx.Destination ? tx.DestinationTag?.ToString("D") : null,
                                 pair.address == tx.Destination && tx.DestinationTag != null
                                     ? AddressTagType.Number
-                                    : (AddressTagType?) null,
-                                pair.address == tx.Account ? tx.Sequence : (long?) null
+                                    : (AddressTagType?)null,
+                                pair.address == tx.Account ? tx.Sequence : (long?)null
                             ))
                             .ToArray(),
                         txFee,
@@ -92,17 +87,20 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
                 }
                 else
                 {
-                    failedTransfers.Add(new TransactionFailedEvent
+                    var item = new TransactionFailedEvent
                     (
                         result.LedgerHash,
                         txNumber,
                         tx.Hash,
-                        tx.Metadata.TransactionResult == "tecUNFUNDED" || tx.Metadata.TransactionResult == "tecUNFUNDED_PAYMENT"
+                        tx.Metadata.TransactionResult == "tecUNFUNDED" ||
+                        tx.Metadata.TransactionResult == "tecUNFUNDED_PAYMENT"
                             ? TransactionBroadcastingError.NotEnoughBalance
                             : TransactionBroadcastingError.TransientFailure,
                         tx.Metadata.TransactionResult,
                         txFee
-                    ));
+                    );
+
+                    failedTransfers.Add(item);
                 }
             }
 
