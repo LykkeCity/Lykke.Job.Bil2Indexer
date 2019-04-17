@@ -13,10 +13,8 @@ using Lykke.Job.Bil2Indexer.Infrastructure;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
-using Lykke.Job.Bil2Indexer.Workflow.Events;
 using Lykke.Numerics;
 using Lykke.Numerics.Linq;
-using ReceivedCoin = Lykke.Job.Bil2Indexer.Contract.ReceivedCoin;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 {
@@ -178,7 +176,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                             g => g
                                 .Select
                                 (
-                                    x => new ReceivedCoin
+                                    x => new Contract.ReceivedCoin
                                     (
                                         number: x.CoinNumber,
                                         value: x.Value,

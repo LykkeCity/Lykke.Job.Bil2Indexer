@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Numerics;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.SharedDomain;

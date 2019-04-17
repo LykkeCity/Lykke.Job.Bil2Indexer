@@ -22,6 +22,5 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
         public BlockId PreviousBlockId { get; set; }
 
         public uint Version { get; set; }
-        
     }
 }

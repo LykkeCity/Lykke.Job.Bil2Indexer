@@ -1,7 +1,5 @@
 ﻿using Autofac;
-using Common.Application;
 using JetBrains.Annotations;
-using Lykke.Common;
 using Lykke.Sdk;
 using Lykke.Service.Bil2IndexerGrpcApi.Services;
 using Lykke.Service.Bil2IndexerGrpcApi.Settings;

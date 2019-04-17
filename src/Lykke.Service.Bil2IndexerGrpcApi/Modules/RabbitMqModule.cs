@@ -2,7 +2,6 @@
 using Autofac;
 using JetBrains.Annotations;
 using Lykke.Bil2.RabbitMq;
-using Lykke.Common;
 using Lykke.Service.Bil2IndexerGrpcApi.EventHandlers;
 using Lykke.Service.Bil2IndexerGrpcApi.Services;
 using Lykke.Service.Bil2IndexerGrpcApi.Settings;
