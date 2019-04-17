@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
@@ -110,16 +112,33 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult(PaginatedItems<TransferCoinsTransactionExecutedEvent>.Empty);
         }
 
-        public Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(
+        public async Task<PaginatedItems<TransferAmountTransactionExecutedEvent>> GetTransferAmountTransactionsOfBlockAsync(
             string blockchainType, BlockId blockId, int limit, string continuation)
         {
-            throw new NotImplementedException();
+            if (_storage.TryGetValue((blockchainType, blockId.Value), out var transactions))
+            {
+                int skip = 0;
+                int.TryParse(continuation, out skip);
+
+                var items = transactions
+                    .TransferAmountTransactions
+                    .Select(x => x.Value)
+                    .Skip(skip)
+                    .Take(limit)
+                    .ToArray();
+
+                var nextContinuation = transactions.TransferAmountTransactions.Count - (skip + limit);
+
+                return new PaginatedItems<TransferAmountTransactionExecutedEvent>(nextContinuation.ToString(), items);
+            }
+
+            return new PaginatedItems<TransferAmountTransactionExecutedEvent>(null, new ArraySegment<TransferAmountTransactionExecutedEvent>());
         }
 
-        public Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType,
+        public async Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType,
             BlockId blockId, int limit, string continuation)
         {
-            throw new NotImplementedException();
+            return new PaginatedItems<TransactionFailedEvent>(null, new List<TransactionFailedEvent>() { });
         }
 
         public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType,
