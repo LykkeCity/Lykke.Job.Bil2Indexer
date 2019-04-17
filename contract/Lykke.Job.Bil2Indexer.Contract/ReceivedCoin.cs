@@ -2,7 +2,7 @@
 using Lykke.Bil2.SharedDomain;
 using Lykke.Numerics;
 
-namespace Lykke.Job.Bil2Indexer.Contract.Events
+namespace Lykke.Job.Bil2Indexer.Contract
 {
     [PublicAPI]
     public class ReceivedCoin

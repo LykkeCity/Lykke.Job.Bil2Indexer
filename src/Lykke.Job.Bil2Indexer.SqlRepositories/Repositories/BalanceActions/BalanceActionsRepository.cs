@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Common.Log;
+using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;

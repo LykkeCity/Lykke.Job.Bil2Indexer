@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Lykke.Bil2.SharedDomain;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
 {
@@ -17,6 +18,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
         [Column("block_id")]
         public string BlockId { get; set; }
 
+        [Column("prev_block_id")]
+        public BlockId PreviousBlockId { get; set; }
+
         public uint Version { get; set; }
+        
     }
 }

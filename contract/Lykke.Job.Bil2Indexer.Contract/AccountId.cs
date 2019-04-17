@@ -2,7 +2,7 @@
 using JetBrains.Annotations;
 using Lykke.Bil2.SharedDomain;
 
-namespace Lykke.Job.Bil2Indexer.Contract.Events
+namespace Lykke.Job.Bil2Indexer.Contract
 {
     [PublicAPI]
     public class AccountId : IEquatable<AccountId>

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -15,6 +16,7 @@ using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Job.Bil2Indexer.Workflow.Events;
 using Lykke.Numerics;
 using Lykke.Numerics.Linq;
+using ReceivedCoin = Lykke.Job.Bil2Indexer.Contract.ReceivedCoin;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 {
@@ -66,18 +68,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 
                 chainHead.ExtendTo(command.ToBlockNumber, command.ToBlockId);
 
+                // TODO: Update balance snapshots
+
+                replyPublisher.Publish(new ChainHeadExtendedEvent
+                {
+                    BlockchainType = command.BlockchainType,
+                    ChainHeadSequence = chainHead.Version,
+                    BlockNumber = command.ToBlockNumber,
+                    BlockId = command.ToBlockId,
+                    PreviousBlockId = chainHead.PreviousBlockId
+                });
+
                 await _chainHeadsRepository.SaveAsync(chainHead);
             }
-
-            // TODO: Update balance snapshots
-
-            replyPublisher.Publish(new ChainHeadExtendedEvent
-            {
-                BlockchainType = command.BlockchainType,
-                ChainHeadSequence = chainHead.Version,
-                ToBlockNumber = command.ToBlockNumber,
-                ToBlockId = command.ToBlockId
-            });
         }
 
         private Task PublishExecutedTransactionsAsync(string blockchainType, string blockId, long blockNumber, IMessagePublisher publisher)
@@ -175,7 +178,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                             g => g
                                 .Select
                                 (
-                                    x => new Contract.Events.ReceivedCoin
+                                    x => new ReceivedCoin
                                     (
                                         number: x.CoinNumber,
                                         value: x.Value,

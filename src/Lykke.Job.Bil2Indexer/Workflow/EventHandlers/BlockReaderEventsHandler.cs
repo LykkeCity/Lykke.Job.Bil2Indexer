@@ -7,20 +7,19 @@ using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Job.Bil2Indexer.Contract.Events;
+using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
-using TransactionFailedEvent = Lykke.Bil2.Contract.BlocksReader.Events.TransactionFailedEvent;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 {
     public class BlockReaderEventsHandler : IBlockEventsHandler
     {
-        private readonly ICommandsSenderFactory _commandsSenderFactory;
+        private readonly IMessageSendersFactory _messageSendersFactory;
         private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly IntegrationSettingsProvider _integrationSettingsProvider;
         private readonly ICrawlersManager _crawlersManager;
@@ -30,7 +29,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
 
         public BlockReaderEventsHandler(
-            ICommandsSenderFactory commandsSenderFactory,
+            IMessageSendersFactory messageSendersFactory,
             IBlockHeadersRepository blockHeadersRepository,
             IntegrationSettingsProvider integrationSettingsProvider,
             ICrawlersManager crawlersManager,
@@ -39,7 +38,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             ICoinsRepository coinsRepository,
             IFeeEnvelopesRepository feeEnvelopesRepository)
         {
-            _commandsSenderFactory = commandsSenderFactory;
+            _messageSendersFactory = messageSendersFactory;
             _blockHeadersRepository = blockHeadersRepository;
             _integrationSettingsProvider = integrationSettingsProvider;
             _crawlersManager = crawlersManager;
@@ -69,7 +68,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 evt.BlockSize, evt.BlockTransactionsCount, evt.PreviousBlockId
             );
             
-            var commandsSender = _commandsSenderFactory.Create();
+            var commandsSender = _messageSendersFactory.CreateCommandsSender();
 
             await _blockHeadersRepository.SaveAsync(blockHeader);
 
@@ -248,6 +247,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
         public Task HandleAsync(string blockchainType, LastIrreversibleBlockUpdatedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
+            var eventsPublisher = _messageSendersFactory.CreateEventsPublisher();
+
+            eventsPublisher.Publish
+            (
+                new Contract.Events.LastIrreversibleBlockUpdatedEvent
+                (
+                    blockchainType,
+                    evt.BlockNumber,
+                    evt.BlockId
+                ),
+                headers.CorrelationId
+            );
+
             return Task.CompletedTask;
         }
     }

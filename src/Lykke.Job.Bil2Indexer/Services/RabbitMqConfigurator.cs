@@ -1,6 +1,8 @@
 ﻿using JetBrains.Annotations;
 using Lykke.Bil2.RabbitMq;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Job.Bil2Indexer.Contract;
+using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Workflow.CommandHandlers;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Job.Bil2Indexer.Workflow.EventHandlers;
@@ -12,8 +14,7 @@ namespace Lykke.Job.Bil2Indexer.Services
     public class RabbitMqConfigurator
     {
         public const string CommandsExchangeName = "bil-v2.indexer.commands";
-        private const string EventsExchangeName = "bil-v2.indexer.events";
-
+        
         private readonly IRabbitMqEndpoint _endpoint;
 
         public RabbitMqConfigurator(IRabbitMqEndpoint endpoint)
@@ -29,7 +30,7 @@ namespace Lykke.Job.Bil2Indexer.Services
 
         private void ConfigureEvents()
         {
-            _endpoint.DeclareExchange(EventsExchangeName);
+            _endpoint.DeclareExchange(Bil2IndexerContractExchanges.Events);
 
             var eventsSubscriptions = new MessageSubscriptionsRegistry()
                 .Handle<BlockAssembledEvent>(o => { o.WithHandler<BlockAssembledEventsHandler>(); })
@@ -39,7 +40,7 @@ namespace Lykke.Job.Bil2Indexer.Services
                 .Handle<ChainHeadExtendedEvent>(o => o.WithHandler<ChainHeadExtendedEventsHandler>());
 
             _endpoint.Subscribe(
-                EventsExchangeName,
+                Bil2IndexerContractExchanges.Events,
                 "bil-v2.indexer",
                 eventsSubscriptions,
                 CommandsExchangeName);
@@ -60,7 +61,7 @@ namespace Lykke.Job.Bil2Indexer.Services
                 CommandsExchangeName,
                 "bil-v2.indexer",
                 commandsSubscriptions,
-                EventsExchangeName);
+                Bil2IndexerContractExchanges.Events);
         }
     }
 }

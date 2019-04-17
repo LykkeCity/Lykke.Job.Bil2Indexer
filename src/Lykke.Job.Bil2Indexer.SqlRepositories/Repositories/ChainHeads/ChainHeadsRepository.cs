@@ -73,13 +73,20 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
             }
         }
 
-        private ChainHead Map(ChainHeadEntity source)
+        private static ChainHead Map(ChainHeadEntity source)
         {
-            return new ChainHead(source.BlockchainType, source.FirstBlockNumber, source.Version, source.BlockNumber,
-                source.BlockId);
+            return new ChainHead
+            (
+                source.BlockchainType,
+                source.FirstBlockNumber,
+                source.Version,
+                source.BlockNumber,
+                source.BlockId,
+                source.PreviousBlockId
+            );
         }
 
-        private ChainHeadEntity Map(ChainHead source)
+        private static ChainHeadEntity Map(ChainHead source)
         {
             return new ChainHeadEntity
             {
@@ -87,6 +94,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
                 BlockchainType = source.BlockchainType,
                 FirstBlockNumber = source.FirstBlockNumber,
                 BlockId = source.BlockId,
+                PreviousBlockId = source.PreviousBlockId,
                 BlockNumber = source.BlockNumber
             };
         }

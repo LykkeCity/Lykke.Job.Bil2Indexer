@@ -63,7 +63,8 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
                         head.FirstBlockNumber,
                         head.Version + 1,
                         head.BlockNumber,
-                        head.BlockId
+                        head.BlockId,
+                        head.PreviousBlockId
                     );
 
                     _log.Info($"Chain head saved {newHead}");
