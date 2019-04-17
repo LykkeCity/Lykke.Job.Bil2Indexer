@@ -1,12 +1,12 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using JetBrains.Annotations;
+using Lykke.Logs.Loggers.LykkeSlack;
 using Lykke.Sdk;
-using Lykke.Service.Bil2Indexer.Settings;
+using Lykke.Service.Bil2IndexerGrpcApi.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using Lykke.Logs.Loggers.LykkeSlack;
 
-namespace Lykke.Service.Bil2Indexer
+namespace Lykke.Service.Bil2IndexerGrpcApi
 {
     [UsedImplicitly]
     public class Startup
@@ -26,7 +26,7 @@ namespace Lykke.Service.Bil2Indexer
 
                 options.Logs = logs =>
                 {
-                    logs.AzureTableName = "Bil2IndexerServiceLog";
+                    logs.AzureTableName = "Bil2IndexerGrpcApiLog";
                     logs.AzureTableConnectionStringResolver = settings => settings.Bil2IndexerService.Db.LogsConnString;
                     
                     logs.Extended = extendedLogs =>

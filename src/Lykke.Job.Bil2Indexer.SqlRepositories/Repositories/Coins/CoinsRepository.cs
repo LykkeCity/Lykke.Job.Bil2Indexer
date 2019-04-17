@@ -11,7 +11,7 @@ using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Coins.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Lykke.Numerics;
 using Microsoft.EntityFrameworkCore;
 using Z.EntityFramework.Plus;

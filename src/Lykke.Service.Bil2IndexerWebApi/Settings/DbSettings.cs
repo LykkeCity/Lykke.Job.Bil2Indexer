@@ -1,6 +1,6 @@
 ﻿using Lykke.SettingsReader.Attributes;
 
-namespace Lykke.Service.Bil2Indexer.Settings
+namespace Lykke.Service.Bil2IndexerWebApi.Settings
 {
     public class DbSettings
     {

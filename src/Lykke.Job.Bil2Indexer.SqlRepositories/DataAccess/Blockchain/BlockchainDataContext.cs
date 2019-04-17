@@ -1,5 +1,4 @@
 ﻿using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Coins.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain
