@@ -12,9 +12,8 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
         Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId);
         Task<Money> GetBalanceAsync(string blockchainType, Address address, Asset asset, long atBlockNumber);
         Task<IReadOnlyDictionary<Asset, Money>> GetBalancesAsync(string blockchainType, Address address, long atBlockNumber);
-        Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetBalancesAsync(
-            string blockchainType, 
-            ISet<TransactionId> transactionIds, 
-            long atBlockNumber);
+        Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetSomeOfBalancesAsync(
+            string blockchainType,  
+            ISet<TransactionId> transactionIds);
     }
 }

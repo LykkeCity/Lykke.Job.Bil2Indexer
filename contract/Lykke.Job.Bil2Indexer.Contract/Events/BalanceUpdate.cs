@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
-using Lykke.Bil2.SharedDomain;
 using Lykke.Numerics;
 
 namespace Lykke.Job.Bil2Indexer.Contract.Events
@@ -12,34 +12,26 @@ namespace Lykke.Job.Bil2Indexer.Contract.Events
         public Money OldBalance { get; }
         public Money NewBalance { get; }
         [CanBeNull]
-        public string TransferId { get; }
+        public IReadOnlyCollection<Transfer> Transfers { get; }
         [CanBeNull]
-        public int? CoinNumber { get; }
+        public IReadOnlyCollection<SpentCoin> SpentCoins { get; }
         [CanBeNull]
-        public AddressTag AddressTag { get; }
-        [CanBeNull]
-        public AddressTagType? AddressTagType { get; }
-        [CanBeNull]
-        public long? Nonce { get; }
+        public IReadOnlyCollection<ReceivedCoin> ReceivedCoins { get; }
         
         public BalanceUpdate(
             AccountId accountId,
             Money oldBalance,
             Money newBalance,
-            [CanBeNull] string transferId,
-            [CanBeNull] int? coinNumber,
-            [CanBeNull] AddressTag addressTag,
-            [CanBeNull] AddressTagType? addressTagType,
-            [CanBeNull] long? nonce)
+            [CanBeNull] IReadOnlyCollection<Transfer> transfers,
+            [CanBeNull] IReadOnlyCollection<SpentCoin> spentCoins,
+            [CanBeNull] IReadOnlyCollection<ReceivedCoin> receivedCoins)
         {
             AccountId = AccountId ?? throw new ArgumentNullException(nameof(accountId));
             OldBalance = oldBalance;
             NewBalance = newBalance;
-            TransferId = transferId;
-            CoinNumber = coinNumber;
-            AddressTag = addressTag;
-            AddressTagType = addressTagType;
-            Nonce = nonce;
+            Transfers = transfers;
+            SpentCoins = spentCoins;
+            ReceivedCoins = receivedCoins;
         }
     }
 }
