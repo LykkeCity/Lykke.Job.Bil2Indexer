@@ -49,7 +49,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             Assert.AreEqual(sum, retrievedSum);
 
-            var byTx = await repo.GetBalancesAsync(bType, actions.Select(p => p.TransactionId).ToHashSet(), long.MaxValue);
+            var byTx = await repo.GetSomeOfBalancesAsync(bType, actions.Select(p => p.TransactionId).ToHashSet());
 
 
             Assert.AreEqual(actions.Count, byTx.Count);
