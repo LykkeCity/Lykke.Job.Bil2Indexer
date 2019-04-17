@@ -1,7 +1,7 @@
-﻿using Lykke.Sdk;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Lykke.Sdk;
 
-namespace Lykke.Service.Bil2Indexer
+namespace Lykke.Service.Bil2IndexerGrpcApi
 {
     internal sealed class Program
     {

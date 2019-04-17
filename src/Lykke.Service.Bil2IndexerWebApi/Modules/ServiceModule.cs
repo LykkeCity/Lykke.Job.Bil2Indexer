@@ -1,8 +1,8 @@
 ﻿using Autofac;
-using Lykke.Service.Bil2Indexer.Settings;
+using Lykke.Service.Bil2IndexerWebApi.Settings;
 using Lykke.SettingsReader;
 
-namespace Lykke.Service.Bil2Indexer.Modules
+namespace Lykke.Service.Bil2IndexerWebApi.Modules
 {
     public class ServiceModule : Module
     {

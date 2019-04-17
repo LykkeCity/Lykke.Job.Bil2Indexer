@@ -1,24 +1,24 @@
-﻿using Autofac;
+﻿using System;
+using Autofac;
 using JetBrains.Annotations;
 using Lykke.HttpClientGenerator;
 using Lykke.HttpClientGenerator.Infrastructure;
-using System;
 
-namespace Lykke.Service.Bil2Indexer.Client
+namespace Lykke.Service.Bil2IndexerWebApi.Client
 {
     /// <summary>
-    /// Extension for client registration
+    /// Extension for WEB API client registration
     /// </summary>
     [PublicAPI]
     public static class AutofacExtension
     {
         /// <summary>
-        /// Registers <see cref="IBil2IndexerClient"/> in Autofac container using <see cref="Bil2IndexerServiceClientSettings"/>.
+        /// Registers <see cref="IBil2IndexerWebApiClient"/> in Autofac container using <see cref="Bil2IndexerServiceClientSettings"/>.
         /// </summary>
         /// <param name="builder">Autofac container builder.</param>
         /// <param name="settings">Bil2Indexer client settings.</param>
         /// <param name="builderConfigure">Optional <see cref="HttpClientGeneratorBuilder"/> configure handler.</param>
-        public static void RegisterBil2IndexerClient(
+        public static void RegisterBil2IndexerWebApiClient(
             [NotNull] this ContainerBuilder builder,
             [NotNull] Bil2IndexerServiceClientSettings settings,
             [CanBeNull] Func<HttpClientGeneratorBuilder, HttpClientGeneratorBuilder> builderConfigure)
@@ -35,8 +35,8 @@ namespace Lykke.Service.Bil2Indexer.Client
 
             clientBuilder = builderConfigure?.Invoke(clientBuilder) ?? clientBuilder.WithoutRetries();
 
-            builder.RegisterInstance(new Bil2IndexerClient(clientBuilder.Create()))
-                .As<IBil2IndexerClient>()
+            builder.RegisterInstance(new Bil2IndexerWebApiClient(clientBuilder.Create()))
+                .As<IBil2IndexerWebApiClient>()
                 .SingleInstance();
         }
     }

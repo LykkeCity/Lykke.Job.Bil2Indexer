@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using JetBrains.Annotations;
 
-namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Coins.Models
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 {
     [Table("coins")]
     public class CoinEntity

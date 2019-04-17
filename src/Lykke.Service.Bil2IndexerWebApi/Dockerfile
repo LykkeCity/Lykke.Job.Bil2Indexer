@@ -1,4 +1,4 @@
 FROM microsoft/dotnet:2.2-aspnetcore-runtime
 WORKDIR /app
 COPY . .
-ENTRYPOINT ["dotnet", "Lykke.Service.Bil2Indexer.dll"]
+ENTRYPOINT ["dotnet", "Lykke.Service.Bil2IndexerWebApi.dll"]
