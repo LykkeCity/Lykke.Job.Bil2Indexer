@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
@@ -10,6 +10,7 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Lykke.Numerics;
 using Microsoft.EntityFrameworkCore;
 using Z.EntityFramework.Plus;
@@ -103,7 +104,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                     .GroupBy(p=>p.AssetId)
                     .Select(p => new
                     {
-                        Sum = p.Sum(x => x.Value).ToString(),
+                        Sum = p.Sum(x => x.Value).ToString(CultureInfo.InvariantCulture),
                         Scale = p.First().ValueScale
                     }).ToListAsync()).FirstOrDefault();
 
@@ -111,16 +112,58 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             }
         }
 
-        public Task<IReadOnlyDictionary<Asset, Money>> GetBalancesAsync(string blockchainType, Address address, long atBlockNumber)
+        public async Task<IReadOnlyDictionary<Asset, Money>> GetBalancesAsync(string blockchainType, Address address, long atBlockNumber)
         {
-            throw new NotImplementedException();
+            using (var db = new BlockchainDataContext(_posgresConnstring))
+            {
+                var queryRes = await db.BalanceActions.Where(p =>
+                        p.BlockchainType == blockchainType
+                        && p.Address == address
+                        && p.BlockNumber <= atBlockNumber)
+                    .GroupBy(p => p.AssetId)
+                    .Select(p => new
+                    {
+                        Sum = p.Sum(x => x.Value).ToString(CultureInfo.InvariantCulture),
+                        Scale = p.First().ValueScale,
+                        p.First().AssetId,
+                        p.First().AssetAddress
+                    }).ToListAsync();
+
+
+                return queryRes.ToDictionary(
+                    p => new Asset(new AssetId(p.AssetId), new AssetAddress(p.AssetAddress)),
+                    p => MoneyHelper.BuildMoney(p.Sum, p.Scale));
+            }
         }
 
-        public Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetSomeOfBalancesAsync(
+        public async Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetSomeOfBalancesAsync(
             string blockchainType, 
             ISet<TransactionId> transactionIds)
         {
-            throw new NotImplementedException();
+            var ids = transactionIds.Select(p => p.ToString()).ToList();
+            using (var db = new BlockchainDataContext(_posgresConnstring))
+            {
+                var queryRes = await db.BalanceActions.Where(p =>
+                        p.BlockchainType == blockchainType
+                        && ids.Any(x => x == p.TransactionId))
+                    .Select(p => new
+                    {
+                        p.TransactionId,
+                        Value = p.Value.ToString(CultureInfo.InvariantCulture),
+                        p.ValueScale,
+                        p.AssetId,
+                        p.AssetAddress,
+                        p.Address
+                    }).ToListAsync();
+
+
+                return queryRes.GroupBy(p => new TransactionId(p.TransactionId)).ToDictionary(p => p.Key, p =>
+                {
+                    return (IReadOnlyDictionary<AccountId, Money>)p.ToDictionary(
+                        x => new AccountId(x.Address, new Asset(new AssetId(x.AssetId), new AssetAddress(x.AssetAddress))),
+                        x => MoneyHelper.BuildMoney(x.Value, x.ValueScale));
+                });
+            }
         }
 
         private static BalanceActionEntity Map(BalanceAction source, string blockchainType)
