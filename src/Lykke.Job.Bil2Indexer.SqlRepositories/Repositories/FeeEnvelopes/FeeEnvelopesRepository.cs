@@ -84,9 +84,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
                 var entity = await db.FeeEnvelopes
-                    .SingleOrDefaultAsync(p => p.BlockchainType == blockchainType
+                    .Where(p => p.BlockchainType == blockchainType
                                                && p.TransactionId == transactionId
-                                               && p.AssetId == asset.Id);
+                                               && p.AssetId == asset.Id)
+                    .Select(MoneyHackProjection())
+                    .SingleOrDefaultAsync();
 
                 return entity != null ? Map(entity) : null;
             }
@@ -97,9 +99,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
                 var entity = await db.FeeEnvelopes
-                    .SingleOrDefaultAsync(p => p.BlockchainType == blockchainType
+                    .Where(p => p.BlockchainType == blockchainType
                                                && p.TransactionId == transactionId
-                                               && p.AssetId == asset.Id);
+                                               && p.AssetId == asset.Id)
+                    .Select(MoneyHackProjection())
+                    .SingleOrDefaultAsync();
 
                 if (entity == null)
                 {
@@ -149,9 +153,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 var entities =await db.FeeEnvelopes.Where(predicate)
                     .Skip(skip)
                     .Take((int) limit)
+                    .Select(MoneyHackProjection())
                     .ToListAsync();
-
-
+                
                 var nextContinuation = entities.Count < limit ? null : (skip + entities.Count).ToString();
 
                 return new PaginatedItems<FeeEnvelope>(nextContinuation, entities.Select(Map).ToList());
@@ -163,19 +167,41 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
                 var entities = await db.FeeEnvelopes.Where(predicate)
+                    .Select(MoneyHackProjection())
                     .ToListAsync();
 
                 return entities.Select(p => Map(p)).ToList();
             }
         }
 
+        private static Expression<Func<FeeEnvelopeEntity, FeeEnvelopeEntity>> MoneyHackProjection()
+        {
+            return ent => new FeeEnvelopeEntity
+            {
+                BlockchainType = ent.BlockchainType,
+                AssetId = ent.AssetId,
+                TransactionId = ent.TransactionId,
+                AssetAddress = ent.AssetAddress,
+                Id = ent.Id,
+                Value = -1,
+                BlockId = ent.BlockId,
+                ValueScale = ent.ValueScale,
+                ValueString = ent.Value.ToString(CultureInfo.InvariantCulture)
+            };
+        }
+
         private static FeeEnvelope Map(FeeEnvelopeEntity source)
         {
+            if (string.IsNullOrEmpty(source.ValueString))
+            {
+                throw new ArgumentNullException($"{nameof(MoneyHackProjection)} should used before mapping", nameof(source.ValueString));
+            }
+
             return new FeeEnvelope(source.BlockchainType, 
                 source.BlockId, 
                 source.TransactionId, 
                 new Fee(new Asset(source.AssetId, source.AssetAddress), 
-                    MoneyHelper.BuildUMoney(source.Value.ToString(CultureInfo.InvariantCulture), 
+                    MoneyHelper.BuildUMoney(source.ValueString, 
                         source.ValueScale)));
         }
 
