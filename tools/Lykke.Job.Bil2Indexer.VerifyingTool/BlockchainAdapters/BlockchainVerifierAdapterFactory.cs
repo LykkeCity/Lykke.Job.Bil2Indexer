@@ -15,6 +15,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters
 
                 case "Ripple":
                     return new RippleBlockchainVerifierAdapter(args[0]);
+
                 default:
                     return null;
             }
