@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using Lykke.Common.Log;
+using Lykke.Logs.Loggers.LykkeConsole;
 using BlockHeader = Lykke.Job.Bil2Indexer.Domain.BlockHeader;
 
 namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
@@ -19,13 +21,16 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
     {
         private readonly IRippleApi _rippleApi;
 
-        public RippleBlockchainVerifierAdapter(string rippleUrl)
+        public RippleBlockchainVerifierAdapter(string rippleUrl, string username = null, string password = null)
         {
             if (string.IsNullOrEmpty(rippleUrl))
                 throw new ArgumentException("Should not be empty", nameof(rippleUrl));
 
             IServiceCollection serviceCollection = new ServiceCollection();
-            Lykke.Bil2.Ripple.Client.ServiceCollectionExtensions.AddRippleClient(serviceCollection, rippleUrl);
+            var logFactory = Logs.EmptyLogFactory.Instance;
+            logFactory.AddConsole();
+            serviceCollection.AddSingleton<ILogFactory>(logFactory);
+            Lykke.Bil2.Ripple.Client.ServiceCollectionExtensions.AddRippleClient(serviceCollection, rippleUrl, username, password);
             _rippleApi = serviceCollection.BuildServiceProvider().GetRequiredService<IRippleApi>();
         }
 

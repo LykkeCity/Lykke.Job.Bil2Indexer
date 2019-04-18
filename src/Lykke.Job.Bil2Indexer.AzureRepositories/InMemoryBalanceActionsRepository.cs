@@ -74,7 +74,8 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             var result = new Dictionary<TransactionId, Dictionary<AccountId, Money>>();
             var filtered = _actions
                 .Where(x => x.Key.Item1 == blockchainType &&
-                            x.Value.Count(y => transactionIds.Contains(y.TransactionId)) != 0);
+                            x.Value.Count(y => transactionIds.Contains(y.TransactionId)) != 0)
+                .ToArray();
 
             foreach (var item in filtered)
             {
