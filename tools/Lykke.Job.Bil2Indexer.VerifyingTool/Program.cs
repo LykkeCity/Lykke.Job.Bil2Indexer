@@ -45,7 +45,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool
                 {
                     return LykkeStarter.Start<StartupInMemory>(true, 5001);
                 });
-                await Task.Delay(45000);
+                await Task.Delay(120000);
                 blockHeadersRepository =
                     StartupInMemory.ServiceProvider.GetRequiredService<IBlockHeadersRepository>();
                 transactionsRepository =

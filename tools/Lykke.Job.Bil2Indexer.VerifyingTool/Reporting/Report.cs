@@ -147,8 +147,6 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
                     }
                     else if (_transferModel == BlockchainTransferModel.Amount)
                     {
-                        _reportingContext.StartListScope("valueTransfer");
-
                         string continuation = null;
                         List<TransferAmountTransactionExecutedEvent> transfers =
                             new List<TransferAmountTransactionExecutedEvent>(100);
@@ -244,6 +242,8 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
                 _reportingContext.EndScope();
             }
+
+            _reportingContext.EndScope();
         }
 
         private void AssertReceivedCoins(ReceivedCoin[] receivedCoinsReal, ReceivedCoin[] receivedCoinsIndexed)
