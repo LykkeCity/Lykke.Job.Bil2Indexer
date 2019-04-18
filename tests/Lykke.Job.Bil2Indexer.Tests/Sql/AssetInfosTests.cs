@@ -26,9 +26,9 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             await repo.AddIfNotExistsAsync(asset);
             await repo.AddIfNotExistsAsync(asset);
 
-            var retrieved1 = await repo.GetOrDefaultAsync(asset.BlockchainType, asset.Id);
-            var retrieved2 = await repo.GetAsync(asset.BlockchainType, asset.Id);
-            var retrieved3 = (await repo.GetSomeOfAsync(asset.BlockchainType, new []{ asset.Id}))
+            var retrieved1 = await repo.GetOrDefaultAsync(asset.BlockchainType, asset.Asset.Id);
+            var retrieved2 = await repo.GetAsync(asset.BlockchainType, asset.Asset.Id);
+            var retrieved3 = (await repo.GetSomeOfAsync(asset.BlockchainType, new []{ asset.Asset.Id }))
                 .Single();
 
             AssertEquals(retrieved1, asset);
@@ -38,14 +38,14 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
         private AssetInfo BuildRandomAssetInfo()
         {
-            return new AssetInfo(Guid.NewGuid().ToString(), new AssetId(Guid.NewGuid().ToString()), new Random().Next() );
+            return new AssetInfo(Guid.NewGuid().ToString(), new Asset(Guid.NewGuid().ToString()), new Random().Next() );
         }
 
 
         private void AssertEquals(AssetInfo a, AssetInfo b)
         {
             Assert.AreEqual(a.BlockchainType, b.BlockchainType);
-            Assert.AreEqual(a.Id, b.Id);
+            Assert.AreEqual(a.Asset.Id, b.Asset.Id);
             Assert.AreEqual(a.Scale, b.Scale);
         }
 

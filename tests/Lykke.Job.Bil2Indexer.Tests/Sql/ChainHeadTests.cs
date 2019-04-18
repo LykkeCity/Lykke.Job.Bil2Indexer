@@ -100,8 +100,16 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         private ChainHead BuildRandom()
         {
             var rnd = new Random();
-            
-            return new ChainHead(Guid.NewGuid().ToString(), rnd.Next(), rnd.Next(), rnd.Next(), Guid.NewGuid().ToString());
+
+            return new ChainHead
+            (
+                Guid.NewGuid().ToString(),
+                rnd.Next(),
+                rnd.Next(),
+                rnd.Next(),
+                Guid.NewGuid().ToString(),
+                Guid.NewGuid().ToString()
+            );
         }
     }
 

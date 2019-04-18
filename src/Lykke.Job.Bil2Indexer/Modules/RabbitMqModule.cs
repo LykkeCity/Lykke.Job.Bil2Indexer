@@ -15,9 +15,8 @@ namespace Lykke.Job.Bil2Indexer.Modules
             builder.RegisterType<RabbitMqConfigurator>()
                 .AsSelf();
 
-            builder.RegisterType<CommandsSenderFactory>()
-                .As<ICommandsSenderFactory>();
-
+            builder.RegisterType<MessageSendersFactory>()
+                .As<IMessageSendersFactory>();
             
             builder.RegisterType<BlockReaderEventsHandler>().As<IBlockEventsHandler>();
             builder.RegisterType<BlockAssembledEventsHandler>().AsSelf();

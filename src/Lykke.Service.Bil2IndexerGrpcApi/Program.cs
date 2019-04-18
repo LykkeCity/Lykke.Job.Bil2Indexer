@@ -8,7 +8,7 @@ namespace Lykke.Service.Bil2IndexerGrpcApi
         public static async Task Main(string[] args)
         {
 #if DEBUG
-            await LykkeStarter.Start<Startup>(true);
+            await LykkeStarter.Start<Startup>(true, 5002);
 #else
             await LykkeStarter.Start<Startup>(false);
 #endif

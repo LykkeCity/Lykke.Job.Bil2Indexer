@@ -4,7 +4,6 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
-using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
@@ -47,52 +46,47 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
         {
             using (var db = new StateDataContext(_posgresConnString))
             {
+                var existed = await db.ChainHeads.SingleOrDefaultAsync(p=>p.BlockchainType == head.BlockchainType);
+
                 var newValues = Map(head);
-                
-                await db.ChainHeads.AddAsync(newValues);
+                if (existed != null)
+                {
+                    db.Entry(existed).Property(nameof(ChainHeadEntity.Version)).OriginalValue = newValues.Version;
+                    db.Entry(existed).State = EntityState.Modified; //forces to update xmin even if actual prop is the same
+
+                    db.Entry(existed).CurrentValues.SetValues(newValues);
+                }
+                else
+                {
+                    db.ChainHeads.Add(newValues);
+                }
 
                 try
                 {
                     await db.SaveChangesAsync();
+
                 }
-                catch (DbUpdateException dbUpdEx) when (dbUpdEx.IsConstraintViolationException())
+                catch (DbUpdateConcurrencyException e)
                 {
-                    var existed = await db.ChainHeads
-                        .SingleOrDefaultAsync(p => p.BlockchainType == head.BlockchainType);
-
-                    if (existed == null)
-                    {
-                        throw;
-                    }
-
-                    db.Entry(newValues).State = EntityState.Detached;
-
-                    db.Entry(existed).Property(nameof(ChainHeadEntity.Version)).OriginalValue = newValues.Version;
-                    db.Entry(existed).State = EntityState.Modified; //forces to update xmin even if actual prop is the same
-                    db.Entry(existed).CurrentValues.SetValues(newValues);
-
-                    try
-                    {
-                        await db.SaveChangesAsync();
-                    }
-                    catch (DbUpdateConcurrencyException e)
-                    {
-                        throw new OptimisticConcurrencyException(e);
-                    }
+                    throw new OptimisticConcurrencyException(e);
                 }
             }
         }
 
-        private ChainHead Map(ChainHeadEntity source)
+        private static ChainHead Map(ChainHeadEntity source)
         {
-            return new ChainHead(source.BlockchainType, 
-                source.FirstBlockNumber, 
-                source.Version, 
+            return new ChainHead
+            (
+                source.BlockchainType,
+                source.FirstBlockNumber,
+                source.Version,
                 source.BlockNumber,
-                source.BlockId);
+                source.BlockId,
+                source.PreviousBlockId
+            );
         }
 
-        private ChainHeadEntity Map(ChainHead source)
+        private static ChainHeadEntity Map(ChainHead source)
         {
             return new ChainHeadEntity
             {
@@ -100,6 +94,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
                 BlockchainType = source.BlockchainType,
                 FirstBlockNumber = source.FirstBlockNumber,
                 BlockId = source.BlockId,
+                PreviousBlockId = source.PreviousBlockId,
                 BlockNumber = source.BlockNumber
             };
         }

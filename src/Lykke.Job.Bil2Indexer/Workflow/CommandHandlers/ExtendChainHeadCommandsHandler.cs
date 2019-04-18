@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -12,7 +13,6 @@ using Lykke.Job.Bil2Indexer.Infrastructure;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
-using Lykke.Job.Bil2Indexer.Workflow.Events;
 using Lykke.Numerics;
 using Lykke.Numerics.Linq;
 
@@ -66,18 +66,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 
                 chainHead.ExtendTo(command.ToBlockNumber, command.ToBlockId);
 
+                // TODO: Update balance snapshots
+
+                replyPublisher.Publish(new ChainHeadExtendedEvent
+                {
+                    BlockchainType = command.BlockchainType,
+                    ChainHeadSequence = chainHead.Version,
+                    BlockNumber = command.ToBlockNumber,
+                    BlockId = command.ToBlockId,
+                    PreviousBlockId = chainHead.PreviousBlockId
+                });
+
                 await _chainHeadsRepository.SaveAsync(chainHead);
             }
-
-            // TODO: Update balance snapshots
-
-            replyPublisher.Publish(new ChainHeadExtendedEvent
-            {
-                BlockchainType = command.BlockchainType,
-                ChainHeadSequence = chainHead.Version,
-                ToBlockNumber = command.ToBlockNumber,
-                ToBlockId = command.ToBlockId
-            });
         }
 
         private Task PublishExecutedTransactionsAsync(string blockchainType, string blockId, long blockNumber, IMessagePublisher publisher)
@@ -148,6 +149,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     }
 
                     var transactionAccountSpentCoins = transactionSpentCoins
+                        .Where(x => x.Address != null)
                         .GroupBy(x => new AccountId(x.Address, x.Asset))
                         .ToDictionary
                         (
@@ -159,15 +161,16 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                                     (
                                         id: x.Id,
                                         value: x.Value,
-                                        address: x.Address,
                                         tag: x.AddressTag,
                                         tagType: x.AddressTagType,
                                         nonce: x.AddressNonce
                                     )
                                 )
+                                .ToArray()
                         );
 
                     var transactionAccountReceivedCoins = transaction.ReceivedCoins
+                        .Where(x => x.Address != null)
                         .GroupBy(x => new AccountId(x.Address, x.Asset))
                         .ToDictionary
                         (
@@ -175,11 +178,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                             g => g
                                 .Select
                                 (
-                                    x => new Contract.Events.ReceivedCoin
+                                    x => new Contract.ReceivedCoin
                                     (
                                         number: x.CoinNumber,
                                         value: x.Value,
-                                        address: x.Address,
                                         tag: x.AddressTag,
                                         tagType: x.AddressTagType,
                                         nonce: x.AddressNonce
@@ -193,11 +195,20 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                         {
                             var accountId = accountBalance.Key;
                             var balance = accountBalance.Value;
-                            var spentCoins = transactionAccountSpentCoins[accountId].ToArray();
-                            var receivedCoins = transactionAccountReceivedCoins[accountId].ToArray();
+
+                            if (!transactionAccountSpentCoins.TryGetValue(accountId, out var spentCoins))
+                            {
+                                spentCoins = Array.Empty<SpentCoin>();
+                            }
+
+                            if (!transactionAccountReceivedCoins.TryGetValue(accountId, out var receivedCoins))
+                            {
+                                receivedCoins = Array.Empty<Contract.ReceivedCoin>();
+                            }
+
                             var spentAmount = spentCoins.Sum(x => x.Value);
                             var receivedAmount = receivedCoins.Sum(x => x.Value);
-                            var oldBalance = balance - spentAmount + receivedAmount;
+                            var oldBalance = balance + spentAmount - receivedAmount;
 
                             return new BalanceUpdate
                             (
@@ -260,6 +271,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     }
 
                     var transactionAccountTransfers = transaction.BalanceChanges
+                        .Where(x => x.Address != null)
                         .GroupBy(x => new AccountId(x.Address, x.Asset))
                         .ToDictionary
                         (
@@ -271,7 +283,6 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                                     (
                                         x.TransferId,
                                         x.Value,
-                                        x.Address,
                                         x.Tag,
                                         x.TagType,
                                         x.Nonce

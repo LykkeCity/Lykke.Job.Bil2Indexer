@@ -2,12 +2,12 @@
 using System.Threading.Tasks;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
-using Lykke.Job.Bil2Indexer.Workflow.Events;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 {
@@ -34,7 +34,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
                 var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
-                var nextBlockNumber = evt.ToBlockNumber + 1;
+                var nextBlockNumber = evt.BlockNumber + 1;
 
                 if (messageCorrelationId.Configuration.CanProcess(nextBlockNumber))
                 {

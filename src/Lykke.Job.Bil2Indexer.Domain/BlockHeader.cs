@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Job.Bil2Indexer.Contract.Events;
+using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain.Infrastructure;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Numerics;

@@ -1,5 +1,4 @@
-﻿using Lykke.Numerics;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace Lykke.Job.Bil2Indexer.Tests
 {

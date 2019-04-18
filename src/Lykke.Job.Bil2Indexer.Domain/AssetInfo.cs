@@ -5,13 +5,13 @@ namespace Lykke.Job.Bil2Indexer.Domain
     public class AssetInfo
     {
         public string BlockchainType { get; }
-        public AssetId Id { get; }
+        public Asset Asset { get; }
         public int Scale { get; }
 
-        public AssetInfo(string blockchainType, AssetId id, int scale)
+        public AssetInfo(string blockchainType, Asset asset, int scale)
         {
             BlockchainType = blockchainType;
-            Id = id;
+            Asset = asset;
             Scale = scale;
         }
     }

@@ -3,9 +3,10 @@ using Lykke.Sdk.Settings;
 
 namespace Lykke.Service.Bil2IndexerGrpcApi.Settings
 {
-    [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
+    [UsedImplicitly]
     public class AppSettings : BaseAppSettings
     {
-        public Bil2IndexerSettings Bil2IndexerService { get; set; }
+        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+        public Bil2IndexerGrpcApiSettings Bil2IndexerGrpcApi { get; set; }
     }
 }

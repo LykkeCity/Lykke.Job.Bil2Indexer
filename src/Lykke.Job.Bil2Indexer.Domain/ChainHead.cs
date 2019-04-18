@@ -10,19 +10,22 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public long FirstBlockNumber { get; }
         public long? BlockNumber { get; private set; }
         public BlockId BlockId { get; private set; }
+        public BlockId PreviousBlockId { get; private set; }
 
         public ChainHead(
             string blockchainType,
             long firstBlockNumber,
             long version,
             long? blockNumber,
-            BlockId blockId)
+            BlockId blockId,
+            BlockId previousBlockId)
         {
             BlockchainType = blockchainType;
             FirstBlockNumber = firstBlockNumber;
             Version = version;
             BlockNumber = blockNumber;
             BlockId = blockId;
+            PreviousBlockId = previousBlockId;
         }
 
         public static ChainHead CreateNew(
@@ -35,7 +38,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 firstBlockNumber: firstBlockNumber,
                 version: 0,
                 blockNumber: null,
-                blockId: null
+                blockId: null,
+                previousBlockId: null
             );
         }
 
@@ -47,6 +51,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             }
 
             BlockNumber = blockNumber;
+            PreviousBlockId = BlockId;
             BlockId = blockId;
         }
 
@@ -58,6 +63,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             }
 
             BlockNumber = blockNumber;
+            PreviousBlockId = BlockId;
             BlockId = blockId;
         }
 

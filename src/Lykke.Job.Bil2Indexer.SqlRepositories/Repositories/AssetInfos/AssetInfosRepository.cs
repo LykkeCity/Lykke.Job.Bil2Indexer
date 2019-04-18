@@ -34,7 +34,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
                     var exist = await db.AssetInfos
                         .AnyAsync(
                             x => x.BlockchainType == asset.BlockchainType 
-                                 && x.Id == asset.Id);
+                                 && x.Id == asset.Asset.Id);
 
                     if (!exist)
                     {
@@ -108,14 +108,14 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
             return new AssetInfoEntity
             {
                 BlockchainType = source.BlockchainType,
-                Id = source.Id,
+                Id = source.Asset.Id,
                 Scale = source.Scale
             };
         }
 
         private AssetInfo Map(AssetInfoEntity source)
         {
-            return new AssetInfo(source.BlockchainType, new AssetId(source.Id), source.Scale);
+            return new AssetInfo(source.BlockchainType, new Asset(source.Id), source.Scale);
         }
     }
 }

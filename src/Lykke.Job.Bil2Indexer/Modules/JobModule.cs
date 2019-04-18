@@ -8,7 +8,6 @@ using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs;
 using Lykke.Logs.Hangfire;
 using Lykke.Sdk;
-using Lykke.Sdk.Health;
 
 namespace Lykke.Job.Bil2Indexer.Modules
 {
@@ -17,10 +16,6 @@ namespace Lykke.Job.Bil2Indexer.Modules
     {
         protected override void Load(ContainerBuilder builder)
         {
-            builder.RegisterType<HealthService>()
-                .As<IHealthService>()
-                .SingleInstance();
-
             builder.RegisterType<StartupManager>()
                 .As<IStartupManager>()
                 .SingleInstance();
@@ -29,9 +24,6 @@ namespace Lykke.Job.Bil2Indexer.Modules
                 .As<IShutdownManager>()
                 .AutoActivate()
                 .SingleInstance();
-
-            builder.RegisterType<RabbitMqConfigurator>()
-                .AsSelf();
 
             builder.RegisterChaosKitty(null);
 

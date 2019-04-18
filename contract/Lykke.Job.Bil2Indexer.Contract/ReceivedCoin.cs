@@ -2,17 +2,14 @@
 using Lykke.Bil2.SharedDomain;
 using Lykke.Numerics;
 
-namespace Lykke.Job.Bil2Indexer.Contract.Events
+namespace Lykke.Job.Bil2Indexer.Contract
 {
     [PublicAPI]
-    public class SpentCoin
+    public class ReceivedCoin
     {
-        public CoinId Id { get; }
+        public int Number { get; }
 
         public UMoney Value { get; }
-
-        [CanBeNull]
-        public Address Address { get; }
 
         [CanBeNull]
         public AddressTag Tag { get; }
@@ -23,17 +20,15 @@ namespace Lykke.Job.Bil2Indexer.Contract.Events
         [CanBeNull]
         public long? Nonce { get; }
 
-        public SpentCoin(
-            CoinId id,
+        public ReceivedCoin(
+            int number,
             UMoney value,
-            Address address,
             AddressTag tag,
             AddressTagType? tagType,
             long? nonce)
         {
-            Id = id;
+            Number = number;
             Value = value;
-            Address = address;
             Tag = tag;
             TagType = tagType;
             Nonce = nonce;
@@ -41,7 +36,7 @@ namespace Lykke.Job.Bil2Indexer.Contract.Events
 
         public override string ToString()
         {
-            return $"{Id}:{Address} = {Value}";
+            return $"{Number} = {Value}";
         }
     }
 }

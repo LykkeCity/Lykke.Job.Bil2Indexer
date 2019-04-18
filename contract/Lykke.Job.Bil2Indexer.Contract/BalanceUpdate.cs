@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using Lykke.Numerics;
 
-namespace Lykke.Job.Bil2Indexer.Contract.Events
+namespace Lykke.Job.Bil2Indexer.Contract
 {
     [PublicAPI]
     public class BalanceUpdate
@@ -26,7 +26,7 @@ namespace Lykke.Job.Bil2Indexer.Contract.Events
             [CanBeNull] IReadOnlyCollection<SpentCoin> spentCoins,
             [CanBeNull] IReadOnlyCollection<ReceivedCoin> receivedCoins)
         {
-            AccountId = AccountId ?? throw new ArgumentNullException(nameof(accountId));
+            AccountId = accountId ?? throw new ArgumentNullException(nameof(accountId));
             OldBalance = oldBalance;
             NewBalance = newBalance;
             Transfers = transfers;

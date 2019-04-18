@@ -27,7 +27,7 @@ namespace Lykke.Service.Bil2IndexerGrpcApi
                 options.Logs = logs =>
                 {
                     logs.AzureTableName = "Bil2IndexerGrpcApiLog";
-                    logs.AzureTableConnectionStringResolver = settings => settings.Bil2IndexerService.Db.LogsConnString;
+                    logs.AzureTableConnectionStringResolver = settings => settings.Bil2IndexerGrpcApi.Db.LogsConnString;
                     
                     logs.Extended = extendedLogs =>
                     {
