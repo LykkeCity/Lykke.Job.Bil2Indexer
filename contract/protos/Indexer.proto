@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+service IndexerApi {
+    rpc GetTransactionExecutedEvent(TransactionExecutedEventsFilter) returns (stream TransactionExecuted) {}
+    rpc GetTransactionFailedEvent(TransactionFailedEventsFilter) returns (stream TransactionFailed) {}
+    rpc GetLastIrreversibleBlockUpdatedEvent(LastIrreversibleBlockUpdatedEventsFilter) returns (stream LastIrreversibleBlockUpdated) {}
+    rpc GetChainHeadExtendedEvent(ChainHeadExtendedEventsFilter) returns (stream ChainHeadExtended) {}
+    rpc GetBlockRolledBackEvent(BlockRolledBackEventsFilter) returns (stream BlockRolledBack) {}
+}
+
+message TransactionExecutedEventsFilter {
+    google.protobuf.StringValue blockchainType = 1;
+    google.protobuf.StringValue transactionId = 2;
+    google.protobuf.StringValue address = 3;
+}
+
+message TransactionFailedEventsFilter {
+    google.protobuf.StringValue blockchainType = 1;
+    google.protobuf.StringValue transactionId = 2;
+}
+
+message LastIrreversibleBlockUpdatedEventsFilter {
+    string blockchainType = 1;
+}
+
+message ChainHeadExtendedEventsFilter {
+    string blockchainType = 1;
+}
+
+message BlockRolledBackEventsFilter {
+    string blockchainType = 1;
+}
+
+message TransactionExecuted {
+    string BlockchainType = 1;
+    string BlockId = 2;
+    int64 BlockNumber = 3;
+    int32 TransactionNumber = 4;
+    string TransactionId = 5;
+    repeated BalanceUpdate BalanceUpdates = 6;
+    repeated Fee Fees = 7;
+    bool IsIrreversible = 8;
+}
+
+message BalanceUpdate {
+    message Transfer {
+        string Id = 1;
+        string Value = 2;
+        google.protobuf.StringValue Tag = 3;
+        google.protobuf.StringValue TagType = 4;
+        google.protobuf.Int64Value Nonce = 5;
+    }
+    message SpentCoin {
+        string Id = 1;
+        string Value = 2;
+        google.protobuf.StringValue Tag = 3;
+        google.protobuf.StringValue TagType = 4;
+        google.protobuf.Int64Value Nonce = 5;
+    }
+    message ReceivedCoin {
+        string Number = 1;
+        string Value = 2;
+        google.protobuf.StringValue Tag = 3;
+        google.protobuf.StringValue TagType = 4;
+        google.protobuf.Int64Value Nonce = 5;
+    }
+
+    AccountId AccountId = 1;
+    string OldBalance = 2;
+    string NewBalance = 3;
+    repeated Transfer Transfers = 4;
+    repeated SpentCoin SpentCoins = 5;
+    repeated ReceivedCoin ReceivedCoins = 6;
+}
+
+message AccountId {
+    string Address = 1;
+    Asset Asset = 2;
+}
+
+message Asset {
+    string Id = 1;
+    google.protobuf.StringValue Address = 2;
+}
+
+message Fee {
+    Asset Asset = 1;
+    string Amount = 2;
+}
+
+
+message TransactionFailed {
+    string BlockchainType = 1;
+    string BlockId = 2;
+    int64 BlockNumber = 3;
+    int32 TransactionNumber = 4;
+    string TransactionId = 5;
+    string ErrorCode = 6;
+    string ErrorMessage = 7;
+    repeated Fee Fees = 8;
+}
+
+
+message LastIrreversibleBlockUpdated {
+    string BlockchainType = 1;
+    int64 BlockNumber = 2;
+    string BlockId = 3;
+}
+
+
+message ChainHeadExtended {
+    string BlockchainType = 1;
+    int64 ChainHeadSequence = 2;
+    int64 BlockNumber = 3;
+    string BlockId = 4;
+    string PreviousBlockId = 5;
+}
+
+message BlockRolledBack {
+    string BlockchainType = 1;
+    int64 BlockNumber = 2;
+    string BlockId = 3;
+    string PreviousBlockId = 4;
+}
