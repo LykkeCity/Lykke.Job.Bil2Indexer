@@ -23,13 +23,6 @@ namespace Lykke.Job.Bil2Indexer.Contract
 
         /// <summary>
         /// Optional.
-        /// Address.
-        /// </summary>
-        [CanBeNull]
-        public Address Address { get; }
-
-        /// <summary>
-        /// Optional.
         /// Tag of the address.
         /// </summary>
         [CanBeNull]
@@ -52,7 +45,6 @@ namespace Lykke.Job.Bil2Indexer.Contract
         public Transfer(
             string id, 
             Money value, 
-            Address address = null, 
             AddressTag tag = null, 
             AddressTagType? tagType = null,
             long? nonce = null)
@@ -60,15 +52,11 @@ namespace Lykke.Job.Bil2Indexer.Contract
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentException("Should be not empty string", nameof(id));
 
-            if (tag != null && address == null)
-                throw new ArgumentException("If the tag is specified, the address should be specified too");
-
             if (tagType.HasValue && tag == null)
                 throw new ArgumentException("If the tag type is specified, the tag should be specified too");
 
             Id = id;
             Value = value;
-            Address = address;
             Tag = tag;
             TagType = tagType;
             Nonce = nonce;
@@ -76,7 +64,7 @@ namespace Lykke.Job.Bil2Indexer.Contract
 
         public override string ToString()
         {
-            return $"{Id}:{Address} = {Value}";
+            return $"{Id} = {Value}";
         }
     }
 }

@@ -12,9 +12,6 @@ namespace Lykke.Job.Bil2Indexer.Contract
         public UMoney Value { get; }
 
         [CanBeNull]
-        public Address Address { get; }
-
-        [CanBeNull]
         public AddressTag Tag { get; }
 
         [CanBeNull]
@@ -26,14 +23,12 @@ namespace Lykke.Job.Bil2Indexer.Contract
         public ReceivedCoin(
             int number,
             UMoney value,
-            Address address,
             AddressTag tag,
             AddressTagType? tagType,
             long? nonce)
         {
             Number = number;
             Value = value;
-            Address = address;
             Tag = tag;
             TagType = tagType;
             Nonce = nonce;
@@ -41,7 +36,7 @@ namespace Lykke.Job.Bil2Indexer.Contract
 
         public override string ToString()
         {
-            return $"{Number}:{Address} = {Value}";
+            return $"{Number} = {Value}";
         }
     }
 }

@@ -161,7 +161,6 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                                     (
                                         id: x.Id,
                                         value: x.Value,
-                                        address: x.Address,
                                         tag: x.AddressTag,
                                         tagType: x.AddressTagType,
                                         nonce: x.AddressNonce
@@ -183,7 +182,6 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                                     (
                                         number: x.CoinNumber,
                                         value: x.Value,
-                                        address: x.Address,
                                         tag: x.AddressTag,
                                         tagType: x.AddressTagType,
                                         nonce: x.AddressNonce
@@ -285,7 +283,6 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                                     (
                                         x.TransferId,
                                         x.Value,
-                                        x.Address,
                                         x.Tag,
                                         x.TagType,
                                         x.Nonce
