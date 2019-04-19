@@ -1,4 +1,5 @@
-﻿using Lykke.Common;
+﻿using Autofac;
+using Lykke.Common;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Settings;
 using Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters;
@@ -13,8 +14,6 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
-using Autofac;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using BlockHeader = Lykke.Job.Bil2Indexer.Domain.BlockHeader;
 
 namespace Lykke.Job.Bil2Indexer.VerifyingTool
