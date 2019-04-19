@@ -75,6 +75,11 @@ namespace Lykke.Job.Bil2Indexer.Modules
             builder.Register(c => new IntegrationSettingsProvider(_settings.BlockchainIntegrations))
                 .AsSelf()
                 .SingleInstance();
+
+            builder.RegisterType<AssetInfosManager>()
+                .As<IAssetInfosManager>()
+                .As<IAssetInfosProvider>()
+                .SingleInstance();
         }
     }
 }

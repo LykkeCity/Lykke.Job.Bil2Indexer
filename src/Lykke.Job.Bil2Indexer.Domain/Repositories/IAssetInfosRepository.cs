@@ -6,10 +6,10 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
 {
     public interface IAssetInfosRepository
     {
-        Task AddIfNotExistsAsync(AssetInfo asset);
-        Task<AssetInfo> GetOrDefaultAsync(string blockchainType, AssetId id);
-        Task<AssetInfo> GetAsync(string blockchainType, AssetId id);
-        Task<IReadOnlyCollection<AssetInfo>> GetSomeOfAsync(string blockchainType, IEnumerable<AssetId> ids);
+        Task AddIfNotExistsAsync(IEnumerable<AssetInfo> assetInfos);
+        Task<AssetInfo> GetOrDefaultAsync(string blockchainType, Asset asset);
+        Task<AssetInfo> GetAsync(string blockchainType, Asset asset);
+        Task<IReadOnlyCollection<AssetInfo>> GetSomeOfAsync(string blockchainType, IEnumerable<Asset> assets);
         Task<PaginatedItems<AssetInfo>> GetAllAsync(string blockchainType, int limit, string continuation);
     }
 }

@@ -10,6 +10,7 @@ namespace Lykke.Job.Bil2Indexer.Modules
     {
         protected override void Load(ContainerBuilder builder)
         {
+            builder.RegisterType<InMemoryAssetInfosRepository>().As<IAssetInfosRepository>().SingleInstance();
             builder.RegisterType<InMemoryBalanceActionsRepository>().As<IBalanceActionsRepository>().SingleInstance();
             builder.RegisterType<InMemoryBlockHeadersRepository>().As<IBlockHeadersRepository>().SingleInstance();
             builder.RegisterType<InMemoryCoinsRepository>().As<ICoinsRepository>().SingleInstance();

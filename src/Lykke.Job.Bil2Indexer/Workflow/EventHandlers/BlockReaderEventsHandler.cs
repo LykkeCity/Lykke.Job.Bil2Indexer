@@ -27,6 +27,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         private readonly IBalanceActionsRepository _balanceActionsRepository;
         private readonly ICoinsRepository _coinsRepository;
         private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
+        private readonly IAssetInfosManager _assetInfosManager;
 
         public BlockReaderEventsHandler(
             IMessageSendersFactory messageSendersFactory,
@@ -36,7 +37,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             ITransactionsRepository transactionsRepository,
             IBalanceActionsRepository balanceActionsRepository,
             ICoinsRepository coinsRepository,
-            IFeeEnvelopesRepository feeEnvelopesRepository)
+            IFeeEnvelopesRepository feeEnvelopesRepository,
+            IAssetInfosManager assetInfosManager)
         {
             _messageSendersFactory = messageSendersFactory;
             _blockHeadersRepository = blockHeadersRepository;
@@ -46,6 +48,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             _balanceActionsRepository = balanceActionsRepository;
             _coinsRepository = coinsRepository;
             _feeEnvelopesRepository = feeEnvelopesRepository;
+            _assetInfosManager = assetInfosManager;
         }
 
         public async Task HandleAsync(string blockchainType, BlockHeaderReadEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -131,9 +134,16 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         evt.BlockId,
                         evt.TransactionId
                     )
-                ).ToList();
-            
+                )
+                .ToArray();
+
             var saveBalanceActionsTask = _balanceActionsRepository.AddIfNotExistsAsync(blockchainType, actions);
+
+            var assetInfos = evt.BalanceChanges
+                .Select(x => new AssetInfo(blockchainType, x.Asset, x.Value.Scale))
+                .ToArray();
+
+            var saveAssetInfosTask = _assetInfosManager.EnsureAdded(assetInfos);
 
             var fees = evt.Fees
                 .Select
@@ -145,12 +155,14 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         evt.TransactionId,
                         x
                     )
-                ).ToList();
+                )
+                .ToArray();
 
             await Task.WhenAll
             (
                 saveTransactionTask,
                 saveBalanceActionsTask,
+                saveAssetInfosTask,
                 _feeEnvelopesRepository.AddIfNotExistsAsync(fees)
             );
         }
@@ -187,7 +199,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         x.AddressTagType,
                         x.AddressNonce
                     )
-                ).ToList();
+                )
+                .ToArray();
 
             var saveCoinsTask = _coinsRepository.AddIfNotExistsAsync(coins);
 
@@ -203,12 +216,20 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         evt.BlockId,
                         evt.TransactionId
                     )
-                ).ToList();
+                )
+                .ToArray();
+
+            var assetInfos = evt.ReceivedCoins
+                .Select(x => new AssetInfo(blockchainType, x.Asset, x.Value.Scale))
+                .ToArray();
+
+            var saveAssetInfosTask = _assetInfosManager.EnsureAdded(assetInfos);
 
             await Task.WhenAll
             (
                 saveTransactionTask,
                 saveCoinsTask,
+                saveAssetInfosTask,
                 _balanceActionsRepository.AddIfNotExistsAsync(blockchainType, actions)
             );
         }
@@ -236,7 +257,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         evt.TransactionId,
                         x
                     )
-                ).ToList();
+                )
+                .ToArray();
 
             await Task.WhenAll
             (
