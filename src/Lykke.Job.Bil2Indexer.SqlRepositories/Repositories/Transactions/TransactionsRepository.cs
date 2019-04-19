@@ -11,7 +11,6 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using Z.EntityFramework.Plus;
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 {

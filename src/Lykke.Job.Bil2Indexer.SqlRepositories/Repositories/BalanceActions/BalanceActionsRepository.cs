@@ -10,10 +10,13 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions.Mappers;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Lykke.Numerics;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Z.EntityFramework.Plus;
+using PostgreSQLCopyHelper;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 {
@@ -21,64 +24,65 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
     {
         private readonly string _posgresConnstring;
         private readonly ILog _log;
+        private readonly PostgreSQLCopyHelper<BalanceActionEntity> _copyHelper;
 
         public BalanceActionsRepository(string posgresConnstring, ILogFactory logFactory)
         {
             _posgresConnstring = posgresConnstring;
 
             _log = logFactory.CreateLog(this);
+            _copyHelper = BalanceActionCopyMapper.BuildCopyMapper();
         }
 
         public async Task AddIfNotExistsAsync(string blockchainType,
             IReadOnlyCollection<BalanceAction> actions)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            var dbEntities = actions.Select(domain => domain.ToDbEntity(blockchainType)).ToList();
+
+            using (var conn = new NpgsqlConnection(_posgresConnstring))
             {
-                var dbEntities = actions.Select(p => Map(p, blockchainType)).ToList();
-                
-                //TODO use COPY instead of insert
-                await db.BalanceActions.AddRangeAsync(dbEntities);
+                conn.Open();
 
                 try
                 {
-                    await db.SaveChangesAsync();
+                    _copyHelper.SaveAll(conn, dbEntities);
                 }
-                catch (DbUpdateException e)
+                catch (PostgresException e) when(e.IsConstraintViolationException())
                 {
-                    string BuildId(string bType, string transactionId, string assetId)
-                    {
-                        return $"{bType}_{transactionId}_{assetId}";
-                    }
-
-                    var ids = dbEntities.Select(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId))
-                        .ToList();
-
-                    _log.Warning($"Entities already exists, {string.Join(", ", ids)}", exception: e);
-
-                    var savedIdData = dbEntities
-                        .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId })
-                        .ToList();
-
-                    var existedIds = (await db.BalanceActions
-                            .Where(dbEntity => savedIdData.Any(
-                                sd => sd.BlockchainType == dbEntity.BlockchainType
-                                      && sd.TransactionId == dbEntity.TransactionId
-                                      && sd.AssetId == dbEntity.AssetId))
-                            .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId })
-                            .ToListAsync())
-                        .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
-
-
-                    var dbEntitiesDic = dbEntities.ToDictionary(p =>
-                        BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
-
-                    foreach (var dbEntity in dbEntitiesDic.Where(p => existedIds.ContainsKey(p.Key)))
-                    {
-                        db.Entry(dbEntity.Value).State = EntityState.Detached;
-                    }
-
-                    await db.SaveChangesAsync();
+                    var notExisted = await ExcludeExistedInDbAsync(dbEntities);
+                    _log.Warning($"Entities already exist, fallback adding {notExisted.Count} of {dbEntities.Count}", exception: e);
+                    
+                    _copyHelper.SaveAll(conn, notExisted);
                 }
+            }
+        }
+
+        private async Task<IReadOnlyCollection<BalanceActionEntity>> ExcludeExistedInDbAsync(IReadOnlyCollection<BalanceActionEntity> dbEntities)
+        {
+            string BuildId(string bType, string transactionId, string assetId)
+            {
+                return $"{bType}_{transactionId}_{assetId}";
+            }
+            
+            var savedIdData = dbEntities
+                .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId })
+                .ToList();
+
+            using (var db = new BlockchainDataContext(_posgresConnstring))
+            {
+                var existedNaturalIds = (await db.BalanceActions
+                        .Where(dbEntity => savedIdData.Any(
+                            sd => sd.BlockchainType == dbEntity.BlockchainType
+                                  && sd.TransactionId == dbEntity.TransactionId
+                                  && sd.AssetId == dbEntity.AssetId))
+                        .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId })
+                        .ToListAsync())
+                    .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
+
+                var dbEntitiesDic = dbEntities.ToDictionary(p =>
+                    BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
+
+                return dbEntitiesDic.Where(p => !existedNaturalIds.ContainsKey(p.Key)).Select(p => p.Value).ToList();
             }
         }
 
@@ -164,22 +168,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                         x => MoneyHelper.BuildMoney(x.Value, x.ValueScale));
                 });
             }
-        }
-
-        private static BalanceActionEntity Map(BalanceAction source, string blockchainType)
-        {
-            return new BalanceActionEntity
-            {
-                BlockchainType = blockchainType,
-                TransactionId = source.TransactionId,
-                AssetAddress = source.AccountId.Asset.Address,
-                AssetId = source.AccountId.Asset.Id,
-                BlockId = source.BlockId,
-                BlockNumber = source.BlockNumber,
-                ValueScale = source.Amount.Scale,
-                Value = (decimal) source.Amount,
-                Address = source.AccountId.Address,
-            };
         }
     }
 }
