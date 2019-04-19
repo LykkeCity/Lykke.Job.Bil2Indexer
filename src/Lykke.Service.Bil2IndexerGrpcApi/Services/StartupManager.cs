@@ -3,11 +3,13 @@ using Common.Log;
 using Lykke.Bil2.RabbitMq;
 using Lykke.Common.Log;
 using Lykke.Sdk;
+using Grpc.Core;
 
 namespace Lykke.Service.Bil2IndexerGrpcApi.Services
 {
     public class StartupManager : IStartupManager
     {
+        private readonly Server _grpcServer;
         private readonly RabbitMqConfigurator _rabbitMqConfigurator;
         private readonly IRabbitMqEndpoint _rabbitMqEndpoint;
         private readonly int _rabbitMqListeningParallelism;
@@ -17,17 +19,22 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Services
             ILogFactory logFactory,
             RabbitMqConfigurator rabbitMqConfigurator,
             IRabbitMqEndpoint rabbitMqEndpoint,
-            int rabbitMqListeningParallelism)
+            int rabbitMqListeningParallelism,
+            Server grpcServer)
         {
             _rabbitMqConfigurator = rabbitMqConfigurator;
             _rabbitMqEndpoint = rabbitMqEndpoint;
             _rabbitMqListeningParallelism = rabbitMqListeningParallelism;
 
             _log = logFactory.CreateLog(this);
+            _grpcServer = grpcServer;
         }
 
         public Task StartAsync()
         {
+            _log.Info("Starting GRPC endpoint...");
+            _grpcServer.Start();
+
             _log.Info("Initializing RabbitMQ endpoint...");
             
             _rabbitMqEndpoint.Initialize();
