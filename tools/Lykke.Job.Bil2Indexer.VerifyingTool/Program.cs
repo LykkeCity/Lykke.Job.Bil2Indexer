@@ -14,6 +14,8 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using Lykke.Job.Bil2Indexer.Modules;
+using Lykke.Job.Bil2Indexer.VerifyingTool.Modules;
 using BlockHeader = Lykke.Job.Bil2Indexer.Domain.BlockHeader;
 
 namespace Lykke.Job.Bil2Indexer.VerifyingTool
@@ -69,8 +71,15 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool
             else
             {
                 var containerBuilder = new ContainerBuilder();
-                containerBuilder.RegisterInstance(appSettings);
-                containerBuilder.RegisterAssemblyModules(typeof(Program).Assembly);
+                containerBuilder
+                    .RegisterInstance<Lykke.SettingsReader.IReloadingManager<Lykke.Job.Bil2Indexer.Settings.AppSettings>>
+                        ((Lykke.SettingsReader.IReloadingManager<Lykke.Job.Bil2Indexer.Settings.AppSettings>)appSettings);
+                containerBuilder.RegisterInstance(logFactory);
+                containerBuilder.RegisterModule(new BlockchainsToolModule(appSettings));
+                containerBuilder.RegisterModule(new JobToolModule());
+                containerBuilder.RegisterModule(new RabbitMqToolModule());
+                containerBuilder.RegisterModule(new RepositoriesToolModule());
+
                 var provider = containerBuilder.Build();
 
                 blockHeadersRepository =

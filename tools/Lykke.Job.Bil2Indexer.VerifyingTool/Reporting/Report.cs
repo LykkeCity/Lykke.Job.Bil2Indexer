@@ -303,7 +303,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
         private void AssertBalanceChanges(BalanceChange[] balanceChangeReal, BalanceChange[] balanceChangeIndexed)
         {
-            _reportingContext.StartListScope("spentCoin");
+            _reportingContext.StartListScope("balanceChange");
 
             for (int balanceChangeIndex = 0; balanceChangeIndex < balanceChangeReal.Length; balanceChangeIndex++)
             {
@@ -311,6 +311,10 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
                 var spentCoinIndexed = balanceChangeIndexed[balanceChangeIndex];
                 var spentCoinReal = balanceChangeReal[balanceChangeIndex];
+
+                AssertEqual(spentCoinIndexed.Value,
+                    spentCoinReal.Value,
+                    nameof(spentCoinReal.Value));
 
                 AssertEqual(spentCoinIndexed.Address,
                     spentCoinReal.Address,
@@ -450,13 +454,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
             if (indexedField?.CompareTo(realField) != 0)
             {
-                var dict = (IDictionary<string, object>)_reportingContext.CurrentReportObject;
-
-                dict[fieldName] = new AssertObject<T>()
-                {
-                    Indexed = indexedField,
-                    Real = realField
-                };
+                _reportingContext.SetError<T>(fieldName, indexedField, realField);
             }
         }
     }
