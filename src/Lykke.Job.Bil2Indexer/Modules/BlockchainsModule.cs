@@ -79,6 +79,7 @@ namespace Lykke.Job.Bil2Indexer.Modules
             builder.RegisterType<AssetInfosManager>()
                 .As<IAssetInfosManager>()
                 .As<IAssetInfosProvider>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.AssetsCaching.LruCacheCapacity))
                 .SingleInstance();
         }
     }

@@ -10,5 +10,8 @@ namespace Lykke.Job.Bil2Indexer.Settings.JobSettings
 
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
         public RabbitMqSettings RabbitMq { get; set; }
+
+        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+        public AssetsCachingSettings AssetsCaching { get; set; }
     }
 }
