@@ -51,7 +51,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             _assetInfosManager = assetInfosManager;
         }
 
-        public async Task HandleAsync(string blockchainType, BlockHeaderReadEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(string blockchainType, BlockHeaderReadEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, evt.BlockNumber);
@@ -59,7 +59,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
             {
                 // Disordered message, we should ignore it.
-                return;
+                return MessageHandlingResult.Success();
             }
 
             var blockHeader = BlockHeader.StartAssembling
@@ -84,9 +84,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 },
                 headers.CorrelationId
             );
+
+            return MessageHandlingResult.Success();
         }
 
-        public async Task HandleAsync(string blockchainType, BlockNotFoundEvent evt, MessageHeaders headers, IMessagePublisher responsePublisher)
+        public async Task<MessageHandlingResult> HandleAsync(string blockchainType, BlockNotFoundEvent evt, MessageHeaders headers, IMessagePublisher responsePublisher)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, evt.BlockNumber);
@@ -94,9 +96,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
             {
                 // Disordered message, we should ignore it.
-                return;
+                return MessageHandlingResult.Success();
             }
 
+            // TODO: To avoid Hangfire job usage, we can add message time to the message and retry the message until timeout is not elapsed.
             // TODO: if delay is less than some configured threshold, use Task.Delay instead of scheduler,
             // because of too high latency of the scheduler.
 
@@ -107,9 +110,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 job => job.RetryAsync(blockchainType, evt.BlockNumber, messageCorrelationId),
                 delay
             );
+
+            return MessageHandlingResult.Success();
         }
 
-        public async Task HandleAsync(string blockchainType, TransferAmountTransactionExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(string blockchainType, TransferAmountTransactionExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
@@ -117,7 +122,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
             {
                 // Disordered message, we should ignore it.
-                return;
+                return MessageHandlingResult.Success();
             }
 
             var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
@@ -165,9 +170,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 saveAssetInfosTask,
                 _feeEnvelopesRepository.AddIfNotExistsAsync(fees)
             );
+
+            return MessageHandlingResult.Success();
         }
 
-        public async Task HandleAsync(string blockchainType, TransferCoinsTransactionExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(string blockchainType, TransferCoinsTransactionExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             if (evt.Fees != null)
             {
@@ -180,7 +187,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
             {
                 // Disordered message, we should ignore it.
-                return;
+                return MessageHandlingResult.Success();
             }
 
             var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
@@ -232,9 +239,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 saveAssetInfosTask,
                 _balanceActionsRepository.AddIfNotExistsAsync(blockchainType, actions)
             );
+
+            return MessageHandlingResult.Success();
         }
 
-        public async Task HandleAsync(string blockchainType, TransactionFailedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(string blockchainType, TransactionFailedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
@@ -242,7 +251,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
             {
                 // Disordered message, we should ignore it.
-                return;
+                return MessageHandlingResult.Success();
             }
             
             var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
@@ -265,9 +274,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 saveTransactionTask,
                 _feeEnvelopesRepository.AddIfNotExistsAsync(fees)
             );
+
+            return MessageHandlingResult.Success();
         }
 
-        public Task HandleAsync(string blockchainType, LastIrreversibleBlockUpdatedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public Task<MessageHandlingResult> HandleAsync(string blockchainType, LastIrreversibleBlockUpdatedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var eventsPublisher = _messageSendersFactory.CreateEventsPublisher();
 
@@ -282,7 +293,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 headers.CorrelationId
             );
 
-            return Task.CompletedTask;
+            return Task.FromResult(MessageHandlingResult.Success());
         }
     }
 }

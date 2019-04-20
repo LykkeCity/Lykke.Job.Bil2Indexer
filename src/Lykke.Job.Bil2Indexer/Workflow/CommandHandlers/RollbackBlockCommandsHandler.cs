@@ -35,7 +35,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             _feeEnvelopesRepository = feeEnvelopesRepository;
         }
 
-        public async Task HandleAsync(RollbackBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(RollbackBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             // TODO: Ignore outdated/retry premature message
 
@@ -72,6 +72,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 BlockId = command.BlockId,
                 PreviousBlockId = command.PreviousBlockId
             });
+
+            return MessageHandlingResult.Success();
         }
     }
 }

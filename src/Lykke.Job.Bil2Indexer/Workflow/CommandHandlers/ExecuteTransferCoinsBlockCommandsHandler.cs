@@ -30,7 +30,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             _feeEnvelopesRepository = feeEnvelopesRepository;
         }
 
-        public async Task HandleAsync(ExecuteTransferCoinsBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(ExecuteTransferCoinsBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var block = await _blockHeadersRepository.GetOrDefaultAsync(command.BlockchainType, command.BlockId);
 
@@ -38,7 +38,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             {
                 // Block either already rolled back, or not ready to be executed yet and
                 // not executed yet and not partially executed yet, command should be skipped.
-                return;
+                return MessageHandlingResult.Success();
             }
 
             if (block.CanBeExecuted)
@@ -70,6 +70,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             {
                 throw new InvalidOperationException($"Unexpected block state: {block.State}");
             }
+
+            return MessageHandlingResult.Success();
         }
     }
 }

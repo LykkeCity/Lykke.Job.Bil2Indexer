@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 using JetBrains.Annotations;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Numerics;
@@ -6,6 +7,7 @@ using Lykke.Numerics;
 namespace Lykke.Job.Bil2Indexer.Contract
 {
     [PublicAPI]
+    [DataContract]
     public class Transfer
     {
         /// <summary>
@@ -13,12 +15,14 @@ namespace Lykke.Job.Bil2Indexer.Contract
         /// Can group several balance changing operations into the single transfer,
         /// or can be just the output number.
         /// </summary>
+        [DataMember(Order = 0)]
         public string Id { get; }
 
         /// <summary>
         /// Value for which the balance of the address was changed.
         /// Can be positive to increase the balance or negative to decrease the balance.
         /// </summary>
+        [DataMember(Order = 1)]
         public Money Value { get; }
 
         /// <summary>
@@ -26,6 +30,7 @@ namespace Lykke.Job.Bil2Indexer.Contract
         /// Tag of the address.
         /// </summary>
         [CanBeNull]
+        [DataMember(Order = 2)]
         public AddressTag Tag { get; }
 
         /// <summary>
@@ -33,6 +38,7 @@ namespace Lykke.Job.Bil2Indexer.Contract
         /// Type of the address tag.
         /// </summary>
         [CanBeNull]
+        [DataMember(Order = 3)]
         public AddressTagType? TagType { get; }
 
         /// <summary>
@@ -40,6 +46,7 @@ namespace Lykke.Job.Bil2Indexer.Contract
         /// Nonce number of the transaction for the address.
         /// </summary>
         [CanBeNull]
+        [DataMember(Order = 4)]
         public long? Nonce { get; }
 
         public Transfer(

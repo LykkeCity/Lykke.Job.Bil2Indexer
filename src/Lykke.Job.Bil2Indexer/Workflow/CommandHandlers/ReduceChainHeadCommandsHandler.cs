@@ -26,7 +26,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             _settingsProvider = settingsProvider;
         }
 
-        public async Task HandleAsync(ReduceChainHeadCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(ReduceChainHeadCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
             
@@ -36,7 +36,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 // TODO: Not sure yet what to do here. Probably we need to check block header state.
                 // We need to determine somehow if this message is outdated or premature and ignore or 
                 // retry it correspondingly.
-                return;
+                return MessageHandlingResult.Success();
             }
 
             var previousBlockNumber = command.ToBlockNumber - 1;
@@ -54,7 +54,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 settings.Capabilities.TransferModel == BlockchainTransferModel.Amount && !previousBlock.IsAssembled ||
                 settings.Capabilities.TransferModel == BlockchainTransferModel.Coins && !previousBlock.IsExecuted)
             {
-                return;
+                return MessageHandlingResult.Success();
             }
 
             if (chainHead.CanReduceTo(command.ToBlockNumber))
@@ -75,6 +75,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 PreviousBlockId = previousBlock.Id,
                 BlockIdToRollback = command.BlockIdToRollback
             });
+
+            return MessageHandlingResult.Success();
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             _settingsProvider = settingsProvider;
         }
 
-        public async Task HandleAsync(ChainHeadExtendedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(ChainHeadExtendedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var settings = _settingsProvider.Get(evt.BlockchainType);
 
@@ -40,14 +40,14 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 {
                     // If the next block is within the crawler assembling range, then the chain head will
                     // be extended after ending of the assembling.
-                    return;
+                    return MessageHandlingResult.Success();
                 }
 
                 var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
 
                 if (!chainHead.CanExtendTo(nextBlockNumber))
                 {
-                    return;
+                    return MessageHandlingResult.Success();
                 }
 
                 var nextBlock = await _blockHeadersRepository.GetOrDefaultAsync(evt.BlockchainType, nextBlockNumber);
@@ -56,7 +56,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 {
                     // If the next block block is not assembled yet no bypassing of the BlockAssembledEvent is
                     // required.
-                    return;
+                    return MessageHandlingResult.Success();
                 }
 
                 replyPublisher.Publish(new ExtendChainHeadCommand
@@ -71,6 +71,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             {
                 throw new ArgumentOutOfRangeException(nameof(settings.Capabilities.TransferModel), settings.Capabilities.TransferModel, "Unknown transfer model");
             }
+
+            return MessageHandlingResult.Success();
         }
     }
 }

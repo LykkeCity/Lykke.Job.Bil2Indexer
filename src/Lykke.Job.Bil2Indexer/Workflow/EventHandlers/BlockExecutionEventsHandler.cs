@@ -23,7 +23,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             _chainHeadsRepository = chainHeadsRepository;
         }
 
-        public async Task HandleAsync(BlockExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(BlockExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var nextBlock = await GetNextBlockToExecuteOrDefaultAsync(evt.BlockchainType, evt.BlockNumber, headers);
 
@@ -46,9 +46,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     ChainHeadVersion = chainHead.Version
                 });
             }
+
+            return MessageHandlingResult.Success();
         }
 
-        public async Task HandleAsync(BlockPartiallyExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(BlockPartiallyExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var block = await GetNextBlockToExecuteOrDefaultAsync(evt.BlockchainType, evt.BlockNumber, headers);
 
@@ -56,6 +58,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             {
                 ContinueExecutionChain(block, replyPublisher);
             }
+
+            return MessageHandlingResult.Success();
         }
 
         private async Task<BlockHeader> GetNextBlockToExecuteOrDefaultAsync(string blockchainType, long blockNumber, MessageHeaders headers)

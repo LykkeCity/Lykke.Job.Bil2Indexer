@@ -1,46 +1,55 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using JetBrains.Annotations;
 using Lykke.Bil2.SharedDomain;
 
 namespace Lykke.Job.Bil2Indexer.Contract.Events
 {
     [PublicAPI]
+    [DataContract]
     public class TransactionExecutedEvent
     {
         /// <summary>
         /// Type of the blockchain.
         /// </summary>
+        [DataMember(Order = 0)]
         public string BlockchainType { get; }
 
         /// <summary>
         /// ID of the block.
         /// </summary>
+        [DataMember(Order = 1)]
         public string BlockId { get; }
 
         /// <summary>
         /// Number of the block.
         /// </summary>
+        [DataMember(Order = 2)]
         public long BlockNumber { get; }
 
         /// <summary>
         /// Number of the transaction in the block.
         /// </summary>
+        [DataMember(Order = 3)]
         public int TransactionNumber { get; }
 
         /// <summary>
         /// ID of the transaction.
         /// </summary>
+        [DataMember(Order = 4)]
         public string TransactionId { get; }
 
         /// <summary>
         /// Balance updating operations.
         /// </summary>
+        [DataMember(Order = 5)]
         public IReadOnlyCollection<BalanceUpdate> BalanceUpdates { get; }
 
         /// <summary>
         /// Fees in the particular asset, that was spent for the transaction.
         /// </summary>
+        [DataMember(Order = 6)]
         public IReadOnlyCollection<Fee> Fees { get; }
 
         /// <summary>
@@ -48,6 +57,7 @@ namespace Lykke.Job.Bil2Indexer.Contract.Events
         /// Flag which indicates, if transaction is irreversible.
         /// </summary>
         [CanBeNull]
+        [DataMember(Order = 7)]
         public bool? IsIrreversible { get; }
 
         /// <summary>

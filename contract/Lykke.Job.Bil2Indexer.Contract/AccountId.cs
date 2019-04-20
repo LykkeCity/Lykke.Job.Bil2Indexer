@@ -1,13 +1,18 @@
 ﻿using System;
+using System.Runtime.Serialization;
 using JetBrains.Annotations;
 using Lykke.Bil2.SharedDomain;
 
 namespace Lykke.Job.Bil2Indexer.Contract
 {
     [PublicAPI]
+    [DataContract]
     public class AccountId : IEquatable<AccountId>
     {
+        [DataMember(Order = 0)]
         public Address Address { get; }
+
+        [DataMember(Order = 1)]
         public Asset Asset { get; }
 
         public AccountId(Address address, Asset asset)

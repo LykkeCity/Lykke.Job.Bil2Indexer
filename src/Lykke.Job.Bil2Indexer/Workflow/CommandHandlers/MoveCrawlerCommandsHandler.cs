@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using JetBrains.Annotations;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -10,7 +9,6 @@ using Lykke.Job.Bil2Indexer.Workflow.Events;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 {
-    [UsedImplicitly]
     public class MoveCrawlerCommandsHandler : IMessageHandler<MoveCrawlerCommand>
     {
         private readonly ICrawlersManager _crawlersManager;
@@ -18,14 +16,13 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
         public MoveCrawlerCommandsHandler(
             ICrawlersManager crawlersManager,
-            ICrawlersRepository crawlersRepository,
-            IBlockHeadersRepository blockHeadersRepository)
+            ICrawlersRepository crawlersRepository)
         {
             _crawlersManager = crawlersManager;
             _crawlersRepository = crawlersRepository;
         }
 
-        public async Task HandleAsync(MoveCrawlerCommand command, MessageHeaders headers, IMessagePublisher eventsPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(MoveCrawlerCommand command, MessageHeaders headers, IMessagePublisher eventsPublisher)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(command.BlockchainType, messageCorrelationId.Configuration);
@@ -34,7 +31,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             if (!(messageCorrelationId.IsPreviousOf(crawlerCorrelationId) || crawlerCorrelationId.Equals(messageCorrelationId)))
             {
                 // Disordered message, we should ignore it.
-                return;
+                return MessageHandlingResult.Success();
             }
 
             crawler.MoveTo(command.NextBlockNumber);
@@ -46,6 +43,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 BlockchainType = command.BlockchainType,
                 BlockNumber = command.NextBlockNumber
             });
+
+            return MessageHandlingResult.Success();
         }
     }
 }
