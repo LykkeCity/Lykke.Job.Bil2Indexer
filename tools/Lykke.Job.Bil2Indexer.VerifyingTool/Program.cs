@@ -72,7 +72,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool
                 containerBuilder.RegisterModule(new BlockchainsToolModule(appSettings));
                 containerBuilder.RegisterModule(new JobToolModule());
                 containerBuilder.RegisterModule(new RabbitMqToolModule(appSettings));
-                containerBuilder.RegisterModule(new RepositoriesToolModule());
+                containerBuilder.RegisterModule(new RepositoriesToolModule(appSettings));
 
                 var provider = containerBuilder.Build();
 
