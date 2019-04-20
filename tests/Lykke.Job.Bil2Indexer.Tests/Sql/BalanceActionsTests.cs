@@ -51,7 +51,6 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var byTx = await repo.GetSomeOfBalancesAsync(bType, actions.Select(p => p.TransactionId).ToHashSet());
 
-
             Assert.AreEqual(actions.Count, byTx.Count);
 
             foreach (var balanceAction in actions)
@@ -72,7 +71,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         private BalanceAction BuildRandomBalanceAction(Asset asset, Address address, int scale)
         {
             var rdm = new Random();
-            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(rdm.Next()), scale),
+            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(double.MaxValue - rdm.Next()), scale),
                 rdm.Next(1, 123333), new BlockId(Guid.NewGuid().ToString()),
                 new TransactionId(Guid.NewGuid().ToString()));
         }

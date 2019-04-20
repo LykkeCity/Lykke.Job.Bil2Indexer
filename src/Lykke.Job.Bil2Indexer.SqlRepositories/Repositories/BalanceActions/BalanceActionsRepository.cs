@@ -98,6 +98,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
         public async Task<Money> GetBalanceAsync(string blockchainType, Address address, Asset asset, long atBlockNumber)
         {
+            //TODO rewrite via dapper and plain sql
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var queryRes = (await db.BalanceActions.Where(p =>
@@ -118,6 +119,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
         public async Task<IReadOnlyDictionary<Asset, Money>> GetBalancesAsync(string blockchainType, Address address, long atBlockNumber)
         {
+            //TODO rewrite via dapper and plain sql
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var queryRes = await db.BalanceActions.Where(p =>
@@ -144,6 +146,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             string blockchainType, 
             ISet<TransactionId> transactionIds)
         {
+            //TODO rewrite via dapper and plain sql
             var ids = transactionIds.Select(p => p.ToString()).ToList();
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {

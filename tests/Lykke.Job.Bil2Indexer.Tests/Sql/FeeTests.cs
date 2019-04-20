@@ -76,7 +76,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 blockId,
                 Guid.NewGuid().ToString(), 
                 new Fee(new Asset(Guid.NewGuid().ToString()),
-                    new UMoney(new BigInteger(rdnm.Next(1, 99999)), scale)));
+                    new UMoney(new BigInteger(double.MaxValue - rdnm.Next(1, int.MaxValue)), scale)));
         }
 
         private void AssertEquals(FeeEnvelope a, FeeEnvelope b)
