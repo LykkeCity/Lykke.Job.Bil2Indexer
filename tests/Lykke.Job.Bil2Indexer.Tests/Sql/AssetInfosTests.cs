@@ -25,6 +25,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var assets = new[]
             {
                 asset,
+                asset,
                 BuildRandomAssetInfo(),
                 BuildRandomAssetInfo(),
                 BuildRandomAssetInfo(),

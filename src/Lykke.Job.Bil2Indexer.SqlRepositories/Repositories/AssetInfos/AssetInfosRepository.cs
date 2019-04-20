@@ -22,9 +22,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
         public async Task AddIfNotExistsAsync(IEnumerable<AssetInfo> assets)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            foreach (var asset in assets)
             {
-                foreach (var asset in assets)
+                using (var db = new BlockchainDataContext(_posgresConnString))
                 {
                     var dbEntity = Map(asset);
                     await db.AssetInfos.AddAsync(Map(asset));
@@ -33,7 +33,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
                     {
                         await db.SaveChangesAsync();
                     }
-                    catch (DbUpdateException e) when(e.IsUniqueConstraintViolationException()) 
+                    catch (DbUpdateException e) when (e.IsUniqueConstraintViolationException())
                     {
                         var exist = await db.AssetInfos.AnyAsync(p =>
                             p.BlockchainType == asset.BlockchainType && p.Id == asset.Asset.Id);
