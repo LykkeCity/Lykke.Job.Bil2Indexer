@@ -68,6 +68,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
             
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
+                //todo rewrite via dapper
                 var existedNaturalIds = (await db.Coins.Where(BuildPredicate(dbEntities.First().BlockchainType, ids))
                         .Select(p => new { p.TransactionId, p.CoinNumber })
                         .ToListAsync())
@@ -84,7 +85,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
         {
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
-                var foundCount = await db.Coins.Where(BuildPredicate(blockchainType, ids)).UpdateAsync(p => new CoinEntity { IsSpent = true });
+                var foundCount = await db.Coins.Where(BuildPredicate(blockchainType, ids))
+                    .UpdateAsync(p => new CoinEntity { IsSpent = true });
 
                 if (foundCount != ids.Count)
                 {

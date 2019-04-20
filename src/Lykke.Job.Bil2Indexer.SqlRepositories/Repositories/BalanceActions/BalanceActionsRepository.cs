@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions.Mappers;
@@ -26,9 +28,14 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
         private readonly ILog _log;
         private readonly PostgreSQLCopyHelper<BalanceActionEntity> _copyMapper;
 
-        public BalanceActionsRepository(string posgresConnstring, ILogFactory logFactory)
+        private readonly IAssetInfosProvider _assetInfosProvider;
+
+        public BalanceActionsRepository(string posgresConnstring, 
+            ILogFactory logFactory,
+            IAssetInfosProvider assetInfosProvider)
         {
             _posgresConnstring = posgresConnstring;
+            _assetInfosProvider = assetInfosProvider;
 
             _log = logFactory.CreateLog(this);
             _copyMapper = BalanceActionCopyMapper.BuildCopyMapper();
@@ -59,23 +66,34 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
         private async Task<IReadOnlyCollection<BalanceActionEntity>> ExcludeExistedInDbAsync(IReadOnlyCollection<BalanceActionEntity> dbEntities)
         {
+            if (dbEntities.GroupBy(p => p.AssetId).Count() > 1)
+            {
+                throw new ArgumentException("Unable to save batch with multiple assetIds");
+            }
+
+            if (dbEntities.GroupBy(p => p.BlockchainType).Count() > 1)
+            {
+                throw new ArgumentException("Unable to save batch with multiple blockchain type");
+            }
+
             string BuildId(string bType, string transactionId, string assetId)
             {
                 return $"{bType}_{transactionId}_{assetId}";
             }
-            
-            var savedIdData = dbEntities
-                .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId })
-                .ToList();
 
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
-                var existedNaturalIds = (await db.BalanceActions
-                        .Where(dbEntity => savedIdData.Any(
-                            sd => sd.BlockchainType == dbEntity.BlockchainType
-                                  && sd.TransactionId == dbEntity.TransactionId
-                                  && sd.AssetId == dbEntity.AssetId))
-                        .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId })
+                var blockchainType = dbEntities.First().BlockchainType;
+                var txIds = dbEntities.Select(p => p.TransactionId).ToList();
+                var assetId = dbEntities.First().AssetId;
+
+                var query = db.BalanceActions
+                        .Where(p => p.BlockchainType == blockchainType)
+                        .Where(p => txIds.Contains(p.TransactionId))
+                        .Where(p => p.AssetId == assetId)
+                    .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId });
+
+                var existedNaturalIds = (await query
                         .ToListAsync())
                     .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
 
@@ -113,7 +131,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                         Scale = p.First().ValueScale
                     }).ToListAsync()).FirstOrDefault();
 
-                return queryRes != null ? Money.Round(Money.Parse(queryRes.Sum.Replace(",", ".")), queryRes.Scale) : Money.Parse("0");
+                return queryRes != null ? MoneyHelper.BuildMoney(queryRes.Sum, queryRes.Scale) : Money.Parse("0");
             }
         }
 
@@ -134,7 +152,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                         p.First().AssetId,
                         p.First().AssetAddress
                     }).ToListAsync();
-
 
                 return queryRes.ToDictionary(
                     p => new Asset(new AssetId(p.AssetId), new AssetAddress(p.AssetAddress)),

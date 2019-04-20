@@ -22,22 +22,23 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var btype = Guid.NewGuid().ToString();
             var scale = new Random().Next(1, 15);
             var blockId = Guid.NewGuid().ToString();
+            var asset = new Asset(Guid.NewGuid().ToString());
 
             var fees = new[]
             {
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId),
-                BuildRandmon(btype, scale, blockId)
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset),
+                BuildRandmon(btype, scale, blockId, asset)
             };
 
             var repo = new FeeEnvelopesRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
@@ -69,13 +70,13 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             }
         }
 
-        public FeeEnvelope BuildRandmon(string blockchainType, int scale, string blockId)
+        public FeeEnvelope BuildRandmon(string blockchainType, int scale, string blockId, Asset asset)
         {
             var rdnm = new Random();
             return new FeeEnvelope(blockchainType,
                 blockId,
                 Guid.NewGuid().ToString(), 
-                new Fee(new Asset(Guid.NewGuid().ToString()),
+                new Fee(asset,
                     new UMoney(new BigInteger(double.MaxValue - rdnm.Next(1, int.MaxValue)), scale)));
         }
 

@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain;
+using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions;
 using Lykke.Job.Bil2Indexer.Tests.Sql.Mocks;
 using Lykke.Logs;
 using Lykke.Numerics;
+using Moq;
 using NUnit.Framework;
 
 namespace Lykke.Job.Bil2Indexer.Tests.Sql
@@ -20,8 +22,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanSaveAndRead()
         {
-            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
-                EmptyLogFactory.Instance);
+
 
             var address = BuildRandmomAddress();
             var asset = BuildRandmomAsset();
@@ -41,6 +42,9 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 sum = Money.Add(sum, act.Amount);
                 ctr++;
             } while (ctr <= max);
+
+            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
+                EmptyLogFactory.Instance, BuildProviderMock(asset,bType, scale).Object);
 
             await repo.AddIfNotExistsAsync(bType, actions);
             await repo.AddIfNotExistsAsync(bType, actions);
@@ -71,7 +75,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         private BalanceAction BuildRandomBalanceAction(Asset asset, Address address, int scale)
         {
             var rdm = new Random();
-            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(double.MaxValue - rdm.Next()), scale),
+            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(rdm.Next()), scale),
                 rdm.Next(1, 123333), new BlockId(Guid.NewGuid().ToString()),
                 new TransactionId(Guid.NewGuid().ToString()));
         }
@@ -83,6 +87,19 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         private Address BuildRandmomAddress()
         {
             return new Address(Guid.NewGuid().ToString());
+        }
+
+        private Mock<IAssetInfosProvider> BuildProviderMock(Asset asset, string blockchainType, int scale)
+        {
+            var result = new Mock<IAssetInfosProvider>();
+            var assetInfo = new AssetInfo(blockchainType, asset, scale);
+
+            result.Setup(p => p.GetAsync(It.IsAny<string>(), It.Is<Asset>(z=> asset.Id == z.Id))).ReturnsAsync(assetInfo);
+
+            result.Setup(p => p.GetSomeOfAsync(It.IsAny<string>(), It.IsAny<IEnumerable<Asset>>()))
+                .ReturnsAsync(new[] {assetInfo});
+
+            return result;
         }
     }
 }
