@@ -28,10 +28,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
         [CanBeNull]
         public string AssetAddress { get; set; }
 
-        [Column("value")]
-        public decimal Value { get; set; }
-        
-        [NotMapped]
+        [Column("value_string")]
         public string ValueString { get; set; }
 
         [Column("value_scale")]

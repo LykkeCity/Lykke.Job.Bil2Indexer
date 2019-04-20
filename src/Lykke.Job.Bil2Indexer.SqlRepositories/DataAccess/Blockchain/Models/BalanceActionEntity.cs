@@ -35,6 +35,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 
         [Column("value_scale")]
         public int ValueScale { get; set; }
+
+        [Column("value_string")]
+        public string ValueString { get; set; }
         
         [NotMapped]
         public Money ValueMoney { get; set; }

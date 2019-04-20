@@ -24,14 +24,14 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
     {
         private readonly string _posgresConnstring;
         private readonly ILog _log;
-        private readonly PostgreSQLCopyHelper<BalanceActionEntity> _copyHelper;
+        private readonly PostgreSQLCopyHelper<BalanceActionEntity> _copyMapper;
 
         public BalanceActionsRepository(string posgresConnstring, ILogFactory logFactory)
         {
             _posgresConnstring = posgresConnstring;
 
             _log = logFactory.CreateLog(this);
-            _copyHelper = BalanceActionCopyMapper.BuildCopyMapper();
+            _copyMapper = BalanceActionCopyMapper.BuildCopyMapper();
         }
 
         public async Task AddIfNotExistsAsync(string blockchainType,
@@ -45,14 +45,14 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
                 try
                 {
-                    _copyHelper.SaveAll(conn, dbEntities);
+                    _copyMapper.SaveAll(conn, dbEntities);
                 }
                 catch (PostgresException e) when(e.IsConstraintViolationException())
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
                     _log.Warning($"Entities already exist, fallback adding {notExisted.Count} of {dbEntities.Count}", exception: e);
                     
-                    _copyHelper.SaveAll(conn, notExisted);
+                    _copyMapper.SaveAll(conn, notExisted);
                 }
             }
         }

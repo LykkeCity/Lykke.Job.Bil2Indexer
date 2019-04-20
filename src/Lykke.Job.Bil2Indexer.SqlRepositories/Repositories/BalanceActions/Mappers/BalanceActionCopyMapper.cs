@@ -16,7 +16,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions.Mapp
                 .Map("asset_id", p => p.AssetId, NpgsqlDbType.Varchar)
                 .Map("asset_address", p => p.AssetAddress, NpgsqlDbType.Varchar)
                 .Map("transaction_id", p => p.TransactionId, NpgsqlDbType.Varchar)
-                .Map("value", p => p.Value, NpgsqlDbType.Numeric)
+                .Map("value_string", p => p.ValueString, NpgsqlDbType.Varchar)
                 .Map("value_scale", p => p.ValueScale, NpgsqlDbType.Integer)
                 .Map("address", p => p.Address, NpgsqlDbType.Varchar);
         }
