@@ -1,4 +1,5 @@
-﻿using Lykke.Common;
+﻿using Autofac;
+using Lykke.Common;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Settings;
 using Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters;
@@ -13,6 +14,7 @@ using System;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using Lykke.Job.Bil2Indexer.VerifyingTool.Modules;
 using BlockHeader = Lykke.Job.Bil2Indexer.Domain.BlockHeader;
 
 namespace Lykke.Job.Bil2Indexer.VerifyingTool
@@ -33,46 +35,58 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool
 
             var logFactory = Logs.EmptyLogFactory.Instance;
             logFactory.AddConsole();
-            Task taskWithIndexer;
-            if (isIndexingInMemoryEnabled)
-            {
-                taskWithIndexer = Task.Run(() =>
-                {
-                    return LykkeStarter.Start<StartupInMemory>(true, 5001);
-                });
-            }
-            await Task.Delay(45000);
-            //TODO: Inint StartupInMemory.ServiceProvider with repo services.
-            IBlockHeadersRepository blockHeadersRepository =
-                StartupInMemory.ServiceProvider.GetRequiredService<IBlockHeadersRepository>();
-            ITransactionsRepository transactionsRepository =
-                StartupInMemory.ServiceProvider.GetRequiredService<ITransactionsRepository>();
-
             var appSettings = ReloadingManagerWithConfiguration();
-            var blockchainIntegrationSettings = appSettings
-                .CurrentValue
-                .BlockchainIntegrations
-                .FirstOrDefault(x => x.Type == blockchainType);
-
+            Task taskWithIndexer;
+            IBlockHeadersRepository blockHeadersRepository;
+            ITransactionsRepository transactionsRepository;
             if (isIndexingInMemoryEnabled)
             {
+                taskWithIndexer = Task.Run(() => LykkeStarter.Start<StartupInMemory>(true, 5001));
+                await Task.Delay(120000);
+                blockHeadersRepository =
+                    StartupInMemory.ServiceProvider.GetRequiredService<IBlockHeadersRepository>();
+                transactionsRepository =
+                    StartupInMemory.ServiceProvider.GetRequiredService<ITransactionsRepository>();
+
                 BlockHeader header = null;
 
                 do
                 {
-                    header = await blockHeadersRepository.GetOrDefaultAsync(blockchainType, (long)toBlock -1);
+                    header = await blockHeadersRepository.GetOrDefaultAsync(blockchainType, (long)toBlock - 1);
 
                     if (header != null)
                     {
                         break;
-                    }
-                    else
+                    } else
                     {
                         await Task.Delay(10000);
                     }
 
                 } while (true);
             }
+            else
+            {
+                var containerBuilder = new ContainerBuilder();
+                containerBuilder.RegisterInstance((IReloadingManager<AppSettings>)appSettings);
+                containerBuilder.RegisterInstance(logFactory);
+                containerBuilder.RegisterModule(new BlockchainsToolModule(appSettings));
+                containerBuilder.RegisterModule(new JobToolModule());
+                containerBuilder.RegisterModule(new RabbitMqToolModule(appSettings));
+                containerBuilder.RegisterModule(new RepositoriesToolModule());
+
+                var provider = containerBuilder.Build();
+
+                blockHeadersRepository =
+                    provider.Resolve<IBlockHeadersRepository>();
+                transactionsRepository =
+                    provider.Resolve<ITransactionsRepository>();
+            }
+
+            //TODO: Inint StartupInMemory.ServiceProvider with repo services.
+            var blockchainIntegrationSettings = appSettings
+                .CurrentValue
+                .BlockchainIntegrations
+                .FirstOrDefault(x => x.Type == blockchainType);
 
             var adapter = InitAdapter(blockchainType, restArgs);
             var report = new Report(blockHeadersRepository,

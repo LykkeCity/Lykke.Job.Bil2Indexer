@@ -17,12 +17,12 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
     {
         private static readonly int _limit = 100;
         private ReportingContext _reportingContext;
-        private SemaphoreSlim _syncRoot = new SemaphoreSlim(1);
-        private IBlockHeadersRepository _blockHeadersRepository;
-        private string _blockchainType;
-        private IBlockchainVerifierAdapter _adapter;
-        private BlockchainTransferModel _transferModel;
-        private ITransactionsRepository _transactionsRepository;
+        private readonly SemaphoreSlim _syncRoot = new SemaphoreSlim(1);
+        private readonly IBlockHeadersRepository _blockHeadersRepository;
+        private readonly string _blockchainType;
+        private readonly IBlockchainVerifierAdapter _adapter;
+        private readonly BlockchainTransferModel _transferModel;
+        private readonly ITransactionsRepository _transactionsRepository;
 
         public Report(IBlockHeadersRepository blockHeadersRepository, 
             string blockchainType, 
@@ -128,15 +128,30 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
                             var spentCoinsReal = orderedTransactionReal.SpentCoins.ToArray();
                             var spentCoinsIndexed = orderedTransactionIndexed.SpentCoins.ToArray();
 
+                            AssertEqual(
+                                spentCoinsReal.Length,
+                                spentCoinsReal.Length,
+                                "SpentCoinsReal.Length");
+
                             AssertSpentCoins(spentCoinsReal, spentCoinsIndexed);
 
                             var receivedCoinsReal = orderedTransactionReal.ReceivedCoins.ToArray();
                             var receivedCoinsIndexed = orderedTransactionIndexed.ReceivedCoins.ToArray();
 
+                            AssertEqual(
+                                receivedCoinsReal.Length,
+                                receivedCoinsReal.Length,
+                                "ReceivedCoinsReal.Length");
+
                             AssertReceivedCoins(receivedCoinsReal, receivedCoinsIndexed);
 
                             var feesReal = orderedTransactionReal.Fees?.ToArray();
                             var feesIndexed = orderedTransactionIndexed.Fees?.ToArray();
+
+                            AssertEqual(
+                                feesReal?.Length ?? 0,
+                                feesIndexed?.Length ?? 0,
+                                "Fees.Length");
 
                             AssertFees(feesReal, feesIndexed);
 
@@ -147,8 +162,6 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
                     }
                     else if (_transferModel == BlockchainTransferModel.Amount)
                     {
-                        _reportingContext.StartListScope("valueTransfer");
-
                         string continuation = null;
                         List<TransferAmountTransactionExecutedEvent> transfers =
                             new List<TransferAmountTransactionExecutedEvent>(100);
@@ -202,10 +215,20 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
                             var balanceChangesReal = orderedTransactionReal.BalanceChanges.ToArray();
                             var balanceChangesIndexed = orderedTransactionIndexed.BalanceChanges.ToArray();
 
+                            AssertEqual(
+                                balanceChangesReal.Length,
+                                balanceChangesIndexed.Length,
+                                "BalanceChanges.Length");
+
                             AssertBalanceChanges(balanceChangesReal, balanceChangesIndexed);
 
                             var feesReal = orderedTransactionReal.Fees?.ToArray();
                             var feesIndexed = orderedTransactionIndexed.Fees?.ToArray();
+
+                            AssertEqual(
+                                feesReal?.Length ?? 0,
+                                feesIndexed?.Length ?? 0,
+                                "Fees.Length");
 
                             AssertFees(feesReal, feesIndexed);
 
@@ -244,6 +267,8 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
                 _reportingContext.EndScope();
             }
+
+            _reportingContext.EndScope();
         }
 
         private void AssertReceivedCoins(ReceivedCoin[] receivedCoinsReal, ReceivedCoin[] receivedCoinsIndexed)
@@ -278,7 +303,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
         private void AssertBalanceChanges(BalanceChange[] balanceChangeReal, BalanceChange[] balanceChangeIndexed)
         {
-            _reportingContext.StartListScope("spentCoin");
+            _reportingContext.StartListScope("balanceChange");
 
             for (int balanceChangeIndex = 0; balanceChangeIndex < balanceChangeReal.Length; balanceChangeIndex++)
             {
@@ -286,6 +311,10 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
                 var spentCoinIndexed = balanceChangeIndexed[balanceChangeIndex];
                 var spentCoinReal = balanceChangeReal[balanceChangeIndex];
+
+                AssertEqual(spentCoinIndexed.Value,
+                    spentCoinReal.Value,
+                    nameof(spentCoinReal.Value));
 
                 AssertEqual(spentCoinIndexed.Address,
                     spentCoinReal.Address,
@@ -369,15 +398,11 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
             {
                 AssertEqual(indexedBlock.BlockchainType, realBlock.BlockchainType, nameof(realBlock.BlockchainType));
                 AssertEqual(indexedBlock.Id, realBlock.Id, nameof(realBlock.Id));
-                AssertEqual(indexedBlock.IsExecuted, true, nameof(realBlock.IsExecuted));
-                AssertEqual((int)indexedBlock.State, (int)BlockState.Executed, nameof(realBlock.State));
                 AssertEqual(indexedBlock.Number, realBlock.Number, nameof(realBlock.Number));
                 AssertEqual(indexedBlock.PreviousBlockId, realBlock.PreviousBlockId, nameof(realBlock.PreviousBlockId));
                 AssertEqual(indexedBlock.TransactionsCount, realBlock.TransactionsCount,
                     nameof(realBlock.TransactionsCount));
-                AssertEqual(indexedBlock.CanBeExecuted, realBlock.CanBeExecuted, nameof(realBlock.CanBeExecuted));
                 AssertEqual(indexedBlock.MinedAt, realBlock.MinedAt, nameof(realBlock.MinedAt));
-                AssertEqual(indexedBlock.Version, realBlock.Version, nameof(realBlock.Version));
                 AssertEqual(indexedBlock.Size, realBlock.Size, nameof(realBlock.Size));
             }
             else
@@ -424,15 +449,12 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
         private void AssertEqual<T>(T indexedField, T realField, string fieldName = null) where T : IComparable<T>
         {
+            if (indexedField == null && realField == null)
+                return;
+
             if (indexedField?.CompareTo(realField) != 0)
             {
-                var dict = (IDictionary<string, object>)_reportingContext.CurrentReportObject;
-
-                dict[fieldName] = new AssertObject<T>()
-                {
-                    Indexed = indexedField,
-                    Real = realField
-                };
+                _reportingContext.SetError<T>(fieldName, indexedField, realField);
             }
         }
     }

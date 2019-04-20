@@ -1,12 +1,12 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Lykke.Bil2.SharedDomain;
+﻿using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Numerics;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Lykke.Job.Bil2Indexer.AzureRepositories
 {
@@ -72,23 +72,33 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
         {
             var result = new Dictionary<TransactionId, Dictionary<AccountId, Money>>();
             var filtered = _actions
-                .Where(x => x.Key.Item1 == blockchainType &&
-                            x.Value.Count(y => transactionIds.Contains(y.TransactionId)) != 0);
+                .Where(x =>
+                {
+                    lock (x.Value)
+                    {
+                        return x.Key.Item1 == blockchainType &&
+                               x.Value.Count(y => transactionIds.Contains(y.TransactionId)) != 0;
+                    }
+                })
+                .ToArray();
 
             foreach (var item in filtered)
             {
-                foreach (var accountAction in item.Value)
+                lock (item.Value)
                 {
-                    if (!result.TryGetValue(accountAction.TransactionId, out var accountMoneyDict))
+                    foreach (var accountAction in item.Value)
                     {
-                        result[accountAction.TransactionId] = new Dictionary<AccountId, Money>()
+                        if (!result.TryGetValue(accountAction.TransactionId, out var accountMoneyDict))
                         {
-                            { accountAction.AccountId, accountAction.Amount}
-                        };
-                    }
-                    else
-                    {
-                        accountMoneyDict[accountAction.AccountId] = accountAction.Amount;
+                            result[accountAction.TransactionId] = new Dictionary<AccountId, Money>()
+                            {
+                                {accountAction.AccountId, accountAction.Amount}
+                            };
+                        }
+                        else
+                        {
+                            accountMoneyDict[accountAction.AccountId] = accountAction.Amount;
+                        }
                     }
                 }
             }

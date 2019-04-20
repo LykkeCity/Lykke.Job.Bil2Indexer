@@ -11,7 +11,8 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.StartUpFolder
     [UsedImplicitly]
     public class StartupInMemory
     {
-        public static IServiceProvider ServiceProvider;
+        public static IServiceProvider ServiceProvider { get; set; }
+
         private readonly LykkeSwaggerOptions _swaggerOptions = new LykkeSwaggerOptions
         {
             ApiTitle = "Bil2IndexerJob API",

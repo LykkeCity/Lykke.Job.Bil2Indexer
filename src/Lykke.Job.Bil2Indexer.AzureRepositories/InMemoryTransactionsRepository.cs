@@ -127,12 +127,12 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
                     .Take(limit)
                     .ToArray();
 
-                var nextContinuation = transactions.TransferAmountTransactions.Count - (skip + limit);
+                var nextContinuation = items.Length > 0 ? (skip + items.Length).ToString() : "";
 
-                return new PaginatedItems<TransferAmountTransactionExecutedEvent>(nextContinuation.ToString(), items);
+                return new PaginatedItems<TransferAmountTransactionExecutedEvent>(nextContinuation, items);
             }
 
-            return new PaginatedItems<TransferAmountTransactionExecutedEvent>(null, new ArraySegment<TransferAmountTransactionExecutedEvent>());
+            return new PaginatedItems<TransferAmountTransactionExecutedEvent>(null, new TransferAmountTransactionExecutedEvent[0]);
         }
 
         public async Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType,

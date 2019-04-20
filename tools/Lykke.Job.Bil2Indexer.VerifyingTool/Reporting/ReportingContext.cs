@@ -17,6 +17,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
         private readonly FileStream _fileStream;
         private readonly Stack<dynamic> _scopeStack = new Stack<dynamic>(10);
         private List<dynamic> _root;
+        private int _errorCountInScope;
 
         public ReportingContext(string filePath)
         {
@@ -30,6 +31,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
             _root = new List<dynamic>();
 
             CurrentReportObject = _root;
+            _errorCountInScope = 0;
         }
 
         public dynamic CurrentReportObject { get; private set; }
@@ -38,23 +40,26 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
         {
             StringBuilder sb = new StringBuilder();
             var rootList = _root.FirstOrDefault();
-
-            if (rootList is List<dynamic>)
+            if (_errorCountInScope != 0)
             {
-                foreach (var item in rootList)
+                if (rootList is List<dynamic>)
                 {
-                    var text = Newtonsoft.Json.JsonConvert.SerializeObject(item, Formatting.Indented);
+                    foreach (var item in rootList)
+                    {
+                        var text = Newtonsoft.Json.JsonConvert.SerializeObject(item, Formatting.Indented);
+                        sb.AppendLine(text);
+                    }
+                }
+                else
+                {
+                    var text = Newtonsoft.Json.JsonConvert.SerializeObject(rootList, Formatting.Indented);
                     sb.AppendLine(text);
                 }
-            }
-            else
-            {
-                var text = Newtonsoft.Json.JsonConvert.SerializeObject(rootList, Formatting.Indented);
-                sb.AppendLine(text);
+
+                await WriteLineAsync(sb.ToString());
             }
 
-            await WriteLineAsync(sb.ToString());
-
+            _errorCountInScope = 0;
             _scopeStack.Clear();
             _root = new List<dynamic>();
             CurrentReportObject = _root;
@@ -113,6 +118,18 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
         public void EndScope()
         {
             CurrentReportObject = _scopeStack.Pop();
+        }
+
+        public void SetError<T>(string fieldName, T indexedField, T realField)
+        {
+            var dict = (IDictionary<string, object>)this.CurrentReportObject;
+            _errorCountInScope++;
+
+            dict[fieldName] = new AssertObject<T>()
+            {
+                Indexed = indexedField,
+                Real = realField
+            };
         }
     }
 
