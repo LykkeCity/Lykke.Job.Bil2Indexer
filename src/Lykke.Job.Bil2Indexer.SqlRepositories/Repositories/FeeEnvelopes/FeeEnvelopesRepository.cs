@@ -22,14 +22,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
     public class FeeEnvelopesRepository: IFeeEnvelopesRepository
     {
         private readonly string _posgresConnstring;
-        private readonly ILog _log;
         private readonly PostgreSQLCopyHelper<FeeEnvelopeEntity> _copyMapper;
 
-        public FeeEnvelopesRepository(string posgresConnstring, ILogFactory logFactory)
+        public FeeEnvelopesRepository(string posgresConnstring)
         {
             _posgresConnstring = posgresConnstring;
-
-            _log = logFactory.CreateLog(this);
+            
             _copyMapper = FeeCopyMapper.BuildCopyMapper();
         }
 
@@ -48,7 +46,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 catch (PostgresException e) when (e.IsUniqueConstraintViolationException())
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
-                    _log.Warning($"Entities already exist, fallback adding {notExisted.Count} of {dbEntities.Count}", exception: e);
 
                     _copyMapper.SaveAll(conn, notExisted);
                 }

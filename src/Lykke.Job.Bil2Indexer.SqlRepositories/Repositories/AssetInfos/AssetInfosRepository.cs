@@ -51,7 +51,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
             }
         }
-
     
 
         public async Task<AssetInfo> GetOrDefaultAsync(string blockchainType, Asset asset)

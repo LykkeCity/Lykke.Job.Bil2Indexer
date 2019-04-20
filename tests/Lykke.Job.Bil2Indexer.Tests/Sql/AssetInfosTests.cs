@@ -22,9 +22,19 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var asset = BuildRandomAssetInfo();
 
-            await repo.AddIfNotExistsAsync(new []{asset});
-            await repo.AddIfNotExistsAsync(new[] { asset });
-            await repo.AddIfNotExistsAsync(new[] { asset });
+            var assets = new[]
+            {
+                asset,
+                BuildRandomAssetInfo(),
+                BuildRandomAssetInfo(),
+                BuildRandomAssetInfo(),
+                BuildRandomAssetInfo(),
+                BuildRandomAssetInfo()
+            };
+
+            await repo.AddIfNotExistsAsync(assets);
+            await repo.AddIfNotExistsAsync(assets);
+            await repo.AddIfNotExistsAsync(assets);
 
             var retrieved1 = await repo.GetOrDefaultAsync(asset.BlockchainType, asset.Asset);
             var retrieved2 = await repo.GetAsync(asset.BlockchainType, asset.Asset);

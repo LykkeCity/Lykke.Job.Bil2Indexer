@@ -44,7 +44,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             } while (ctr <= max);
 
             var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
-                EmptyLogFactory.Instance, BuildProviderMock(asset,bType, scale).Object);
+                BuildProviderMock(asset,bType, scale).Object);
 
             await repo.AddIfNotExistsAsync(bType, actions);
             await repo.AddIfNotExistsAsync(bType, actions);
