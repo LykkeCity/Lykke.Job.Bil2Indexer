@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions;
+using Lykke.Job.Bil2Indexer.Tests.Sql.Mocks;
 using Lykke.Logs;
 using Lykke.Numerics;
 using NUnit.Framework;
@@ -38,7 +40,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
                 sum = Money.Add(sum, act.Amount);
                 ctr++;
-            } while (ctr<=max);
+            } while (ctr <= max);
 
             await repo.AddIfNotExistsAsync(bType, actions);
             await repo.AddIfNotExistsAsync(bType, actions);
@@ -46,12 +48,30 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var retrievedSum = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);
 
             Assert.AreEqual(sum, retrievedSum);
+
+            var byTx = await repo.GetSomeOfBalancesAsync(bType, actions.Select(p => p.TransactionId).ToHashSet());
+
+            Assert.AreEqual(actions.Count, byTx.Count);
+
+            foreach (var balanceAction in actions)
+            {
+                var retrieved = byTx[balanceAction.TransactionId];
+
+                Assert.AreEqual(balanceAction.AccountId, retrieved.Keys.Single());
+                Assert.AreEqual(balanceAction.Amount, retrieved.Values.Single());
+            }
+
+            var allAssets = await repo.GetBalancesAsync(bType, address, long.MaxValue);
+
+            Assert.AreEqual(1, allAssets.Count);
+
+            Assert.AreEqual(asset, allAssets.Keys.Single());
         }
 
         private BalanceAction BuildRandomBalanceAction(Asset asset, Address address, int scale)
         {
             var rdm = new Random();
-            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(rdm.Next()), scale),
+            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(double.MaxValue - rdm.Next()), scale),
                 rdm.Next(1, 123333), new BlockId(Guid.NewGuid().ToString()),
                 new TransactionId(Guid.NewGuid().ToString()));
         }

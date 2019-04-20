@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -11,102 +10,111 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
-using Lykke.Numerics;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes.Mappers;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Z.EntityFramework.Plus;
+using PostgreSQLCopyHelper;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 {
     public class FeeEnvelopesRepository: IFeeEnvelopesRepository
     {
-        private readonly string _posgresConnString;
+        private readonly string _posgresConnstring;
         private readonly ILog _log;
-        
-        public FeeEnvelopesRepository(string posgresConnString, ILogFactory logFactory)
+        private readonly PostgreSQLCopyHelper<FeeEnvelopeEntity> _copyMapper;
+
+        public FeeEnvelopesRepository(string posgresConnstring, ILogFactory logFactory)
         {
-            _posgresConnString = posgresConnString;
+            _posgresConnstring = posgresConnstring;
 
             _log = logFactory.CreateLog(this);
+            _copyMapper = FeeCopyMapper.BuildCopyMapper();
         }
 
         public async Task AddIfNotExistsAsync(IReadOnlyCollection<FeeEnvelope> fees)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
-            {
-                var dbEntities = fees.Select(Map).ToList();
+            var dbEntities = fees.Select(p => p.ToDbEntity()).ToList();
 
-                //TODO use COPY instead of insert
-                await db.FeeEnvelopes.AddRangeAsync(dbEntities);
+            using (var conn = new NpgsqlConnection(_posgresConnstring))
+            {
+                conn.Open();
 
                 try
                 {
-                    await db.SaveChangesAsync();
+                    _copyMapper.SaveAll(conn, dbEntities);
                 }
-                catch (DbUpdateException e)
+                catch (PostgresException e) when (e.IsConstraintViolationException())
                 {
-                    var ids = fees.Select(p => new {p.BlockchainType ,  p.TransactionId, p.Fee.Asset }).ToList();
-                    _log.Warning($"Entities already exists, {string.Join(", ", ids)}", exception: e);
+                    var notExisted = await ExcludeExistedInDbAsync(dbEntities);
+                    _log.Warning($"Entities already exist, fallback adding {notExisted.Count} of {dbEntities.Count}", exception: e);
 
-                    string BuildId(string blockchainType, string transactionId, string assetId)
-                    {
-                        return $"{blockchainType}_{transactionId}_{assetId}";
-                    }
-
-                    var savedIdData = dbEntities
-                        .Select(p => new {p.BlockchainType, p.TransactionId, p.AssetId})
-                        .ToList();
-
-                    var existedIds = (await db.FeeEnvelopes
-                            .Where(dbEntity => savedIdData.Any(
-                                sd => sd.BlockchainType == dbEntity.BlockchainType 
-                                      && sd.TransactionId == dbEntity.TransactionId
-                                      && sd.AssetId == dbEntity.AssetId ))
-                            .Select(p => new {p.BlockchainType, p.TransactionId, p.AssetId})
-                            .ToListAsync())
-                        .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
-
-                    var dbEntitiesDic = dbEntities.ToDictionary(p => 
-                        BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
-
-                    foreach (var dbEntity in dbEntitiesDic
-                        .Where(p => existedIds.ContainsKey(p.Key)))
-                    {
-                        db.Entry(dbEntity.Value).State = EntityState.Detached;
-                    }
-
-                    await db.SaveChangesAsync();
+                    _copyMapper.SaveAll(conn, notExisted);
                 }
+            }
+        }
+
+
+        private async Task<IReadOnlyCollection<FeeEnvelopeEntity>> ExcludeExistedInDbAsync(IReadOnlyCollection<FeeEnvelopeEntity> dbEntities)
+        {
+            string BuildId(string bType, string transactionId, string assetId)
+            {
+                return $"{bType}_{transactionId}_{assetId}";
+            }
+
+            var savedIdData = dbEntities
+                .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId })
+                .ToList();
+
+            using (var db = new BlockchainDataContext(_posgresConnstring))
+            {
+                var existedNaturalIds = (await db.FeeEnvelopes
+                        .Where(dbEntity => savedIdData.Any(
+                            sd => sd.BlockchainType == dbEntity.BlockchainType
+                                  && sd.TransactionId == dbEntity.TransactionId
+                                  && sd.AssetId == dbEntity.AssetId))
+                        .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId })
+                        .ToListAsync())
+                    .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
+
+                var dbEntitiesDic = dbEntities.ToDictionary(p =>
+                    BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
+
+                return dbEntitiesDic.Where(p => !existedNaturalIds.ContainsKey(p.Key)).Select(p => p.Value).ToList();
             }
         }
 
         public async Task<FeeEnvelope> GetOrDefaultAsync(string blockchainType, TransactionId transactionId, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var entity = await db.FeeEnvelopes
-                    .SingleOrDefaultAsync(p => p.BlockchainType == blockchainType
+                    .Where(p => p.BlockchainType == blockchainType
                                                && p.TransactionId == transactionId
-                                               && p.AssetId == asset.Id);
+                                               && p.AssetId == asset.Id)
+                    .SingleOrDefaultAsync();
 
-                return entity != null ? Map(entity) : null;
+                return entity?.ToDomain();
             }
         }
 
         public async Task<FeeEnvelope> GetAsync(string blockchainType, TransactionId transactionId, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var entity = await db.FeeEnvelopes
-                    .SingleOrDefaultAsync(p => p.BlockchainType == blockchainType
+                    .Where(p => p.BlockchainType == blockchainType
                                                && p.TransactionId == transactionId
-                                               && p.AssetId == asset.Id);
+                                               && p.AssetId == asset.Id)
+                    .SingleOrDefaultAsync();
 
                 if (entity == null)
                 {
                     throw new ArgumentException($"Fee for {blockchainType}:{transactionId}:{asset} not found");
                 }
 
-                return Map(entity);
+                return entity.ToDomain();
             }
         }
 
@@ -127,7 +135,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 await db.FeeEnvelopes
                     .Where(p => p.BlockchainType == blockchainType && p.BlockId == blockId)
@@ -138,7 +146,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
         private async Task<PaginatedItems<FeeEnvelope>> GetPagedAsync(Expression<Func<FeeEnvelopeEntity, bool>> predicate,
             long limit, string continuation)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 int skip = 0;
                 if (!string.IsNullOrEmpty(continuation))
@@ -150,50 +158,22 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                     .Skip(skip)
                     .Take((int) limit)
                     .ToListAsync();
-
-
+                
                 var nextContinuation = entities.Count < limit ? null : (skip + entities.Count).ToString();
 
-                return new PaginatedItems<FeeEnvelope>(nextContinuation, entities.Select(Map).ToList());
+                return new PaginatedItems<FeeEnvelope>(nextContinuation, entities.Select(p=>p.ToDomain()).ToList());
             }
         }
 
         private async Task<IReadOnlyCollection<FeeEnvelope>> GetAllAsync(Expression<Func<FeeEnvelopeEntity, bool>> predicate)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var entities = await db.FeeEnvelopes.Where(predicate)
                     .ToListAsync();
 
-                return entities.Select(p => Map(p)).ToList();
+                return entities.Select(p => p.ToDomain()).ToList();
             }
-        }
-
-        private static FeeEnvelope Map(FeeEnvelopeEntity source)
-        {
-            var money =  UMoney.Round(UMoney.Parse(source.Value.ToString(CultureInfo.InvariantCulture)
-                .Replace(",", ".")), 
-                source.ValueScale);
-
-            return new FeeEnvelope(source.BlockchainType, 
-                source.BlockId, 
-                source.TransactionId, 
-                new Fee(new Asset(source.AssetId, source.AssetAddress), money));
-        }
-
-
-        private static FeeEnvelopeEntity Map(FeeEnvelope source)
-        {
-            return new FeeEnvelopeEntity
-            {
-                BlockchainType = source.BlockchainType,
-                TransactionId = source.TransactionId,
-                AssetAddress = source.Fee.Asset.Address,
-                AssetId = source.Fee.Asset.Id,
-                BlockId = source.BlockId,
-                ValueScale = source.Fee.Amount.Scale,
-                Value = (decimal) source.Fee.Amount
-            };
         }
 
     }

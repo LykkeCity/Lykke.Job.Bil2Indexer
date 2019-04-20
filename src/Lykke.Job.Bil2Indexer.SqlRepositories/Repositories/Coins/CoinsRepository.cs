@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Numerics;
 using System.Threading.Tasks;
 using Common;
 using Common.Log;
@@ -12,63 +11,78 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
-using Lykke.Numerics;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Z.EntityFramework.Plus;
+using PostgreSQLCopyHelper;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 {
     public class CoinsRepository:ICoinsRepository
     {
-        private readonly string _posgresConnString;
+        private readonly string _posgresConnstring;
         private readonly ILog _log;
+        private readonly PostgreSQLCopyHelper<CoinEntity> _copyMapper;
 
         public CoinsRepository(string posgresConnString, ILogFactory logFactory)
         {
-            _posgresConnString = posgresConnString;
+            _posgresConnstring = posgresConnString;
 
             _log = logFactory.CreateLog(this);
+            _copyMapper = CoinCopyMapper.BuildCopyMapper();
         }
 
         public async Task AddIfNotExistsAsync(IReadOnlyCollection<Coin> coins)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            if (coins.GroupBy(p => p.BlockchainType).Count() > 1)
             {
-                var dbEntities = coins.Select(Map).ToList();
+                throw new ArgumentException($"Unable to save coins with different {nameof(Coin.BlockchainType)} in single batch", nameof(coins));
+            }
 
-                //TODO use COPY instead of insert
-                await db.Coins.AddRangeAsync(dbEntities);
+            var dbEntities = coins.Select(p => p.ToDbEntity()).ToList();
+
+            using (var conn = new NpgsqlConnection(_posgresConnstring))
+            {
+                conn.Open();
 
                 try
                 {
-                    await db.SaveChangesAsync();
+                    _copyMapper.SaveAll(conn, dbEntities);
                 }
-                catch (DbUpdateException e)
+                catch (PostgresException e) when (e.IsConstraintViolationException())
                 {
-                    var ids = coins.Select(p => p.Id).ToList();
-                    _log.Warning($"Entities already exists, {string.Join(", ", ids)}", exception: e);
+                    var notExisted = await ExcludeExistedInDbAsync(dbEntities);
+                    _log.Warning($"Entities already exist, fallback adding {notExisted.Count} of {dbEntities.Count}", exception: e);
 
-                    var existedIds = (await db.Coins.Where(BuildPredicate(coins.First().BlockchainType, ids))
-                            .Select(p => new { p.TransactionId, p.CoinNumber })
-                            .ToListAsync())
-                        .Select(p => new CoinId(p.TransactionId, p.CoinNumber))
-                        .ToDictionary(p => p);
-                    
-                    var dbEntitiesDic = dbEntities.ToDictionary(p => new CoinId(p.TransactionId, p.CoinNumber));
-
-                    foreach (var dbEntity in dbEntitiesDic.Where(p => existedIds.ContainsKey(p.Key)))
-                    {
-                        db.Entry(dbEntity.Value).State = EntityState.Detached;
-                    }
-
-                    await db.SaveChangesAsync();
+                    _copyMapper.SaveAll(conn, notExisted);
                 }
             }
         }
-        
+
+
+        private async Task<IReadOnlyCollection<CoinEntity>> ExcludeExistedInDbAsync(IReadOnlyCollection<CoinEntity> dbEntities)
+        {
+            var ids = dbEntities.Select(p => new CoinId(p.TransactionId, p.CoinNumber)).ToList();
+            
+            using (var db = new BlockchainDataContext(_posgresConnstring))
+            {
+                var existedNaturalIds = (await db.Coins.Where(BuildPredicate(dbEntities.First().BlockchainType, ids))
+                        .Select(p => new { p.TransactionId, p.CoinNumber })
+                        .ToListAsync())
+                    .Select(p => new CoinId(p.TransactionId, p.CoinNumber))
+                    .ToDictionary(p => p);
+
+                var dbEntitiesDic = dbEntities.ToDictionary(p => new CoinId(p.TransactionId, p.CoinNumber));
+
+                return dbEntitiesDic.Where(p => !existedNaturalIds.ContainsKey(p.Key)).Select(p => p.Value).ToList();
+            }
+        }
+
         public async Task SpendAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var foundCount = await db.Coins.Where(BuildPredicate(blockchainType, ids)).UpdateAsync(p => new CoinEntity { IsSpent = true });
 
@@ -88,7 +102,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task RevertSpendingAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var foundCount = await db.Coins.Where(BuildPredicate(blockchainType, ids)).UpdateAsync(p => new CoinEntity {IsSpent = false});
 
@@ -108,11 +122,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 return (await db.Coins.Where(BuildPredicate(blockchainType, ids))
                         .Where(p => !p.IsDeleted).ToListAsync())
-                    .Select(Map)
+                    .Select(p=> p.ToDomain())
                     .ToList();
             }
         }
@@ -121,7 +135,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
         {
             var ids = receivedInTransactionIds.Select(p => p.ToString()).ToList();
 
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 await db.Coins.Where(p => ids.Any(x => x == p.TransactionId))
                     .UpdateAsync(p => new CoinEntity {IsDeleted = true});
@@ -140,77 +154,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
             return dbCoin => dbCoin.BlockchainType == blockchainType
                              && !ids.Any(coinRef => coinRef.TransactionId == dbCoin.TransactionId
                                                    && coinRef.CoinNumber == dbCoin.CoinNumber);
-        }
-
-        private static CoinEntity Map(Coin source)
-        {
-
-            return new CoinEntity
-            {
-                BlockchainType = source.BlockchainType,
-                TransactionId = source.Id.TransactionId,
-                CoinNumber = source.Id.CoinNumber,
-                Address = source.Address,
-                AddressNonce = source.AddressNonce,
-                AddressTag = source.AddressTag,
-                AddressTagType = Map(source.AddressTagType),
-                AssetAddress = source.Asset.Address,
-                IsSpent = source.IsSpent,
-                AssetId = source.Asset.Id,
-                ValueScale = source.Value.Scale,
-                Value = (decimal) source.Value
-            };
-
-
-        }
-
-        private static Coin Map(CoinEntity source)
-        {
-            return new Coin(blockchainType: source.BlockchainType, 
-                id: new CoinId(source.TransactionId, source.CoinNumber),
-                asset: new Asset(new AssetId(source.AssetId), new AssetAddress(source.AssetAddress)), 
-                address: source.Address, 
-                value: new UMoney(new BigInteger(source.Value), source.ValueScale), 
-                addressNonce: source.AddressNonce,
-                addressTag: source.AddressTag,
-                addressTagType: Map(source.AddressTagType), 
-                isSpent: source.IsSpent );
-        }
-
-        private static AddressTagType? Map(CoinEntity.AddressTagTypeValues? source)
-        {
-            if (source == null)
-            {
-                return null;
-            }
-
-            switch (source.Value)
-            {
-                case CoinEntity.AddressTagTypeValues.Number:
-                    return AddressTagType.Number;
-                case CoinEntity.AddressTagTypeValues.Text:
-                    return AddressTagType.Text;
-                default:
-                    throw new ArgumentException("Unknown mapping", nameof(source));
-            }
-        }
-
-        private static CoinEntity.AddressTagTypeValues? Map(AddressTagType? source)
-        {
-            if (source == null)
-            {
-                return null;
-            }
-
-            switch (source.Value)
-            {
-                case AddressTagType.Number:
-                    return CoinEntity.AddressTagTypeValues.Number;
-                case AddressTagType.Text:
-                    return CoinEntity.AddressTagTypeValues.Text;
-                default:
-                    throw new ArgumentException($"Unknown mapping", nameof(source));
-            }
         }
     }
 }

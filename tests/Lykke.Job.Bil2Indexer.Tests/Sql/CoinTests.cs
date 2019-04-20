@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins;
+using Lykke.Job.Bil2Indexer.Tests.Sql.Mocks;
 using Lykke.Logs;
 using Lykke.Numerics;
 using NUnit.Framework;
@@ -27,7 +28,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 GenerateRandom(bType),
                 GenerateRandom(bType),
                 GenerateRandom(bType),
-                GenerateRandom(bType)
+                GenerateRandom(bType),
             };
 
             await repo.AddIfNotExistsAsync(coins);
@@ -136,7 +137,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         {
             var rdm = new Random();
 
-            return new Coin(blockchainType, new CoinId(Guid.NewGuid().ToString(), rdm.Next()), new Asset(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()), new UMoney(new BigInteger(rdm.Next()), 0), Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), AddressTagType.Number, null, false);
+            return new Coin(blockchainType, new CoinId(Guid.NewGuid().ToString(), rdm.Next()), new Asset(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()), new UMoney(new BigInteger(long.MaxValue - rdm.Next()), 0), Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), AddressTagType.Number, null, false);
         }
     }
 }

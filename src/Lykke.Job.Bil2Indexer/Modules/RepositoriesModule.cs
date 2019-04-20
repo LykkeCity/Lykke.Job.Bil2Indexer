@@ -1,23 +1,70 @@
 ﻿using Autofac;
 using JetBrains.Annotations;
-using Lykke.Job.Bil2Indexer.AzureRepositories;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Settings;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions;
+using Lykke.SettingsReader;
 
 namespace Lykke.Job.Bil2Indexer.Modules
 {
     [UsedImplicitly]
     public class RepositoriesModule : Module
     {
+        private readonly AppSettings _settings;
+
+        public RepositoriesModule(IReloadingManager<AppSettings> settings)
+        {
+            _settings = settings.CurrentValue;
+        }
+
         protected override void Load(ContainerBuilder builder)
         {
-            builder.RegisterType<InMemoryAssetInfosRepository>().As<IAssetInfosRepository>().SingleInstance();
-            builder.RegisterType<InMemoryBalanceActionsRepository>().As<IBalanceActionsRepository>().SingleInstance();
-            builder.RegisterType<InMemoryBlockHeadersRepository>().As<IBlockHeadersRepository>().SingleInstance();
-            builder.RegisterType<InMemoryCoinsRepository>().As<ICoinsRepository>().SingleInstance();
-            builder.RegisterType<InMemoryCrawlersRepository>().As<ICrawlersRepository>().SingleInstance();
-            builder.RegisterType<InMemoryTransactionsRepository>().As<ITransactionsRepository>().SingleInstance();
-            builder.RegisterType<InMemoryChainHeadsRepository>().As<IChainHeadsRepository>().SingleInstance();
-            builder.RegisterType<InMemoryFeeEnvelopesRepository>().As<IFeeEnvelopesRepository>().SingleInstance();
+            builder.RegisterType<BalanceActionsRepository>()
+                .As<IBalanceActionsRepository>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.Db.PgBlockchainDataConnString))
+                .SingleInstance();
+
+            builder.RegisterType<BlockHeadersRepository>()
+                .As<IBlockHeadersRepository>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.Db.PgStateDataConnString))
+                .SingleInstance();
+
+            builder.RegisterType<CoinsRepository>()
+                .As<ICoinsRepository>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.Db.PgBlockchainDataConnString))
+                .SingleInstance();
+
+            builder.RegisterType<CrawlersRepository>()
+                .As<ICrawlersRepository>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.Db.PgStateDataConnString))
+                .SingleInstance();
+
+            builder.RegisterType<TransactionsRepository>()
+                .As<ITransactionsRepository>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.Db.PgTransactionsDataConnString))
+                .SingleInstance();
+
+            builder.RegisterType<ChainHeadsRepository>()
+                .As<IChainHeadsRepository>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.Db.PgStateDataConnString))
+                .SingleInstance();
+
+            builder.RegisterType<FeeEnvelopesRepository>()
+                .As<IFeeEnvelopesRepository>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.Db.PgBlockchainDataConnString))
+                .SingleInstance();
+
+            builder.RegisterType<AssetInfosRepository>()
+                .As<IAssetInfosRepository>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.Db.PgBlockchainDataConnString))
+                .SingleInstance();
         }
     }
 }

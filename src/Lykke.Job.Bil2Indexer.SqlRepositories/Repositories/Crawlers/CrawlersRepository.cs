@@ -5,6 +5,7 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
@@ -44,29 +45,38 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
 
             using (var db = new StateDataContext(_posgresConnString))
             {
-                var existed = await db.Crawlers.SingleOrDefaultAsync(BuildIdPredicate(crawler.BlockchainType, crawler.Configuration.StartBlock, crawler.Configuration.StopAssemblingBlock));
-
                 var newValues = Map(crawler);
-                if (existed != null)
-                {
-                    db.Entry(existed).Property(nameof(CrawlerEntity.Version)).OriginalValue = crawler.Version;
-                    db.Entry(existed).State = EntityState.Modified; //forces to update xmin even if actual prop is the same
 
-                    db.Entry(existed).CurrentValues.SetValues(newValues);
-                }
-                else
-                {
-                    db.Crawlers.Add(newValues);
-                }
+                await db.Crawlers.AddAsync(newValues);
 
                 try
                 {
                     await db.SaveChangesAsync();
-
                 }
-                catch (DbUpdateConcurrencyException e)
+                catch (DbUpdateException dbUpdEx) when (dbUpdEx.IsConstraintViolationException())
                 {
-                    throw new OptimisticConcurrencyException(e);
+                    var existed = await db.Crawlers
+                        .SingleOrDefaultAsync(BuildIdPredicate(crawler.BlockchainType, crawler.Configuration.StartBlock, crawler.Configuration.StopAssemblingBlock));
+
+                    if (existed == null)
+                    {
+                        throw;
+                    }
+
+                    db.Entry(newValues).State = EntityState.Detached;
+
+                    db.Entry(existed).Property(nameof(ChainHeadEntity.Version)).OriginalValue = newValues.Version;
+                    db.Entry(existed).State = EntityState.Modified; //forces to update xmin even if actual prop is the same
+                    db.Entry(existed).CurrentValues.SetValues(newValues);
+
+                    try
+                    {
+                        await db.SaveChangesAsync();
+                    }
+                    catch (DbUpdateConcurrencyException e)
+                    {
+                        throw new OptimisticConcurrencyException(e);
+                    }
                 }
             }
         }

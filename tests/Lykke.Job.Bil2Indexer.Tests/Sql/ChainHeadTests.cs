@@ -4,6 +4,7 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads;
+using Lykke.Job.Bil2Indexer.Tests.Sql.Mocks;
 using NUnit.Framework;
 
 namespace Lykke.Job.Bil2Indexer.Tests.Sql

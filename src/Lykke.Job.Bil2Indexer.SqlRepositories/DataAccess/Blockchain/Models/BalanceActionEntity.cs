@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using JetBrains.Annotations;
+using Lykke.Numerics;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 {
@@ -34,6 +35,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 
         [Column("value_scale")]
         public int ValueScale { get; set; }
+
+        [Column("value_string")]
+        public string ValueString { get; set; }
+        
+        [NotMapped]
+        public Money ValueMoney { get; set; }
 
         [Column("address")]
         public string Address { get; set; }
