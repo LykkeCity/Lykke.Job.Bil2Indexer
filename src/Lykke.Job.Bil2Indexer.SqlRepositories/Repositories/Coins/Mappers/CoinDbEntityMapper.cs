@@ -23,7 +23,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
                 IsSpent = source.IsSpent,
                 AssetId = source.Asset.Id,
                 ValueScale = source.Value.Scale,
-                ValueString = MoneyHelper.BuildPgString(source.Value)
+                ValueString = MoneyHelper.BuildPgString(source.Value),
+                CoinId = CoinIdBuilder.BuildCoinId(source.Id)
             };
         }
 

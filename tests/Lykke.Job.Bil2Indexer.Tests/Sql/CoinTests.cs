@@ -62,6 +62,12 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 GenerateRandom(bType),
                 GenerateRandom(bType),
                 GenerateRandom(bType),
+                GenerateRandom(bType),
+
+                GenerateRandom(bType),
+                GenerateRandom(bType),
+                GenerateRandom(bType),
+                GenerateRandom(bType),
                 GenerateRandom(bType)
             };
 
@@ -75,13 +81,19 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             Assert.AreEqual(coins.Length, retrieved.Count);
 
-            await repo.RemoveIfExistAsync(bType, ids.Select(p => new TransactionId(p.TransactionId)).ToHashSet());
-            await repo.RemoveIfExistAsync(bType, ids.Select(p => new TransactionId(p.TransactionId)).ToHashSet());
+
+            var idsToDelete = coins.Take(5).Select(p => p.Id).ToList();
+
+            await repo.RemoveIfExistAsync(bType, idsToDelete.Select(p => new TransactionId(p.TransactionId)).ToHashSet());
+            await repo.RemoveIfExistAsync(bType, idsToDelete.Select(p => new TransactionId(p.TransactionId)).ToHashSet());
 
             var retrieved2 = await repo.GetSomeOfAsync(bType, ids);
 
 
-            Assert.AreEqual(retrieved2.Count, 0);
+            Assert.AreEqual(retrieved2.Count, coins.Length - idsToDelete.Count);
+
+
+            Assert.AreEqual(retrieved2.Count(p => idsToDelete.Contains(p.Id)), 0);
         }
 
 
@@ -99,6 +111,12 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 GenerateRandom(bType),
                 GenerateRandom(bType),
                 GenerateRandom(bType),
+                GenerateRandom(bType),
+
+                GenerateRandom(bType),
+                GenerateRandom(bType),
+                GenerateRandom(bType),
+                GenerateRandom(bType),
                 GenerateRandom(bType)
             };
 
@@ -112,12 +130,16 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.AreEqual(coins.Length, retrieved.Count);
             Assert.True(retrieved.All(p => !p.IsSpent));
 
-            await repo.SpendAsync(bType, ids);
-            await repo.SpendAsync(bType, ids);
+            var idsToSpend = coins.Take(4).Select(p => p.Id).ToList();
+
+            await repo.SpendAsync(bType, idsToSpend);
+            await repo.SpendAsync(bType, idsToSpend);
 
 
             var retrieved2 = await repo.GetSomeOfAsync(bType, ids);
-            Assert.True(retrieved2.All(p => p.IsSpent));
+
+            Assert.True(retrieved2.Where(p=>idsToSpend.Contains(p.Id)).All(p => p.IsSpent));
+            Assert.True(retrieved2.Where(p => !idsToSpend.Contains(p.Id)).All(p => !p.IsSpent));
         }
 
         private void AssertEquals(Coin a, Coin b)

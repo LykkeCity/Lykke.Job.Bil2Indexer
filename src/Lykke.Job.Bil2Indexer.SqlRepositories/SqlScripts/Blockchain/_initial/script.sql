@@ -15,6 +15,7 @@ create table coins
     transaction_id   text                            not null,
     coin_number      integer                         not null,
     asset_id         text                            not null,
+    coin_id          text                            not null,
     asset_address    text,
     value            numeric                         not null,
     value_string     text                            not null,
@@ -29,8 +30,11 @@ create table coins
         primary key (id)
 );
 
-create unique index coins_blockchain_type_transaction_id_coin_number_uindex
-    on coins (blockchain_type, transaction_id, coin_number);
+create unique index coins_blockchain_type_coin_id_uindex
+    on coins (blockchain_type, coin_id);
+
+create index coins_blockchain_type_transaction_id_index
+	on coins (blockchain_type, transaction_id);
 
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on coins for each row

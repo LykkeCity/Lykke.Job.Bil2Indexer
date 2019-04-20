@@ -17,7 +17,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 
         [Column("transaction_id")]
         public string TransactionId { get; set; }
-
+        
+        [Column("coin_id")]
+        public string CoinId { get; set; }
 
         [Column("coin_number")]
         public int CoinNumber { get; set; }
