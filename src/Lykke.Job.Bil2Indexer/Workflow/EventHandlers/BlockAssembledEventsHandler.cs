@@ -32,7 +32,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             _chainHeadsRepository = chainHeadsRepository;
         }
 
-        public async Task HandleAsync(BlockAssembledEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(BlockAssembledEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
 
@@ -46,7 +46,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
             {
                 // Disordered message, we should ignore it.
-                return;
+                return MessageHandlingResult.Success();
             }
 
             long nextBlockNumber;
@@ -61,6 +61,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         blockNumber => _blockHeadersRepository.GetOrDefaultAsync(evt.BlockchainType, blockNumber),
                         blockToRollback => replyPublisher.Publish
                         (
+                            // TODO: Fix it, should be ReduceChainHeadCommand
                             new RollbackBlockCommand
                             {
                                 BlockchainType = evt.BlockchainType,
@@ -79,6 +80,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         previousBlock,
                         blockToRollback => replyPublisher.Publish
                         (
+                            // TODO: Fix it, should be ReduceChainHeadCommand
                             new RollbackBlockCommand
                             {
                                 BlockchainType = evt.BlockchainType,
@@ -132,6 +134,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             {
                 throw new ArgumentOutOfRangeException(nameof(settings.Capabilities.TransferModel), settings.Capabilities.TransferModel, "Unknown transfer model");
             }
+
+            return MessageHandlingResult.Success();
         }
     }
 }

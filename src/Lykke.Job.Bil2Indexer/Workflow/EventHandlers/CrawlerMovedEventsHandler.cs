@@ -22,7 +22,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             _crawlersManager = crawlersManager;
         }
 
-        public async Task HandleAsync(CrawlerMovedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(CrawlerMovedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(evt.BlockchainType, messageCorrelationId.Configuration);
@@ -31,7 +31,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (crawlerCorrelationId.Equals(messageCorrelationId))
             {
                 // Disordered message, we should ignore it.
-                return;
+                return MessageHandlingResult.Success();
             }
 
             if (crawler.Configuration.CanProcess(crawler.ExpectedBlockNumber))
@@ -40,6 +40,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
                 await blocksReaderApi.SendAsync(new ReadBlockCommand(evt.BlockNumber), crawler.GetCorrelationId().ToString());
             }
+
+            return MessageHandlingResult.Success();
         }
     }
 }

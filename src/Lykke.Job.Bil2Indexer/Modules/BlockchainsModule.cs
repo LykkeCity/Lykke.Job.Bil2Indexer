@@ -5,6 +5,7 @@ using Autofac.Extensions.DependencyInjection;
 using JetBrains.Annotations;
 using Lykke.Bil2.Client.BlocksReader;
 using Lykke.Bil2.Client.BlocksReader.Services;
+using Lykke.Common;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
@@ -32,8 +33,24 @@ namespace Lykke.Job.Bil2Indexer.Modules
 
             services.AddBlocksReaderClient(options =>
             {
-                options.RabbitMqConnString = _settings.Bil2IndexerJob.RabbitMq.ConnString;
-                options.MessageListeningParallelism = _settings.Bil2IndexerJob.RabbitMq.ListeningParallelism;
+                var settings = _settings.Bil2IndexerJob.RabbitMq;
+
+                options.RabbitMqConnString = settings.ConnString;
+#if DEBUG
+                options.RabbitVhost = settings.Vhost == "/"
+                    ? null
+                    : settings.Vhost ?? AppEnvironment.EnvInfo;
+#else
+                options.RabbitVhost = settings.Vhost;
+#endif
+                options.MessageConsumersCount = settings.MessageConsumersCount;
+                options.MessageProcessorsCount = settings.MessageProcessorsCount;
+                options.MaxFirstLevelRetryCount = settings.MaxFirstLevelRetryCount;
+                options.MaxFirstLevelRetryMessageAge = settings.MaxFirstLevelRetryMessageAge;
+                options.DefaultFirstLevelRetryTimeout = settings.DefaultFirstLevelRetryTimeout;
+                options.FirstLevelRetryQueueCapacity = settings.FirstLevelRetryQueueCapacity;
+                options.ProcessingQueueCapacity = settings.ProcessingQueueCapacity;
+
                 options.BlockEventsHandlerFactory = c => c.GetRequiredService<IBlockEventsHandler>();
 
                 foreach (var integration in _settings.BlockchainIntegrations)
@@ -74,6 +91,12 @@ namespace Lykke.Job.Bil2Indexer.Modules
 
             builder.Register(c => new IntegrationSettingsProvider(_settings.BlockchainIntegrations))
                 .AsSelf()
+                .SingleInstance();
+
+            builder.RegisterType<AssetInfosManager>()
+                .As<IAssetInfosManager>()
+                .As<IAssetInfosProvider>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.AssetsCaching.LruCacheCapacity))
                 .SingleInstance();
         }
     }

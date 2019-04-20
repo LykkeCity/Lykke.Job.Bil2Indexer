@@ -43,7 +43,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             _settingsProvider = settingsProvider;
         }
 
-        public async Task HandleAsync(ExtendChainHeadCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(ExtendChainHeadCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
 
@@ -53,7 +53,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 // TODO: Not sure yet what to do here. Probably we need to check block header state.
                 // We need to determine somehow if this message is outdated or premature and ignore or 
                 // retry it correspondingly.
-                return;
+                return MessageHandlingResult.Success();
             }
 
             if (chainHead.CanExtendTo(command.ToBlockNumber))
@@ -79,6 +79,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
                 await _chainHeadsRepository.SaveAsync(chainHead);
             }
+
+            return MessageHandlingResult.Success();
         }
 
         private Task PublishExecutedTransactionsAsync(string blockchainType, string blockId, long blockNumber, IMessagePublisher publisher)

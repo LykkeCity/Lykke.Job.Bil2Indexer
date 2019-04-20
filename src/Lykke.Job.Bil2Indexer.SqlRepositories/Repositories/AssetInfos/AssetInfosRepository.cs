@@ -6,6 +6,7 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
@@ -19,52 +20,75 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
             _posgresConnString = posgresConnString;
         }
 
-        public async Task AddIfNotExistsAsync(AssetInfo asset)
+        public async Task AddIfNotExistsAsync(IEnumerable<AssetInfo> assets)
         {
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
-                await db.AssetInfos.AddAsync(Map(asset));
-
-                try
+                foreach (var asset in assets)
                 {
-                    await db.SaveChangesAsync();
-                }
-                catch (DbUpdateException)
-                {
-                    var exist = await db.AssetInfos
-                        .AnyAsync(
-                            x => x.BlockchainType == asset.BlockchainType 
-                                 && x.Id == asset.Asset.Id);
+                    var dbEntity = Map(asset);
+                    await db.AssetInfos.AddAsync(Map(asset));
 
-                    if (!exist)
+                    try
                     {
-                        throw;
+                        await db.SaveChangesAsync();
+                    }
+                    catch (DbUpdateException e) when(e.IsConstraintViolationException()) 
+                    {
+                        var exist = await db.AssetInfos.AnyAsync(p =>
+                            p.BlockchainType == asset.BlockchainType && p.Id == asset.Asset.Id);
+
+                        if (exist)
+                        {
+                            db.Entry(dbEntity).State = EntityState.Detached;
+                        }
+                        else
+                        {
+                            throw;
+                        }
                     }
                 }
+
             }
         }
 
-        public async Task<AssetInfo> GetOrDefaultAsync(string blockchainType, AssetId id)
+    
+
+        public async Task<AssetInfo> GetOrDefaultAsync(string blockchainType, Asset asset)
         {
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
                 var entity = await db.AssetInfos
                     .SingleOrDefaultAsync(p => p.BlockchainType == blockchainType 
-                                               && p.Id == id);
+                                               && p.Id == asset.Id);
 
                 return entity != null ? Map(entity) : null;
             }
         }
 
-        public async Task<AssetInfo> GetAsync(string blockchainType, AssetId id)
+        public async Task<AssetInfo> GetAsync(string blockchainType, Asset asset)
         {
             using (var db = new BlockchainDataContext(_posgresConnString))
             {
                 var entity = await db.AssetInfos
                     .SingleAsync(p => p.BlockchainType == blockchainType
-                                               && p.Id == id);
+                                               && p.Id == asset.Id);
 
                 return Map(entity);
+            }
+        }
+
+        public async Task<IReadOnlyCollection<AssetInfo>> GetSomeOfAsync(string blockchainType, IEnumerable<Asset> assets)
+        {
+            var ids = assets.Select(p => p.Id.ToString());
+
+            using (var db = new BlockchainDataContext(_posgresConnString))
+            {
+                var entities = await db.AssetInfos
+                    .Where(p => p.BlockchainType == blockchainType && ids.Any(x => x == p.Id))
+                    .ToListAsync();
+
+                return entities.Select(Map).ToList();
             }
         }
 

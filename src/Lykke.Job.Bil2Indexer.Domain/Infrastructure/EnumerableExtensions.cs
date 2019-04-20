@@ -7,6 +7,39 @@ namespace Lykke.Job.Bil2Indexer.Domain.Infrastructure
 {
     public static class EnumerableExtensions
     {
+        public static async Task<IReadOnlyCollection<TResult>> MapAsync<TSource, TResult>(
+            this IEnumerable<TSource> source,
+            int degreeOfParallelism,
+            Func<TSource, Task<TResult>> body)
+        {
+            var tasks = new List<Task<TResult>>();
+
+            using (var throttler = new SemaphoreSlim(degreeOfParallelism))
+            {
+                foreach (var element in source)
+                {
+                    await throttler.WaitAsync();
+
+                    tasks.Add(Task.Run(() =>
+                    {
+                        try
+                        {
+                            return body(element);
+                        }
+                        finally
+                        {
+                            // ReSharper disable once AccessToDisposedClosure
+                            throttler.Release();
+                        }
+                    }));
+                }
+
+                var result = await Task.WhenAll(tasks);
+
+                return result;
+            }
+        }
+
         public static async Task ForEachAsync<T>(
             this IEnumerable<T> source,
             int degreeOfParallelism,

@@ -8,7 +8,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 {
     public class ChainHeadReducedEventsHandler : IMessageHandler<ChainHeadReducedEvent>
     {
-        public Task HandleAsync(ChainHeadReducedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public Task<MessageHandlingResult> HandleAsync(ChainHeadReducedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             replyPublisher.Publish(new RollbackBlockCommand
             {
@@ -18,7 +18,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 PreviousBlockId = evt.ToBlockId
             });
 
-            return Task.CompletedTask;
+            return Task.FromResult(MessageHandlingResult.Success());
         }
     }
 }

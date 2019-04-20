@@ -3,6 +3,7 @@ using Lykke.Bil2.RabbitMq;
 using Lykke.Bil2.RabbitMq.Subscription;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Contract.Events;
+using Lykke.Job.Bil2Indexer.Settings.JobSettings;
 using Lykke.Job.Bil2Indexer.Workflow.CommandHandlers;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Job.Bil2Indexer.Workflow.EventHandlers;
@@ -16,10 +17,14 @@ namespace Lykke.Job.Bil2Indexer.Services
         public const string CommandsExchangeName = "bil-v2.indexer.commands";
         
         private readonly IRabbitMqEndpoint _endpoint;
+        private readonly RabbitMqSettings _settings;
 
-        public RabbitMqConfigurator(IRabbitMqEndpoint endpoint)
+        public RabbitMqConfigurator(
+            IRabbitMqEndpoint endpoint,
+            RabbitMqSettings settings)
         {
             _endpoint = endpoint;
+            _settings = settings;
         }
 
         public void Configure()
@@ -37,12 +42,20 @@ namespace Lykke.Job.Bil2Indexer.Services
                 .Handle<BlockExecutedEvent>(o => o.WithHandler<BlockExecutionEventsHandler>())
                 .Handle<BlockPartiallyExecutedEvent>(o => o.WithHandler<BlockExecutionEventsHandler>())
                 .Handle<CrawlerMovedEvent>(o => o.WithHandler<CrawlerMovedEventsHandler>())
-                .Handle<ChainHeadExtendedEvent>(o => o.WithHandler<ChainHeadExtendedEventsHandler>());
+                .Handle<ChainHeadExtendedEvent>(o => o.WithHandler<ChainHeadExtendedEventsHandler>())
+                .Handle<ChainHeadReducedEvent>(o => o.WithHandler<ChainHeadReducedEventsHandler>());
 
             _endpoint.Subscribe(
+                eventsSubscriptions,
                 Bil2IndexerContractExchanges.Events,
                 "bil-v2.indexer",
-                eventsSubscriptions,
+                _settings.DefaultFirstLevelRetryTimeout,
+                _settings.MaxFirstLevelRetryMessageAge,
+                _settings.MaxFirstLevelRetryCount,
+                _settings.FirstLevelRetryQueueCapacity,
+                _settings.ProcessingQueueCapacity,
+                _settings.MessageConsumersCount,
+                _settings.MessageProcessorsCount,
                 CommandsExchangeName);
         }
 
@@ -55,12 +68,20 @@ namespace Lykke.Job.Bil2Indexer.Services
                 .Handle<RollbackBlockCommand>(o => { o.WithHandler<RollbackBlockCommandsHandler>(); })
                 .Handle<WaitForBlockAssemblingCommand>(o => { o.WithHandler<WaitForBlockAssemblingCommandsHandler>(); })
                 .Handle<ExecuteTransferCoinsBlockCommand>(o => { o.WithHandler<ExecuteTransferCoinsBlockCommandsHandler>(); })
-                .Handle<ExtendChainHeadCommand>(o => { o.WithHandler<ExtendChainHeadCommandsHandler>(); });
+                .Handle<ExtendChainHeadCommand>(o => { o.WithHandler<ExtendChainHeadCommandsHandler>(); })
+                .Handle<ReduceChainHeadCommand>(o => { o.WithHandler<ReduceChainHeadCommandsHandler>(); });
             
             _endpoint.Subscribe(
+                commandsSubscriptions,
                 CommandsExchangeName,
                 "bil-v2.indexer",
-                commandsSubscriptions,
+                _settings.DefaultFirstLevelRetryTimeout,
+                _settings.MaxFirstLevelRetryMessageAge,
+                _settings.MaxFirstLevelRetryCount,
+                _settings.FirstLevelRetryQueueCapacity,
+                _settings.ProcessingQueueCapacity,
+                _settings.MessageConsumersCount,
+                _settings.MessageProcessorsCount,
                 Bil2IndexerContractExchanges.Events);
         }
     }
