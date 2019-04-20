@@ -58,23 +58,34 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         private async Task<IReadOnlyCollection<FeeEnvelopeEntity>> ExcludeExistedInDbAsync(IReadOnlyCollection<FeeEnvelopeEntity> dbEntities)
         {
+            if (dbEntities.GroupBy(p => p.AssetId).Count() > 1)
+            {
+                throw new ArgumentException("Unable to save batch with multiple assetIds");
+            }
+
+            if (dbEntities.GroupBy(p => p.BlockchainType).Count() > 1)
+            {
+                throw new ArgumentException("Unable to save batch with multiple blockchain type");
+            }
+
             string BuildId(string bType, string transactionId, string assetId)
             {
                 return $"{bType}_{transactionId}_{assetId}";
             }
 
-            var savedIdData = dbEntities
-                .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId })
-                .ToList();
-
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
-                var existedNaturalIds = (await db.FeeEnvelopes
-                        .Where(dbEntity => savedIdData.Any(
-                            sd => sd.BlockchainType == dbEntity.BlockchainType
-                                  && sd.TransactionId == dbEntity.TransactionId
-                                  && sd.AssetId == dbEntity.AssetId))
-                        .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId })
+                var blockchainType = dbEntities.First().BlockchainType;
+                var txIds = dbEntities.Select(p => p.TransactionId).ToList();
+                var assetId = dbEntities.First().AssetId;
+
+                var query = db.FeeEnvelopes
+                        .Where(p => p.BlockchainType == blockchainType)
+                        .Where(p=> txIds.Contains(p.TransactionId))
+                        .Where(p => p.AssetId == assetId)
+                    .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId });
+
+                var existedNaturalIds = (await query
                         .ToListAsync())
                     .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
 
