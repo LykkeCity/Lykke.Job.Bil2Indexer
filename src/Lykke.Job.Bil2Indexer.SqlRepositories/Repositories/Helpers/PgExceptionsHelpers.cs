@@ -6,13 +6,13 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers
 {
     public static class PgExceptionsHelpers
     {
-        public static bool IsConstraintViolationException(this DbUpdateException e)
+        public static bool IsUniqueConstraintViolationException(this DbUpdateException e)
         {
-            return e.InnerException is PostgresException pgEx && pgEx.IsConstraintViolationException();
+            return e.InnerException is PostgresException pgEx && pgEx.IsUniqueConstraintViolationException();
         }
 
 
-        public static bool IsConstraintViolationException(this PostgresException e)
+        public static bool IsUniqueConstraintViolationException(this PostgresException e)
         {
             const string constraintViolationErrorCode = "23505";
             if (string.Equals(e.SqlState, constraintViolationErrorCode, StringComparison.InvariantCultureIgnoreCase))

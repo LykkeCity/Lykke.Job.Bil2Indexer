@@ -33,7 +33,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
                     {
                         await db.SaveChangesAsync();
                     }
-                    catch (DbUpdateException e) when(e.IsConstraintViolationException()) 
+                    catch (DbUpdateException e) when(e.IsUniqueConstraintViolationException()) 
                     {
                         var exist = await db.AssetInfos.AnyAsync(p =>
                             p.BlockchainType == asset.BlockchainType && p.Id == asset.Asset.Id);

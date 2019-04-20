@@ -54,7 +54,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 {
                     _copyMapper.SaveAll(conn, dbEntities);
                 }
-                catch (PostgresException e) when(e.IsConstraintViolationException())
+                catch (PostgresException e) when(e.IsUniqueConstraintViolationException())
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
                     _log.Warning($"Entities already exist, fallback adding {notExisted.Count} of {dbEntities.Count}", exception: e);
