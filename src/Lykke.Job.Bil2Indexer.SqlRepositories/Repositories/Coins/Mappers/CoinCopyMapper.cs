@@ -4,7 +4,7 @@ using PostgreSQLCopyHelper;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
 {
-    public static class CoinCopyMapper
+    internal static class CoinCopyMapper
     {
         public static PostgreSQLCopyHelper<CoinEntity> BuildCopyMapper()
         {

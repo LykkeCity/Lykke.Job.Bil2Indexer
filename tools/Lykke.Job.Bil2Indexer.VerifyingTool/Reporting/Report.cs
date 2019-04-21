@@ -76,13 +76,13 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
                     if (_transferModel == BlockchainTransferModel.Coins)
                     {
                         string continuation = null;
-                        List<TransferCoinsTransactionExecutedEvent> transfers =
-                            new List<TransferCoinsTransactionExecutedEvent>(100);
+                        var transfers = new List<TransferCoinsTransactionExecutedEvent>(indexedBlock.TransactionsCount);
+                        var failedTransfers = new List<TransactionFailedEvent>(indexedBlock.TransactionsCount);
 
                         do
                         {
                             var paginationResponse = await
-                                _transactionsRepository.GetTransferCoinsTransactionsOfBlockAsync(
+                                _transactionsRepository.GetAllOfBlockAsync(
                                     _blockchainType,
                                     indexedBlock.Id,
                                     _limit,
@@ -90,15 +90,9 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
                             continuation = paginationResponse.Continuation;
 
-                            if (paginationResponse?.Items != null &&
-                                paginationResponse.Items.Any())
-                            {
-                                transfers.AddRange(paginationResponse.Items);
-                            }
+                            transfers.AddRange(paginationResponse.Items.Where(x => x.IsTransferCoins).Select(x => x.AsTransferCoins()));
+                            failedTransfers.AddRange(paginationResponse.Items.Where(x => x.IsFailed).Select(x => x.AsFailed()));
                         } while (!string.IsNullOrEmpty(continuation));
-
-                        var failedTransfers =
-                            await GetFailedEventsForBlockAsync(_transactionsRepository, _blockchainType, indexedBlock);
 
                         var orderedTransactions = transfers.OrderBy(x => x.TransactionNumber).ToArray();
                         var (realCoinTransfers, realFailedEvents) =
@@ -163,13 +157,13 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
                     else if (_transferModel == BlockchainTransferModel.Amount)
                     {
                         string continuation = null;
-                        List<TransferAmountTransactionExecutedEvent> transfers =
-                            new List<TransferAmountTransactionExecutedEvent>(100);
+                        var transfers = new List<TransferAmountTransactionExecutedEvent>(indexedBlock.TransactionsCount);
+                        var failedTransfers = new List<TransactionFailedEvent>(indexedBlock.TransactionsCount);
 
                         do
                         {
                             var paginationResponse = await
-                                _transactionsRepository.GetTransferAmountTransactionsOfBlockAsync(
+                                _transactionsRepository.GetAllOfBlockAsync(
                                     _blockchainType,
                                     indexedBlock.Id,
                                     _limit,
@@ -177,16 +171,10 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
                             continuation = paginationResponse.Continuation;
 
-                            if (paginationResponse?.Items != null &&
-                                paginationResponse.Items.Any())
-                            {
-                                transfers.AddRange(paginationResponse.Items);
-                            }
-
+                            transfers.AddRange(paginationResponse.Items.Where(x => x.IsTransferAmount).Select(x => x.AsTransferAmount()));
+                            failedTransfers.AddRange(paginationResponse.Items.Where(x => x.IsFailed).Select(x => x.AsFailed()));
                         } while (!string.IsNullOrEmpty(continuation));
 
-                        var failedTransfers =
-                            await GetFailedEventsForBlockAsync(_transactionsRepository, _blockchainType, indexedBlock);
                         var orderedTransactions = transfers.OrderBy(x => x.TransactionNumber).ToArray();
                         var (realAmountTransfers, realFailedEvents) =
                             await _adapter.GetAmountTransactionsForBlockAsync(currentBlockNumber);
@@ -413,34 +401,6 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
             _reportingContext.EndScope();
         }
 
-        private async Task<List<TransactionFailedEvent>> GetFailedEventsForBlockAsync(
-            ITransactionsRepository transactionsRepository, string blockchainType,
-            BlockHeader indexedBlock)
-        {
-            string continuation = null;
-            var failedTransfers = new List<TransactionFailedEvent>(100);
-
-            do
-            {
-                var paginationResponse = await
-                    transactionsRepository.GetFailedTransactionsOfBlockAsync(
-                        blockchainType,
-                        indexedBlock.Id,
-                        _limit,
-                        continuation);
-
-                continuation = paginationResponse.Continuation;
-
-                if (paginationResponse?.Items != null &&
-                    paginationResponse.Items.Any())
-                {
-                    failedTransfers.AddRange(paginationResponse.Items);
-                }
-            } while (!string.IsNullOrEmpty(continuation));
-
-            return failedTransfers;
-        }
-
         private IBlockchainVerifierAdapter InitAdapter(string blockchainType, string[] args)
         {
             BlockchainVerifierAdapterFactory factory = new BlockchainVerifierAdapterFactory();
@@ -454,7 +414,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
             if (indexedField?.CompareTo(realField) != 0)
             {
-                _reportingContext.SetError<T>(fieldName, indexedField, realField);
+                _reportingContext.SetError(fieldName, indexedField, realField);
             }
         }
     }

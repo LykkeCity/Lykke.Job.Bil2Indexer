@@ -3,7 +3,7 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
 {
-    public static class ReceivedCoinMapper
+    internal static class ReceivedCoinMapper
     {
         public static ReceivedCoinEntity ToDbEntity(this ReceivedCoin source)
         {

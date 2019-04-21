@@ -4,7 +4,7 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions.Mappers
 {
-    public static class BalanceActionDbEntityMapper
+    internal static class BalanceActionDbEntityMapper
     {
         public static BalanceActionEntity ToDbEntity(this BalanceAction source, string blockchainType)
         {

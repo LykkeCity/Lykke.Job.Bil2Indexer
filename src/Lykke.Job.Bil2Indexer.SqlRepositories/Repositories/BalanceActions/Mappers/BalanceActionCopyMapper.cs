@@ -4,7 +4,7 @@ using PostgreSQLCopyHelper;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions.Mappers
 {
-    public static class BalanceActionCopyMapper
+    internal static class BalanceActionCopyMapper
     {
         public static PostgreSQLCopyHelper<BalanceActionEntity> BuildCopyMapper()
         {

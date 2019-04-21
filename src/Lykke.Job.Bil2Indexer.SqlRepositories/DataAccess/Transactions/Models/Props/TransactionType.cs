@@ -1,6 +1,6 @@
 ﻿namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props
 {
-    public enum TransactionType
+    internal enum TransactionType
     {
         TransferAmountTransactionExecuted = 0,
         TransferCoinsTransactionExecuted = 1,

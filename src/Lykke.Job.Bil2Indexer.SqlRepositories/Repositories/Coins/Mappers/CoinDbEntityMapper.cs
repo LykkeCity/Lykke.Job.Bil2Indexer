@@ -6,7 +6,7 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
 {
-    public static class CoinDbEntityMapper
+    internal static class CoinDbEntityMapper
     {
         public static CoinEntity ToDbEntity(this Coin source)
         {

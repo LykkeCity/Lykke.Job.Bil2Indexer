@@ -4,7 +4,7 @@ using PostgreSQLCopyHelper;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes.Mappers
 {
-    public static class FeeCopyMapper
+    internal static class FeeCopyMapper
     {
         public static PostgreSQLCopyHelper<FeeEnvelopeEntity> BuildCopyMapper()
         {

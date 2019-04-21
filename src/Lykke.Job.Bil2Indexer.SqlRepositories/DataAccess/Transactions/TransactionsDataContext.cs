@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions
 {
-    public class TransactionsDataContext : DbContext
+    internal class TransactionsDataContext : DbContext
     {
         private readonly string _connectionString;
 

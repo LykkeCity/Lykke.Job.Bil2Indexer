@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Newtonsoft.Json;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props.Payloads

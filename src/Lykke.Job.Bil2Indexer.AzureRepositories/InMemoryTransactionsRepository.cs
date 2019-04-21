@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Common.Log;
+using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
 namespace Lykke.Job.Bil2Indexer.AzureRepositories
@@ -91,6 +90,21 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             return Task.FromResult(totalCount);
         }
 
+        public Task<PaginatedItems<TransactionEnvelope>> GetAllOfBlockAsync(string blockchainType, BlockId blockId, int limit, string continuation)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransactionEnvelope> GetAsync(string blockchainType, TransactionId transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransactionEnvelope> GetOrDefaultAsync(string blockchainType, TransactionId transactionId)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<PaginatedItems<TransferCoinsTransactionExecutedEvent>> GetTransferCoinsTransactionsOfBlockAsync(
             string blockchainType,
             BlockId blockId,
@@ -133,48 +147,6 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
             }
 
             return new PaginatedItems<TransferAmountTransactionExecutedEvent>(null, new TransferAmountTransactionExecutedEvent[0]);
-        }
-
-        public async Task<PaginatedItems<TransactionFailedEvent>> GetFailedTransactionsOfBlockAsync(string blockchainType,
-            BlockId blockId, int limit, string continuation)
-        {
-            return new PaginatedItems<TransactionFailedEvent>(null, new List<TransactionFailedEvent>() { });
-        }
-
-        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionAsync(string blockchainType,
-            TransactionId transactionId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionAsync(string blockchainType,
-            TransactionId transactionId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TransactionFailedEvent> GetFailedTransactionAsync(string blockchainType,
-            TransactionId transactionId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TransferCoinsTransactionExecutedEvent> GetTransferCoinsTransactionOrDefaultAsync(
-            string blockchainType, TransactionId transactionId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TransferAmountTransactionExecutedEvent> GetTransferAmountTransactionOrDefaultAsync(
-            string blockchainType, TransactionId transactionId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TransactionFailedEvent> GetFailedTransactionOrDefaultAsync(string blockchainType,
-            TransactionId transactionId)
-        {
-            throw new NotImplementedException();
         }
 
         public Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)

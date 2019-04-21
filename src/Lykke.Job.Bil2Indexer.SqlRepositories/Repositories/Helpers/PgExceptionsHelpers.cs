@@ -4,7 +4,7 @@ using Npgsql;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers
 {
-    public static class PgExceptionsHelpers
+    internal static class PgExceptionsHelpers
     {
         public static bool IsUniqueConstraintViolationException(this DbUpdateException e)
         {

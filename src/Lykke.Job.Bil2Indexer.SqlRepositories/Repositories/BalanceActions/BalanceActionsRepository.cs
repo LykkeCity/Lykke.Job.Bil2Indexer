@@ -177,9 +177,21 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
                 return queryRes.GroupBy(p => new TransactionId(p.TransactionId)).ToDictionary(p => p.Key, p =>
                 {
-                    return (IReadOnlyDictionary<AccountId, Money>)p.ToDictionary(
-                        x => new AccountId(x.Address, new Asset(new AssetId(x.AssetId), new AssetAddress(x.AssetAddress))),
-                        x => MoneyHelper.BuildMoney(x.Value, x.ValueScale));
+                    return (IReadOnlyDictionary<AccountId, Money>) p.ToDictionary
+                    (
+                        x => new AccountId
+                        (
+                            x.Address,
+                            new Asset
+                            (
+                                new AssetId(x.AssetId),
+                                x.AssetAddress != null
+                                    ? new AssetAddress(x.AssetAddress)
+                                    : null
+                            )
+                        ),
+                        x => MoneyHelper.BuildMoney(x.Value, x.ValueScale)
+                    );
                 });
             }
         }

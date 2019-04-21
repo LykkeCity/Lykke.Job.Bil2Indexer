@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers
 {
-    public static class EfHelpers
+    internal static class EfHelpers
     {
         private static readonly TypeInfo QueryCompilerTypeInfo = typeof(QueryCompiler).GetTypeInfo();
 

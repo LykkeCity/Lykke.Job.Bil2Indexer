@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Log;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -26,8 +28,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private readonly IBalanceActionsRepository _balanceActionsRepository;
         private readonly ICoinsRepository _coinsRepository;
         private readonly IntegrationSettingsProvider _settingsProvider;
+        private readonly ILog _log;
 
         public ExtendChainHeadCommandsHandler(
+            ILogFactory logFactory,
             IChainHeadsRepository chainHeadsRepository,
             ITransactionsRepository transactionsRepository,
             IFeeEnvelopesRepository feeEnvelopesRepository,
@@ -41,6 +45,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             _balanceActionsRepository = balanceActionsRepository;
             _coinsRepository = coinsRepository;
             _settingsProvider = settingsProvider;
+            _log = logFactory.CreateLog(this);
         }
 
         public async Task<MessageHandlingResult> HandleAsync(ExtendChainHeadCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -80,6 +85,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 await _chainHeadsRepository.SaveAsync(chainHead);
             }
 
+            _log.Info("Chain head extended", chainHead);
+
             return MessageHandlingResult.Success();
         }
 
@@ -102,273 +109,273 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
         private async Task PublishTransferCoinsTransactionsAsync(string blockchainType, string blockId, long blockNumber, IMessagePublisher publisher)
         {
-            PaginatedItems<TransferCoinsTransactionExecutedEvent> transactions = null;
+            //PaginatedItems<TransferCoinsTransactionExecutedEvent> transactions = null;
 
-            do
-            {
-                transactions = await _transactionsRepository.GetTransferCoinsTransactionsOfBlockAsync
-                (
-                    blockchainType,
-                    blockId,
-                    500,
-                    transactions?.Continuation
-                );
+            //do
+            //{
+            //    transactions = await _transactionsRepository.GetTransferCoinsTransactionsOfBlockAsync
+            //    (
+            //        blockchainType,
+            //        blockId,
+            //        500,
+            //        transactions?.Continuation
+            //    );
 
-                var (transactionsAccountBalances, coinsSpentByTransactions) = await TaskExecution.WhenAll
-                (
-                    _balanceActionsRepository.GetSomeOfBalancesAsync
-                    (
-                        blockchainType,
-                        transactions.Items.Select(x => x.TransactionId).ToHashSet()
-                    ),
-                    _coinsRepository.GetSomeOfAsync
-                    (
-                        blockchainType,
-                        transactions.Items.SelectMany(x => x.SpentCoins).ToArray()
-                    )
-                );
+            //    var (transactionsAccountBalances, coinsSpentByTransactions) = await TaskExecution.WhenAll
+            //    (
+            //        _balanceActionsRepository.GetSomeOfBalancesAsync
+            //        (
+            //            blockchainType,
+            //            transactions.Items.Select(x => x.TransactionId).ToHashSet()
+            //        ),
+            //        _coinsRepository.GetSomeOfAsync
+            //        (
+            //            blockchainType,
+            //            transactions.Items.SelectMany(x => x.SpentCoins).ToArray()
+            //        )
+            //    );
 
-                var transactionsSpentCoins = coinsSpentByTransactions
-                    .GroupBy(x => x.Id.TransactionId)
-                    .ToDictionary
-                    (
-                        g => g.Key,
-                        g => g.Select(x => x)
-                    );
+            //    var transactionsSpentCoins = coinsSpentByTransactions
+            //        .GroupBy(x => x.Id.TransactionId)
+            //        .ToDictionary
+            //        (
+            //            g => g.Key,
+            //            g => g.Select(x => x)
+            //        );
 
-                // TODO: Make in parallel
+            //    // TODO: Make in parallel
 
-                foreach (var transaction in transactions.Items)
-                {
-                    if (!transactionsAccountBalances.TryGetValue(transaction.TransactionId, out var transactionAccountBalances))
-                    {
-                        transactionAccountBalances = new Dictionary<AccountId, Money>();
-                    }
+            //    foreach (var transaction in transactions.Items)
+            //    {
+            //        if (!transactionsAccountBalances.TryGetValue(transaction.TransactionId, out var transactionAccountBalances))
+            //        {
+            //            transactionAccountBalances = new Dictionary<AccountId, Money>();
+            //        }
 
-                    if (!transactionsSpentCoins.TryGetValue(transaction.TransactionId, out var transactionSpentCoins))
-                    {
-                        transactionSpentCoins = Enumerable.Empty<Coin>();
-                    }
+            //        if (!transactionsSpentCoins.TryGetValue(transaction.TransactionId, out var transactionSpentCoins))
+            //        {
+            //            transactionSpentCoins = Enumerable.Empty<Coin>();
+            //        }
 
-                    var transactionAccountSpentCoins = transactionSpentCoins
-                        .Where(x => x.Address != null)
-                        .GroupBy(x => new AccountId(x.Address, x.Asset))
-                        .ToDictionary
-                        (
-                            g => g.Key,
-                            g => g
-                                .Select
-                                (
-                                    x => new SpentCoin
-                                    (
-                                        id: x.Id,
-                                        value: x.Value,
-                                        tag: x.AddressTag,
-                                        tagType: x.AddressTagType,
-                                        nonce: x.AddressNonce
-                                    )
-                                )
-                                .ToArray()
-                        );
+            //        var transactionAccountSpentCoins = transactionSpentCoins
+            //            .Where(x => x.Address != null)
+            //            .GroupBy(x => new AccountId(x.Address, x.Asset))
+            //            .ToDictionary
+            //            (
+            //                g => g.Key,
+            //                g => g
+            //                    .Select
+            //                    (
+            //                        x => new SpentCoin
+            //                        (
+            //                            id: x.Id,
+            //                            value: x.Value,
+            //                            tag: x.AddressTag,
+            //                            tagType: x.AddressTagType,
+            //                            nonce: x.AddressNonce
+            //                        )
+            //                    )
+            //                    .ToArray()
+            //            );
 
-                    var transactionAccountReceivedCoins = transaction.ReceivedCoins
-                        .Where(x => x.Address != null)
-                        .GroupBy(x => new AccountId(x.Address, x.Asset))
-                        .ToDictionary
-                        (
-                            g => g.Key,
-                            g => g
-                                .Select
-                                (
-                                    x => new Contract.ReceivedCoin
-                                    (
-                                        number: x.CoinNumber,
-                                        value: x.Value,
-                                        tag: x.AddressTag,
-                                        tagType: x.AddressTagType,
-                                        nonce: x.AddressNonce
-                                    )
-                                )
-                                .ToArray()
-                        );
+            //        var transactionAccountReceivedCoins = transaction.ReceivedCoins
+            //            .Where(x => x.Address != null)
+            //            .GroupBy(x => new AccountId(x.Address, x.Asset))
+            //            .ToDictionary
+            //            (
+            //                g => g.Key,
+            //                g => g
+            //                    .Select
+            //                    (
+            //                        x => new Contract.ReceivedCoin
+            //                        (
+            //                            number: x.CoinNumber,
+            //                            value: x.Value,
+            //                            tag: x.AddressTag,
+            //                            tagType: x.AddressTagType,
+            //                            nonce: x.AddressNonce
+            //                        )
+            //                    )
+            //                    .ToArray()
+            //            );
                     
-                    var balanceUpdates = transactionAccountBalances
-                        .Select(accountBalance =>
-                        {
-                            var accountId = accountBalance.Key;
-                            var balance = accountBalance.Value;
+            //        var balanceUpdates = transactionAccountBalances
+            //            .Select(accountBalance =>
+            //            {
+            //                var accountId = accountBalance.Key;
+            //                var balance = accountBalance.Value;
 
-                            if (!transactionAccountSpentCoins.TryGetValue(accountId, out var spentCoins))
-                            {
-                                spentCoins = Array.Empty<SpentCoin>();
-                            }
+            //                if (!transactionAccountSpentCoins.TryGetValue(accountId, out var spentCoins))
+            //                {
+            //                    spentCoins = Array.Empty<SpentCoin>();
+            //                }
 
-                            if (!transactionAccountReceivedCoins.TryGetValue(accountId, out var receivedCoins))
-                            {
-                                receivedCoins = Array.Empty<Contract.ReceivedCoin>();
-                            }
+            //                if (!transactionAccountReceivedCoins.TryGetValue(accountId, out var receivedCoins))
+            //                {
+            //                    receivedCoins = Array.Empty<Contract.ReceivedCoin>();
+            //                }
 
-                            var spentAmount = spentCoins.Sum(x => x.Value);
-                            var receivedAmount = receivedCoins.Sum(x => x.Value);
-                            var oldBalance = balance + spentAmount - receivedAmount;
+            //                var spentAmount = spentCoins.Sum(x => x.Value);
+            //                var receivedAmount = receivedCoins.Sum(x => x.Value);
+            //                var oldBalance = balance + spentAmount - receivedAmount;
 
-                            return new BalanceUpdate
-                            (
-                                accountId: accountId,
-                                oldBalance: oldBalance,
-                                newBalance: balance,
-                                transfers: null,
-                                spentCoins: spentCoins,
-                                receivedCoins: receivedCoins
-                            );
-                        });
+            //                return new BalanceUpdate
+            //                (
+            //                    accountId: accountId,
+            //                    oldBalance: oldBalance,
+            //                    newBalance: balance,
+            //                    transfers: null,
+            //                    spentCoins: spentCoins,
+            //                    receivedCoins: receivedCoins
+            //                );
+            //            });
 
-                    // TODO: Get batch of transactions
+            //        // TODO: Get batch of transactions
 
-                    var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
-                    var evt = new TransactionExecutedEvent
-                    (
-                        blockchainType,
-                        blockId,
-                        blockNumber,
-                        transaction.TransactionNumber,
-                        transaction.TransactionId,
-                        balanceUpdates.ToArray(),
-                        fees.Select(x => x.Fee).ToArray()
-                    );
+            //        var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
+            //        var evt = new TransactionExecutedEvent
+            //        (
+            //            blockchainType,
+            //            blockId,
+            //            blockNumber,
+            //            transaction.TransactionNumber,
+            //            transaction.TransactionId,
+            //            balanceUpdates.ToArray(),
+            //            fees.Select(x => x.Fee).ToArray()
+            //        );
 
-                    publisher.Publish(evt);
-                }
+            //        publisher.Publish(evt);
+            //    }
 
-            } while (transactions.Continuation != null);
+            //} while (transactions.Continuation != null);
         }
 
         private async Task PublishTransferAmountTransactionsAsync(string blockchainType, string blockId, long blockNumber, IMessagePublisher publisher)
         {
-            PaginatedItems<TransferAmountTransactionExecutedEvent> transactions = null;
+            //PaginatedItems<TransferAmountTransactionExecutedEvent> transactions = null;
 
-            do
-            {
-                transactions = await _transactionsRepository.GetTransferAmountTransactionsOfBlockAsync
-                (
-                    blockchainType,
-                    blockId,
-                    500,
-                    transactions?.Continuation
-                );
+            //do
+            //{
+            //    transactions = await _transactionsRepository.GetTransferAmountTransactionsOfBlockAsync
+            //    (
+            //        blockchainType,
+            //        blockId,
+            //        500,
+            //        transactions?.Continuation
+            //    );
 
-                var transactionsAccountBalances = await _balanceActionsRepository.GetSomeOfBalancesAsync
-                (
-                    blockchainType,
-                    transactions.Items.Select(x => x.TransactionId).ToHashSet()
-                );
+            //    var transactionsAccountBalances = await _balanceActionsRepository.GetSomeOfBalancesAsync
+            //    (
+            //        blockchainType,
+            //        transactions.Items.Select(x => x.TransactionId).ToHashSet()
+            //    );
 
-                // TODO: Make in parallel
+            //    // TODO: Make in parallel
 
-                foreach (var transaction in transactions.Items)
-                {
-                    if (!transactionsAccountBalances.TryGetValue(transaction.TransactionId, out var transactionAccountBalances))
-                    {
-                        transactionAccountBalances = new Dictionary<AccountId, Money>();
-                    }
+            //    foreach (var transaction in transactions.Items)
+            //    {
+            //        if (!transactionsAccountBalances.TryGetValue(transaction.TransactionId, out var transactionAccountBalances))
+            //        {
+            //            transactionAccountBalances = new Dictionary<AccountId, Money>();
+            //        }
 
-                    var transactionAccountTransfers = transaction.BalanceChanges
-                        .Where(x => x.Address != null)
-                        .GroupBy(x => new AccountId(x.Address, x.Asset))
-                        .ToDictionary
-                        (
-                            g => g.Key,
-                            g => g
-                                .Select
-                                (
-                                    x => new Transfer
-                                    (
-                                        x.TransferId,
-                                        x.Value,
-                                        x.Tag,
-                                        x.TagType,
-                                        x.Nonce
-                                    )
-                                )
-                                .ToArray()
-                        );
+            //        var transactionAccountTransfers = transaction.BalanceChanges
+            //            .Where(x => x.Address != null)
+            //            .GroupBy(x => new AccountId(x.Address, x.Asset))
+            //            .ToDictionary
+            //            (
+            //                g => g.Key,
+            //                g => g
+            //                    .Select
+            //                    (
+            //                        x => new Transfer
+            //                        (
+            //                            x.TransferId,
+            //                            x.Value,
+            //                            x.Tag,
+            //                            x.TagType,
+            //                            x.Nonce
+            //                        )
+            //                    )
+            //                    .ToArray()
+            //            );
 
-                    var balanceUpdates = transactionAccountBalances
-                        .Select(accountBalance =>
-                        {
-                            var accountId = accountBalance.Key;
-                            var balance = accountBalance.Value;
-                            var transfers = transactionAccountTransfers[accountId];
-                            var oldBalance = balance - transfers.Sum(x => x.Value);
+            //        var balanceUpdates = transactionAccountBalances
+            //            .Select(accountBalance =>
+            //            {
+            //                var accountId = accountBalance.Key;
+            //                var balance = accountBalance.Value;
+            //                var transfers = transactionAccountTransfers[accountId];
+            //                var oldBalance = balance - transfers.Sum(x => x.Value);
 
-                            return new BalanceUpdate
-                            (
-                                accountId: accountId,
-                                oldBalance: oldBalance,
-                                newBalance: balance,
-                                transfers: transfers,
-                                spentCoins: null,
-                                receivedCoins: null
-                            );
-                        });
+            //                return new BalanceUpdate
+            //                (
+            //                    accountId: accountId,
+            //                    oldBalance: oldBalance,
+            //                    newBalance: balance,
+            //                    transfers: transfers,
+            //                    spentCoins: null,
+            //                    receivedCoins: null
+            //                );
+            //            });
 
-                    // TODO: Get batch of transactions
+            //        // TODO: Get batch of transactions
 
-                    var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
-                    var evt = new TransactionExecutedEvent
-                    (
-                        blockchainType,
-                        blockId,
-                        blockNumber,
-                        transaction.TransactionNumber,
-                        transaction.TransactionId,
-                        balanceUpdates.ToArray(),
-                        fees.Select(x => x.Fee).ToArray()
-                    );
+            //        var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
+            //        var evt = new TransactionExecutedEvent
+            //        (
+            //            blockchainType,
+            //            blockId,
+            //            blockNumber,
+            //            transaction.TransactionNumber,
+            //            transaction.TransactionId,
+            //            balanceUpdates.ToArray(),
+            //            fees.Select(x => x.Fee).ToArray()
+            //        );
 
-                    publisher.Publish(evt);
-                }
+            //        publisher.Publish(evt);
+            //    }
 
-            } while (transactions.Continuation != null);
+            //} while (transactions.Continuation != null);
         }
 
         private async Task PublishFailedTransactionsAsync(string blockchainType, string blockId, long blockNumber, IMessagePublisher publisher)
         {
-            PaginatedItems<Bil2.Contract.BlocksReader.Events.TransactionFailedEvent> transactions = null;
+            //PaginatedItems<Bil2.Contract.BlocksReader.Events.TransactionFailedEvent> transactions = null;
 
-            do
-            {
-                transactions = await _transactionsRepository.GetFailedTransactionsOfBlockAsync
-                (
-                    blockchainType,
-                    blockId,
-                    500,
-                    transactions?.Continuation
-                );
+            //do
+            //{
+            //    transactions = await _transactionsRepository.GetFailedTransactionsOfBlockAsync
+            //    (
+            //        blockchainType,
+            //        blockId,
+            //        500,
+            //        transactions?.Continuation
+            //    );
 
-                // TODO: Make in parallel
+            //    // TODO: Make in parallel
 
-                foreach (var transaction in transactions.Items)
-                {
-                    // TODO: Get batch of transactions
+            //    foreach (var transaction in transactions.Items)
+            //    {
+            //        // TODO: Get batch of transactions
 
-                    var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
-                    var evt = new Contract.Events.TransactionFailedEvent
-                    (
-                        blockchainType,
-                        blockId,
-                        blockNumber,
-                        transaction.TransactionNumber,
-                        transaction.TransactionId,
-                        transaction.ErrorCode,
-                        transaction.ErrorMessage,
-                        fees.Select(x => x.Fee).ToArray()
-                    );
+            //        var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
+            //        var evt = new Contract.Events.TransactionFailedEvent
+            //        (
+            //            blockchainType,
+            //            blockId,
+            //            blockNumber,
+            //            transaction.TransactionNumber,
+            //            transaction.TransactionId,
+            //            transaction.ErrorCode,
+            //            transaction.ErrorMessage,
+            //            fees.Select(x => x.Fee).ToArray()
+            //        );
 
-                    publisher.Publish(evt);
-                }
+            //        publisher.Publish(evt);
+            //    }
                
-            } while (transactions.Continuation != null);
+            //} while (transactions.Continuation != null);
         }
     }
 }

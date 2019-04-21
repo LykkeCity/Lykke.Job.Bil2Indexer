@@ -4,7 +4,7 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
 {
-    public static class TransactionBroadcastingErrorMapper
+    internal static class TransactionBroadcastingErrorMapper
     {
         public static TransactionBroadcastingErrorEntity ToDbEntity(this TransactionBroadcastingError source)
         {

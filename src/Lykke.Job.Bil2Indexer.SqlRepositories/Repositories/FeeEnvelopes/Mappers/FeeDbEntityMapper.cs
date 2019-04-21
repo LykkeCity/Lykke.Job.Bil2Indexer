@@ -5,7 +5,7 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes.Mappers
 {
-    public static class FeeDbEntityMapper
+    internal static class FeeDbEntityMapper
     {
         public static FeeEnvelope ToDomain(this FeeEnvelopeEntity source)
         {

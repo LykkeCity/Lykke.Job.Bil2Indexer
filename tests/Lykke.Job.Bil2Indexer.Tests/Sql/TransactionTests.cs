@@ -23,19 +23,22 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var evt = BuildRandomTransferCoinsTransactionExecutedEvent();
 
-            var btype = Guid.NewGuid().ToString();
-            await repo.AddIfNotExistsAsync(btype, evt);
+            var blockchainType = Guid.NewGuid().ToString();
+            await repo.AddIfNotExistsAsync(blockchainType, evt);
 
-            var retrieved = await repo.GetTransferCoinsTransactionAsync(btype, evt.TransactionId);
+            var envelope = await repo.GetAsync(blockchainType, evt.TransactionId);
 
-            Assert.AreEqual(evt.BlockId, retrieved.BlockId);
-            Assert.AreEqual(evt.TransactionId, retrieved.TransactionId);
-            Assert.AreEqual(evt.Fees.ToJson(), retrieved.Fees.ToJson());
-            Assert.AreEqual(evt.ReceivedCoins.ToJson(), retrieved.ReceivedCoins.ToJson());
-            Assert.AreEqual(evt.SpentCoins.ToJson(), evt.SpentCoins.ToJson());
+            Assert.IsTrue(envelope.IsTransferCoins);
 
+            var transaction = envelope.AsTransferCoins();
 
-            Assert.AreEqual(evt.ToJson(), retrieved.ToJson());
+            Assert.AreEqual(evt.BlockId, transaction.BlockId);
+            Assert.AreEqual(evt.TransactionId, transaction.TransactionId);
+            Assert.AreEqual(evt.Fees.ToJson(), transaction.Fees.ToJson());
+            Assert.AreEqual(evt.ReceivedCoins.ToJson(), transaction.ReceivedCoins.ToJson());
+            Assert.AreEqual(evt.SpentCoins.ToJson(), transaction.SpentCoins.ToJson());
+            
+            Assert.AreEqual(evt.ToJson(), transaction.ToJson());
         }
 
         [Test]
@@ -45,20 +48,23 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var evt = BuildRandomTransferAmountEvent();
 
-            var btype = Guid.NewGuid().ToString();
-            await repo.AddIfNotExistsAsync(btype, evt);
+            var blockchainType = Guid.NewGuid().ToString();
+            await repo.AddIfNotExistsAsync(blockchainType, evt);
 
-            var retrieved = await repo.GetTransferAmountTransactionAsync(btype, evt.TransactionId);
+            var envelope = await repo.GetAsync(blockchainType, evt.TransactionId);
 
-            Assert.AreEqual(evt.BlockId, retrieved.BlockId);
-            Assert.AreEqual(evt.TransactionId, retrieved.TransactionId);
-            Assert.AreEqual(evt.Fees.ToJson(), retrieved.Fees.ToJson());
-            Assert.AreEqual(evt.BalanceChanges.ToJson(), retrieved.BalanceChanges.ToJson());
+            Assert.IsTrue(envelope.IsTransferAmount);
 
-            Assert.AreEqual(evt.IsIrreversible, retrieved.IsIrreversible);
+            var transaction = envelope.AsTransferAmount();
 
+            Assert.AreEqual(evt.BlockId, transaction.BlockId);
+            Assert.AreEqual(evt.TransactionId, transaction.TransactionId);
+            Assert.AreEqual(evt.Fees.ToJson(), transaction.Fees.ToJson());
+            Assert.AreEqual(evt.BalanceChanges.ToJson(), transaction.BalanceChanges.ToJson());
 
-            Assert.AreEqual(evt.ToJson(), retrieved.ToJson());
+            Assert.AreEqual(evt.IsIrreversible, transaction.IsIrreversible);
+            
+            Assert.AreEqual(evt.ToJson(), transaction.ToJson());
         }
 
         [Test]
@@ -68,15 +74,18 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var evt = BuildRandomTransferFailedEvent();
 
-            var btype = Guid.NewGuid().ToString();
-            await repo.AddIfNotExistsAsync(btype, evt);
+            var blockchainType = Guid.NewGuid().ToString();
+            await repo.AddIfNotExistsAsync(blockchainType, evt);
 
-            var retrieved = await repo.GetFailedTransactionAsync(btype, evt.TransactionId);
+            var envelope = await repo.GetAsync(blockchainType, evt.TransactionId);
 
-            Assert.AreEqual(evt.ToJson(), retrieved.ToJson());
+            Assert.IsTrue(envelope.IsFailed);
+
+            var transaction = envelope.AsFailed();
+
+            Assert.AreEqual(evt.ToJson(), transaction.ToJson());
         }
-
-
+        
         [Test]
         public async Task DoNotUpdates()
         {
@@ -85,16 +94,20 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var evt = BuildRandomTransferCoinsTransactionExecutedEvent();
             var evt2 = BuildRandomTransferCoinsTransactionExecutedEvent(evt.TransactionId);
 
-            var btype = Guid.NewGuid().ToString();
-            await repo.AddIfNotExistsAsync(btype, evt);
-            await repo.AddIfNotExistsAsync(btype, evt2);
+            var blockchainType = Guid.NewGuid().ToString();
+            await repo.AddIfNotExistsAsync(blockchainType, evt);
+            await repo.AddIfNotExistsAsync(blockchainType, evt2);
 
-            var retrieved = await repo.GetTransferCoinsTransactionAsync(btype, evt.TransactionId);
+            var envelope = await repo.GetAsync(blockchainType, evt.TransactionId);
 
-            Assert.AreEqual(evt.BlockId, retrieved.BlockId);
-            Assert.AreEqual(evt.Fees.ToJson(), retrieved.Fees.ToJson());
-            Assert.AreEqual(evt.ReceivedCoins.ToJson(), retrieved.ReceivedCoins.ToJson());
-            Assert.AreEqual(evt.SpentCoins.ToJson(), retrieved.SpentCoins.ToJson());
+            Assert.IsTrue(envelope.IsTransferCoins);
+
+            var transaction = envelope.AsTransferCoins();
+
+            Assert.AreEqual(evt.BlockId, transaction.BlockId);
+            Assert.AreEqual(evt.Fees.ToJson(), transaction.Fees.ToJson());
+            Assert.AreEqual(evt.ReceivedCoins.ToJson(), transaction.ReceivedCoins.ToJson());
+            Assert.AreEqual(evt.SpentCoins.ToJson(), transaction.SpentCoins.ToJson());
         }
 
 
@@ -105,17 +118,20 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var evt = BuildRandomTransferCoinsTransactionExecutedEvent();
 
-            var btype = Guid.NewGuid().ToString();
-            await repo.AddIfNotExistsAsync(btype, evt);
+            var blockchainType = Guid.NewGuid().ToString();
+            await repo.AddIfNotExistsAsync(blockchainType, evt);
 
-            var retrieved = await repo.GetTransferCoinsTransactionOrDefaultAsync(btype, evt.TransactionId);
+            var envelope = await repo.GetOrDefaultAsync(blockchainType, evt.TransactionId);
             
-            Assert.IsNotNull(retrieved);
+            Assert.IsNotNull(envelope);
+            Assert.IsTrue(envelope.IsTransferCoins);
+            Assert.IsNotNull(envelope.AsTransferCoins());
 
-            await repo.TryRemoveAllOfBlockAsync(btype, evt.BlockId);
+            await repo.TryRemoveAllOfBlockAsync(blockchainType, evt.BlockId);
 
-            var retrieved2 = await repo.GetTransferCoinsTransactionOrDefaultAsync(btype, evt.TransactionId);
-            Assert.IsNull(retrieved2);
+            var envelope2 = await repo.GetOrDefaultAsync(blockchainType, evt.TransactionId);
+            
+            Assert.IsNull(envelope2);
         }
 
         [Test]
@@ -123,7 +139,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         {
             var repo = BuildRepo();
 
-            var btype = Guid.NewGuid().ToString();
+            var blockchainType = Guid.NewGuid().ToString();
             var blockId = Guid.NewGuid().ToString();
 
             var insertedCount = 9;
@@ -133,13 +149,13 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             {
                 var evt = BuildRandomTransferCoinsTransactionExecutedEvent(blockId: blockId);
 
-                await repo.AddIfNotExistsAsync(btype, evt);
+                await repo.AddIfNotExistsAsync(blockchainType, evt);
 
                 ctr++;
             } while (ctr<insertedCount);
 
 
-            var counted = await repo.CountInBlockAsync(btype, blockId);
+            var counted = await repo.CountInBlockAsync(blockchainType, blockId);
 
             Assert.AreEqual(counted, insertedCount);
         }
@@ -155,59 +171,59 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 transactionId ?? Guid.NewGuid().ToString(),
                 new List<ReceivedCoin>
                 {
-                    BuildRandmonReceivedCoin(),
-                    BuildRandmonReceivedCoin(),
-                    BuildRandmonReceivedCoin()
+                    BuildRandomReceivedCoin(),
+                    BuildRandomReceivedCoin(),
+                    BuildRandomReceivedCoin()
 
-                }, new List<CoinId>()
+                }, new List<CoinId>
                 {
-                    BuildRandmomSpentCoin(),
-                    BuildRandmomSpentCoin(),
-                    BuildRandmomSpentCoin(),
-                    BuildRandmomSpentCoin(),
-                    BuildRandmomSpentCoin()
-                }, new Fee[]
+                    BuildRandomSpentCoin(),
+                    BuildRandomSpentCoin(),
+                    BuildRandomSpentCoin(),
+                    BuildRandomSpentCoin(),
+                    BuildRandomSpentCoin()
+                }, new[]
                 {
-                    BuildRandmomFee(),
-                    BuildRandmomFee()
+                    BuildRandomFee(),
+                    BuildRandomFee()
                 });
         }
 
-        public TransferAmountTransactionExecutedEvent BuildRandomTransferAmountEvent()
+        private TransferAmountTransactionExecutedEvent BuildRandomTransferAmountEvent()
         {
             var rdm = new Random();
             return new TransferAmountTransactionExecutedEvent(new BlockId(Guid.NewGuid().ToString()),rdm.Next(), new TransactionId(Guid.NewGuid().ToString()),
-                new BalanceChange[]{ BuuildRamdnomBalanceChange (),
-                    BuuildRamdnomBalanceChange()},
+                new[]{ BuildRandomBalanceChange (),
+                    BuildRandomBalanceChange()},
                 new []
                 {
-                    BuildRandmomFee(),
-                    BuildRandmomFee(),
-                    BuildRandmomFee()
+                    BuildRandomFee(),
+                    BuildRandomFee(),
+                    BuildRandomFee()
                 });
         }
 
-        public TransactionFailedEvent BuildRandomTransferFailedEvent()
+        private static TransactionFailedEvent BuildRandomTransferFailedEvent()
         {
             var rdm = new Random();
             return new TransactionFailedEvent(new BlockId(Guid.NewGuid().ToString()), rdm.Next(),
                 new TransactionId(Guid.NewGuid().ToString()), TransactionBroadcastingError.NotEnoughBalance,
                 Guid.NewGuid().ToString(),
-                new Fee[]
+                new[]
                 {
-                    BuildRandmomFee()
+                    BuildRandomFee()
 
                 });
         }
 
 
-        public BalanceChange BuuildRamdnomBalanceChange()
+        private static BalanceChange BuildRandomBalanceChange()
         {
             var rdm = new Random();
             return new BalanceChange(Guid.NewGuid().ToString(), new Asset(new AssetId(Guid.NewGuid().ToString())), new Money(rdm.Next(), 0), new Address(Guid.NewGuid().ToString()), new AddressTag(Guid.NewGuid().ToString()), AddressTagType.Number, rdm.Next());
         }
 
-        private ReceivedCoin BuildRandmonReceivedCoin()
+        private static ReceivedCoin BuildRandomReceivedCoin()
         {
             var rnd = new Random();
             return new ReceivedCoin(rnd.Next(), 
@@ -215,14 +231,14 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 new UMoney(new BigInteger(rnd.Next()), 12));
         }
 
-        private CoinId BuildRandmomSpentCoin()
+        private static CoinId BuildRandomSpentCoin()
         {
             var rnd = new Random();
 
             return new CoinId(Guid.NewGuid().ToString(), rnd.Next());
         }
 
-        private Fee BuildRandmomFee()
+        private static Fee BuildRandomFee()
         {
             var rnd = new Random();
             
@@ -230,7 +246,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 new UMoney(new BigInteger(rnd.Next()), 123));
         }
 
-        private TransactionsRepository BuildRepo()
+        private static TransactionsRepository BuildRepo()
         {
             return new TransactionsRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
         }

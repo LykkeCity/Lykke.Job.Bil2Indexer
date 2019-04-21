@@ -5,7 +5,7 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
 {
-    public static class BalanceChangeMapper
+    internal static class BalanceChangeMapper
     {
         public static BalanceChangeEntity ToDbEntity(this BalanceChange source)
         {

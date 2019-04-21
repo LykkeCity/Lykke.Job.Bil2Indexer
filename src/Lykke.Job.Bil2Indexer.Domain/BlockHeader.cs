@@ -119,14 +119,14 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 throw new InvalidOperationException($"Block can be executed only in states: {BlockState.Assembled} or {BlockState.PartiallyExecuted}, actual: {State}");
             }
 
-            PaginatedItems<TransferCoinsTransactionExecutedEvent> transactions = null;
+            PaginatedItems<TransactionEnvelope> transactions = null;
             var spendCoinsTask = default(Task);
             
             do
             {
                 var coinsToSpend = new ConcurrentBag<CoinId>();
 
-                transactions = await transactionsRepository.GetTransferCoinsTransactionsOfBlockAsync
+                transactions = await transactionsRepository.GetAllOfBlockAsync
                 (
                     BlockchainType,
                     Id, 
@@ -134,30 +134,33 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     transactions?.Continuation
                 );
 
-                var isAllTransactionsExecuted = await transactions.Items.ForEachAsync
-                (
-                    degreeOfParallelism: 8,
-                    body: async transaction =>
-                    {
-                        var coinsToSpendByTransaction = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
-                        var isExecuted = await ExecuteTransactionAsync
-                        (
-                            coinsToSpendByTransaction,
-                            balanceActionsRepository,
-                            feeEnvelopesRepository,
-                            transaction
-                        );
-
-                        if (isExecuted)
+                var isAllTransactionsExecuted = await transactions.Items
+                    .Where(x => x.IsTransferCoins)
+                    .Select(x => x.AsTransferCoins())
+                    .ForEachAsync
+                    (
+                        degreeOfParallelism: 8,
+                        body: async transaction =>
                         {
-                            foreach (var coin in coinsToSpendByTransaction.Where(x => !x.IsSpent))
-                            {
-                                coinsToSpend.Add(coin.Id);
-                            }
-                        }
+                            var coinsToSpendByTransaction = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
+                            var isExecuted = await ExecuteTransactionAsync
+                            (
+                                coinsToSpendByTransaction,
+                                balanceActionsRepository,
+                                feeEnvelopesRepository,
+                                transaction
+                            );
 
-                        return isExecuted;
-                    });
+                            if (isExecuted)
+                            {
+                                foreach (var coin in coinsToSpendByTransaction.Where(x => !x.IsSpent))
+                                {
+                                    coinsToSpend.Add(coin.Id);
+                                }
+                            }
+
+                            return isExecuted;
+                        });
 
                 if (spendCoinsTask != default(Task))
                 {
@@ -186,11 +189,11 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 throw new InvalidOperationException($"Block can be reverted only in states: {BlockState.Executed} or {BlockState.PartiallyExecuted}, actual: {State}");
             }
 
-            PaginatedItems<TransferCoinsTransactionExecutedEvent> transactions = null;
+            PaginatedItems<TransactionEnvelope> transactions = null;
 
             do
             {
-                transactions = await transactionsRepository.GetTransferCoinsTransactionsOfBlockAsync
+                transactions = await transactionsRepository.GetAllOfBlockAsync
                 (
                     BlockchainType,
                     Id,
@@ -198,8 +201,12 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     transactions?.Continuation
                 );
 
-                var coinsToRevertSpending = transactions.Items.SelectMany(t => t.SpentCoins).ToList();
-                var transactionIds = transactions.Items.Select(t => t.TransactionId).ToHashSet();
+                var transferCoinsTransactions = transactions.Items
+                    .Where(x => x.IsTransferCoins)
+                    .Select(x => x.AsTransferCoins())
+                    .ToArray();
+                var coinsToRevertSpending = transferCoinsTransactions.SelectMany(t => t.SpentCoins).ToList();
+                var transactionIds = transferCoinsTransactions.Select(t => t.TransactionId).ToHashSet();
 
                 await Task.WhenAll
                 (
