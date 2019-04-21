@@ -3,6 +3,7 @@ using System.Linq;
 using Common;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props.Payloads;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
@@ -19,7 +20,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
                 {
                     Fees = source.Fees,
                     IsIrreversible = source.IsIrreversible,
-                    BalanceChanges = source.BalanceChanges
+                    BalanceChanges = source.BalanceChanges.Select(p => p.ToDbEntity())
                 }.ToJson(),
                 TransactionId = source.TransactionId,
                 Type = TransactionType.TransferAmountTransactionExecuted
@@ -38,7 +39,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
             return new TransferAmountTransactionExecutedEvent(blockId: source.BlockId,
                 transactionId: source.TransactionId,
                 transactionNumber: source.TransactionNumber,
-                balanceChanges: payload.BalanceChanges?.ToList(),
+                balanceChanges: payload.BalanceChanges.Select(p => p.ToDomain()).ToList(),
                 fees: payload.Fees?.ToList(),
                 isIrreversible: payload.IsIrreversible);
         }

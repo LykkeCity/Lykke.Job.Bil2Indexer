@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Lykke.Bil2.SharedDomain;
-using Lykke.Job.Bil2Indexer.Domain;
+﻿using Lykke.Bil2.SharedDomain;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 {

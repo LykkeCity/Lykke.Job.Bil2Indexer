@@ -1,4 +1,4 @@
-﻿namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models
+﻿namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props
 {
     public enum TransactionType
     {

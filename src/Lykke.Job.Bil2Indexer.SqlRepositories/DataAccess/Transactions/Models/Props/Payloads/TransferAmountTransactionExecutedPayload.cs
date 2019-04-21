@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using JetBrains.Annotations;
-using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.SharedDomain;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Newtonsoft.Json;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props.Payloads
@@ -9,7 +9,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.P
     public class TransferAmountTransactionExecutedPayload
     {
         [JsonProperty("balanceChanges")]
-        public IEnumerable<BalanceChange> BalanceChanges { get; set; }
+        public IEnumerable<BalanceChangeEntity> BalanceChanges { get; set; }
 
         [CanBeNull]
         [JsonProperty("fees")]
