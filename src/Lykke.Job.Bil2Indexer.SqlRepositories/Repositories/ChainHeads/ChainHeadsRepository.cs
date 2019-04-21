@@ -10,16 +10,16 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
 {
     public class ChainHeadsRepository:IChainHeadsRepository
     {
-        private readonly string _posgresConnString;
+        private readonly string _postgresConnString;
 
-        public ChainHeadsRepository(string posgresConnString)
+        public ChainHeadsRepository(string postgresConnString)
         {
-            _posgresConnString = posgresConnString;
+            _postgresConnString = postgresConnString;
         }
 
         public async Task<ChainHead> GetOrDefaultAsync(string blockchainType)
         {
-            using (var db = new StateDataContext(_posgresConnString))
+            using (var db = new StateDataContext(_postgresConnString))
             {
                 var existed = await db.ChainHeads.SingleOrDefaultAsync(p => p.BlockchainType == blockchainType);
 
@@ -29,7 +29,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
 
         public async Task<ChainHead> GetAsync(string blockchainType)
         {
-            using (var db = new StateDataContext(_posgresConnString))
+            using (var db = new StateDataContext(_postgresConnString))
             {
                 var existed = await db.ChainHeads.SingleOrDefaultAsync(p => p.BlockchainType == blockchainType);
 
@@ -44,7 +44,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
 
         public async Task SaveAsync(ChainHead head)
         {
-            using (var db = new StateDataContext(_posgresConnString))
+            using (var db = new StateDataContext(_postgresConnString))
             {
                 var existed = await db.ChainHeads.SingleOrDefaultAsync(p=>p.BlockchainType == head.BlockchainType);
 

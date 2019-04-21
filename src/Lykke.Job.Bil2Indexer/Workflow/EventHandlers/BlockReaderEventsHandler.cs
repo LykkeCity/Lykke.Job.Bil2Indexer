@@ -146,7 +146,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
             var assetInfos = evt.BalanceChanges
                 .Select(x => new AssetInfo(blockchainType, x.Asset, x.Value.Scale))
-                .ToArray();
+                .ToHashSet();
 
             var saveAssetInfosTask = _assetInfosManager.EnsureAdded(assetInfos);
 
@@ -228,7 +228,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
             var assetInfos = evt.ReceivedCoins
                 .Select(x => new AssetInfo(blockchainType, x.Asset, x.Value.Scale))
-                .ToArray();
+                .ToHashSet();
 
             var saveAssetInfosTask = _assetInfosManager.EnsureAdded(assetInfos);
 

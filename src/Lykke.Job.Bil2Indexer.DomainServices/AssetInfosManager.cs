@@ -33,14 +33,18 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
             );
         }
 
-        public Task EnsureAdded(IReadOnlyCollection<AssetInfo> assets)
+        public async Task EnsureAdded(ISet<AssetInfo> assets)
         {
-            foreach (var asset in assets)
+            var notCachedAssets = assets
+                .Where(x => _indexByFullId.GetItem((x.BlockchainType, x.Asset)) != null)
+                .ToArray();
+            
+            await _repository.AddIfNotExistsAsync(notCachedAssets);
+
+            foreach (var asset in notCachedAssets)
             {
                 _cache.Add(asset);
             }
-
-            return _repository.AddIfNotExistsAsync(assets);
         }
 
         public async Task<AssetInfo> GetAsync(string blockchainType, Asset asset)

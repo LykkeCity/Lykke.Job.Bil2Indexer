@@ -5,6 +5,6 @@ namespace Lykke.Job.Bil2Indexer.Domain.Services
 {
     public interface IAssetInfosManager
     {
-        Task EnsureAdded(IReadOnlyCollection<AssetInfo> assets);
+        Task EnsureAdded(ISet<AssetInfo> assets);
     }
 }
