@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models
 {

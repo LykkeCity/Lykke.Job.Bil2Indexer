@@ -12,7 +12,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.P
         public IEnumerable<Fee> Fees { get; set; }
 
         [JsonProperty("errorCode")]
-        public TransactionBroadcastingError ErrorCode { get; set; }
+        public TransactionBroadcastingErrorEntity ErrorCode { get; set; }
 
         [JsonProperty("errorMessage")]
         public string ErrorMessage { get; set; }

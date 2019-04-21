@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Common.Log;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
@@ -22,14 +20,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
     public class FeeEnvelopesRepository: IFeeEnvelopesRepository
     {
         private readonly string _posgresConnstring;
-        private readonly ILog _log;
         private readonly PostgreSQLCopyHelper<FeeEnvelopeEntity> _copyMapper;
 
-        public FeeEnvelopesRepository(string posgresConnstring, ILogFactory logFactory)
+        public FeeEnvelopesRepository(string posgresConnstring)
         {
             _posgresConnstring = posgresConnstring;
-
-            _log = logFactory.CreateLog(this);
+            
             _copyMapper = FeeCopyMapper.BuildCopyMapper();
         }
 
@@ -45,10 +41,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 {
                     _copyMapper.SaveAll(conn, dbEntities);
                 }
-                catch (PostgresException e) when (e.IsConstraintViolationException())
+                catch (PostgresException e) when (e.IsUniqueConstraintViolationException())
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
-                    _log.Warning($"Entities already exist, fallback adding {notExisted.Count} of {dbEntities.Count}", exception: e);
 
                     _copyMapper.SaveAll(conn, notExisted);
                 }

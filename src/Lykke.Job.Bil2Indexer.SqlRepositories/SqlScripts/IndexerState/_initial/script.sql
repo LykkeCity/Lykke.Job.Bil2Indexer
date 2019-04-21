@@ -22,7 +22,7 @@ create table chain_heads
     first_block_number bigint not null,
     block_number       bigint,
     block_id           text,
-    prev_block_id           text,
+    prev_block_id      text,
     constraint chain_heads_pk
         primary key (blockchain_type)
 );

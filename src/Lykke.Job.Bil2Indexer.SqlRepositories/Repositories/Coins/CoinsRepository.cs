@@ -4,9 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Common;
-using Common.Log;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
@@ -23,14 +21,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
     public class CoinsRepository:ICoinsRepository
     {
         private readonly string _posgresConnstring;
-        private readonly ILog _log;
         private readonly PostgreSQLCopyHelper<CoinEntity> _copyMapper;
 
-        public CoinsRepository(string posgresConnString, ILogFactory logFactory)
+        public CoinsRepository(string posgresConnString)
         {
             _posgresConnstring = posgresConnString;
-
-            _log = logFactory.CreateLog(this);
+            
             _copyMapper = CoinCopyMapper.BuildCopyMapper();
         }
 
@@ -51,10 +47,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                 {
                     _copyMapper.SaveAll(conn, dbEntities);
                 }
-                catch (PostgresException e) when (e.IsConstraintViolationException())
+                catch (PostgresException e) when (e.IsUniqueConstraintViolationException())
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
-                    _log.Warning($"Entities already exist, fallback adding {notExisted.Count} of {dbEntities.Count}", exception: e);
 
                     _copyMapper.SaveAll(conn, notExisted);
                 }

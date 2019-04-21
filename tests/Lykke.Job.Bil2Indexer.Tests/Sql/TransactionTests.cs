@@ -17,7 +17,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
     public class TransactionTests
     {
         [Test]
-        public async Task CanSaveAndRetrieve()
+        public async Task CanSaveAndRetrieveTransferCoins()
         {
             var repo = BuildRepo();
 
@@ -33,7 +33,49 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.AreEqual(evt.Fees.ToJson(), retrieved.Fees.ToJson());
             Assert.AreEqual(evt.ReceivedCoins.ToJson(), retrieved.ReceivedCoins.ToJson());
             Assert.AreEqual(evt.SpentCoins.ToJson(), evt.SpentCoins.ToJson());
+
+
+            Assert.AreEqual(evt.ToJson(), retrieved.ToJson());
         }
+
+        [Test]
+        public async Task CanSaveAndRetrieveTransferAmount()
+        {
+            var repo = BuildRepo();
+
+            var evt = BuildRandomTransferAmountEvent();
+
+            var btype = Guid.NewGuid().ToString();
+            await repo.AddIfNotExistsAsync(btype, evt);
+
+            var retrieved = await repo.GetTransferAmountTransactionAsync(btype, evt.TransactionId);
+
+            Assert.AreEqual(evt.BlockId, retrieved.BlockId);
+            Assert.AreEqual(evt.TransactionId, retrieved.TransactionId);
+            Assert.AreEqual(evt.Fees.ToJson(), retrieved.Fees.ToJson());
+            Assert.AreEqual(evt.BalanceChanges.ToJson(), retrieved.BalanceChanges.ToJson());
+
+            Assert.AreEqual(evt.IsIrreversible, retrieved.IsIrreversible);
+
+
+            Assert.AreEqual(evt.ToJson(), retrieved.ToJson());
+        }
+
+        [Test]
+        public async Task CanSaveAndRetrieveFailedEvent()
+        {
+            var repo = BuildRepo();
+
+            var evt = BuildRandomTransferFailedEvent();
+
+            var btype = Guid.NewGuid().ToString();
+            await repo.AddIfNotExistsAsync(btype, evt);
+
+            var retrieved = await repo.GetFailedTransactionAsync(btype, evt.TransactionId);
+
+            Assert.AreEqual(evt.ToJson(), retrieved.ToJson());
+        }
+
 
         [Test]
         public async Task DoNotUpdates()
@@ -129,6 +171,40 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                     BuildRandmomFee(),
                     BuildRandmomFee()
                 });
+        }
+
+        public TransferAmountTransactionExecutedEvent BuildRandomTransferAmountEvent()
+        {
+            var rdm = new Random();
+            return new TransferAmountTransactionExecutedEvent(new BlockId(Guid.NewGuid().ToString()),rdm.Next(), new TransactionId(Guid.NewGuid().ToString()),
+                new BalanceChange[]{ BuuildRamdnomBalanceChange (),
+                    BuuildRamdnomBalanceChange()},
+                new []
+                {
+                    BuildRandmomFee(),
+                    BuildRandmomFee(),
+                    BuildRandmomFee()
+                });
+        }
+
+        public TransactionFailedEvent BuildRandomTransferFailedEvent()
+        {
+            var rdm = new Random();
+            return new TransactionFailedEvent(new BlockId(Guid.NewGuid().ToString()), rdm.Next(),
+                new TransactionId(Guid.NewGuid().ToString()), TransactionBroadcastingError.NotEnoughBalance,
+                Guid.NewGuid().ToString(),
+                new Fee[]
+                {
+                    BuildRandmomFee()
+
+                });
+        }
+
+
+        public BalanceChange BuuildRamdnomBalanceChange()
+        {
+            var rdm = new Random();
+            return new BalanceChange(Guid.NewGuid().ToString(), new Asset(new AssetId(Guid.NewGuid().ToString())), new Money(rdm.Next(), 0), new Address(Guid.NewGuid().ToString()), new AddressTag(Guid.NewGuid().ToString()), AddressTagType.Number, rdm.Next());
         }
 
         private ReceivedCoin BuildRandmonReceivedCoin()

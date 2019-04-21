@@ -3,6 +3,7 @@ using System.Linq;
 using Common;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props.Payloads;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
@@ -18,7 +19,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
                 Payload = new TransactionFailedEventPayload
                 {
                     Fees = source.Fees,
-                    ErrorCode = source.ErrorCode,
+                    ErrorCode = source.ErrorCode.ToDbEntity(),
                     ErrorMessage = source.ErrorMessage
 
                 }.ToJson(),
@@ -39,7 +40,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
             return new TransactionFailedEvent(blockId: source.BlockId,
                 transactionId: source.TransactionId,
                 transactionNumber: source.TransactionNumber,
-                errorCode: payload.ErrorCode,
+                errorCode: payload.ErrorCode.ToDomain(),
                 errorMessage: payload.ErrorMessage,
                 fees: payload.Fees?.ToList());
         }

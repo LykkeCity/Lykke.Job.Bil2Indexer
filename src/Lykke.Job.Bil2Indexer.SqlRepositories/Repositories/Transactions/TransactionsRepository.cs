@@ -50,7 +50,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 {
                     await db.SaveChangesAsync();
                 }
-                catch (DbUpdateException e) when(e.IsConstraintViolationException())
+                catch (DbUpdateException e) when(e.IsUniqueConstraintViolationException())
                 {
                     var exist = await db.Transactions.AnyAsync(p =>
                         p.BlockchainType == transaction.BlockchainType &&

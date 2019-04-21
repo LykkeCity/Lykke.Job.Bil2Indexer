@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
-using Common.Log;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -25,19 +23,16 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
     public class BalanceActionsRepository: IBalanceActionsRepository
     {
         private readonly string _posgresConnstring;
-        private readonly ILog _log;
         private readonly PostgreSQLCopyHelper<BalanceActionEntity> _copyMapper;
 
         private readonly IAssetInfosProvider _assetInfosProvider;
 
         public BalanceActionsRepository(string posgresConnstring, 
-            ILogFactory logFactory,
             IAssetInfosProvider assetInfosProvider)
         {
             _posgresConnstring = posgresConnstring;
             _assetInfosProvider = assetInfosProvider;
-
-            _log = logFactory.CreateLog(this);
+            
             _copyMapper = BalanceActionCopyMapper.BuildCopyMapper();
         }
 
@@ -54,10 +49,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 {
                     _copyMapper.SaveAll(conn, dbEntities);
                 }
-                catch (PostgresException e) when(e.IsConstraintViolationException())
+                catch (PostgresException e) when(e.IsUniqueConstraintViolationException())
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
-                    _log.Warning($"Entities already exist, fallback adding {notExisted.Count} of {dbEntities.Count}", exception: e);
                     
                     _copyMapper.SaveAll(conn, notExisted);
                 }

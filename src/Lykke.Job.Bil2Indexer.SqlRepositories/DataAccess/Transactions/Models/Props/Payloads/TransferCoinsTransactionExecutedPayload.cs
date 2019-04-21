@@ -9,7 +9,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.P
     public class TransferCoinsTransactionExecutedPayload
     {
         [JsonProperty("receivedCoins")]
-        public IEnumerable<ReceivedCoin> ReceivedCoins { get; set; }
+        public IEnumerable<ReceivedCoinEntity> ReceivedCoins { get; set; }
 
         [JsonProperty("spentCoins")]
         public IEnumerable<CoinId> SpentCoins { get; set; }

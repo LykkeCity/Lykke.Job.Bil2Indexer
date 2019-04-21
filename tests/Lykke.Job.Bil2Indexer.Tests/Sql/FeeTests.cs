@@ -41,7 +41,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 BuildRandmon(btype, scale, blockId, asset)
             };
 
-            var repo = new FeeEnvelopesRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
+            var repo = new FeeEnvelopesRepository(ContextFactory.GetPosgresTestsConnString());
 
             await repo.AddIfNotExistsAsync(fees);
             await repo.AddIfNotExistsAsync(fees);

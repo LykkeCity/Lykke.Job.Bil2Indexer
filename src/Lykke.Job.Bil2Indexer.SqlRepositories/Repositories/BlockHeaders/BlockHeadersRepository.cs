@@ -31,7 +31,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
                 {
                     await db.SaveChangesAsync();
                 }
-                catch (DbUpdateException dbUpdEx) when (dbUpdEx.IsConstraintViolationException())
+                catch (DbUpdateException dbUpdEx) when (dbUpdEx.IsUniqueConstraintViolationException())
                 {
                     var existed = await db.BlockHeaders
                         .SingleOrDefaultAsync(p => p.BlockchainType == block.BlockchainType && p.Id == block.Id);

@@ -53,7 +53,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
                 {
                     await db.SaveChangesAsync();
                 }
-                catch (DbUpdateException dbUpdEx) when (dbUpdEx.IsConstraintViolationException())
+                catch (DbUpdateException dbUpdEx) when (dbUpdEx.IsUniqueConstraintViolationException())
                 {
                     var existed = await db.Crawlers
                         .SingleOrDefaultAsync(BuildIdPredicate(crawler.BlockchainType, crawler.Configuration.StartBlock, crawler.Configuration.StopAssemblingBlock));
