@@ -24,6 +24,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
 
                 }.ToJson(),
                 TransactionId = source.TransactionId,
+                TransactionNumber = source.TransactionNumber,
                 Type = TransactionType.TransactionFailed
             };
         }

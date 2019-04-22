@@ -24,6 +24,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
                     ReceivedCoins = source.ReceivedCoins.Select(p => p.ToDbEntity())
                 }.ToJson(),
                 TransactionId = source.TransactionId,
+                TransactionNumber = source.TransactionNumber,
                 Type = TransactionType.TransferCoinsTransactionExecuted
             };
         }
