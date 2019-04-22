@@ -8,7 +8,7 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
 {
-    internal static class TransferAmountTransactionExecutedPayloadMapper
+    internal static class TransferAmountTransactionExecutedMapper
     {
         public static TransactionEntity MapToDbEntity(this TransferAmountTransactionExecutedEvent source, string blockchainType)
         {
