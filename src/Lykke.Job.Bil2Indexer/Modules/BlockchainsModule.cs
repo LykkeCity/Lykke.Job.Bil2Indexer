@@ -5,6 +5,7 @@ using Autofac.Extensions.DependencyInjection;
 using JetBrains.Annotations;
 using Lykke.Bil2.Client.BlocksReader;
 using Lykke.Bil2.Client.BlocksReader.Services;
+using Lykke.Bil2.RabbitMq.Subscription.MessageFilters;
 using Lykke.Common;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -50,6 +51,8 @@ namespace Lykke.Job.Bil2Indexer.Modules
                 options.DefaultFirstLevelRetryTimeout = settings.DefaultFirstLevelRetryTimeout;
                 options.FirstLevelRetryQueueCapacity = settings.FirstLevelRetryQueueCapacity;
                 options.ProcessingQueueCapacity = settings.ProcessingQueueCapacity;
+                options.AddMessageFilter(s => new AppInsightTelemetryMessageFilter());
+                //options.AddFiler(s => new TraceMessageFilter(s.GetRequiredService<ILogFactory>(), LogLevel.Information));
 
                 options.BlockEventsHandlerFactory = c => c.GetRequiredService<IBlockEventsHandler>();
 
