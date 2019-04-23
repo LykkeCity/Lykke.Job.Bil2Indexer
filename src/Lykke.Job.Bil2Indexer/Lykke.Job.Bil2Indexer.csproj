@@ -12,7 +12,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Update="appsettings.develop.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Dockerfile">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
@@ -39,6 +39,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\contract\Lykke.Job.Bil2Indexer.Contract\Lykke.Job.Bil2Indexer.Contract.csproj" />
     <ProjectReference Include="..\Lykke.Job.Bil2Indexer.InMemoryRepositories\Lykke.Job.Bil2Indexer.InMemoryRepositories.csproj" />
+    <ProjectReference Include="..\Lykke.Job.Bil2Indexer.Decorators\Lykke.Job.Bil2Indexer.Decorators.csproj" />
     <ProjectReference Include="..\Lykke.Job.Bil2Indexer.Domain\Lykke.Job.Bil2Indexer.Domain.csproj" />
     <ProjectReference Include="..\Lykke.Job.Bil2Indexer.DomainServices\Lykke.Job.Bil2Indexer.DomainServices.csproj" />
     <ProjectReference Include="..\Lykke.Job.Bil2Indexer.SqlRepositories\Lykke.Job.Bil2Indexer.SqlRepositories.csproj" />
