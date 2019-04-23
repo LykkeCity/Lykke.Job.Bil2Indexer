@@ -36,18 +36,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
                     {
                         await db.SaveChangesAsync();
                     }
-                    catch (DbUpdateException e) when (e.IsUniqueConstraintViolationException())
+                    catch (DbUpdateException e) when (e.IsNaturalKeyViolationException())
                     {
-                        var exist = await db.AssetInfos.AnyAsync(BuildPredicate(asset.BlockchainType, asset.Asset));
-
-                        if (exist)
-                        {
-                            db.Entry(dbEntity).State = EntityState.Detached;
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        //assume entity already exist in db
                     }
                 }
             }

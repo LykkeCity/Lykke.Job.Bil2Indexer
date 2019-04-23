@@ -124,7 +124,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var rdmState = (BlockState) stateValues.GetValue(rnd.Next(stateValues.Length));
 
             return new BlockHeader(Guid.NewGuid().ToString(), 
-                rnd.Next(), 
+                0, 
                 Guid.NewGuid().ToString(), rnd.Next(), 
                 DateTime.UtcNow + TimeSpan.FromSeconds(rnd.Next()), 
                 rnd.Next(), 

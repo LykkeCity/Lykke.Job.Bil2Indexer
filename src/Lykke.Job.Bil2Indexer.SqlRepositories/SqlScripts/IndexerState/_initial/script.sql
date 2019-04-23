@@ -34,7 +34,7 @@ create table crawlers
     stop_accembling_block bigint not null,
     sequence              bigint not null,
     expected_block_number bigint not null,
-    constraint crawlers_pk
+    constraint crawlers_natural_key_pk
         primary key (blockchain_type, start_block, stop_accembling_block)
 );
 

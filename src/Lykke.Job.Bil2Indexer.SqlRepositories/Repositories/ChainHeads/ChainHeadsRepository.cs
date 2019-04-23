@@ -44,27 +44,22 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
 
         public async Task SaveAsync(ChainHead head)
         {
+            var dbEntity = Map(head);
+            var isExisted = head.Version != 0;
+
             using (var db = new StateDataContext(_postgresConnString))
             {
-                var existed = await db.ChainHeads.SingleOrDefaultAsync(p=>p.BlockchainType == head.BlockchainType);
-
-                var newValues = Map(head);
-                if (existed != null)
+                if (isExisted)
                 {
-                    db.Entry(existed).Property(nameof(ChainHeadEntity.Version)).OriginalValue = newValues.Version;
-                    db.Entry(existed).State = EntityState.Modified; //forces to update xmin even if actual prop is the same
-
-                    db.Entry(existed).CurrentValues.SetValues(newValues);
+                    db.ChainHeads.Update(dbEntity);
                 }
                 else
                 {
-                    db.ChainHeads.Add(newValues);
+                    await db.ChainHeads.AddAsync(dbEntity);
                 }
-
                 try
                 {
                     await db.SaveChangesAsync();
-
                 }
                 catch (DbUpdateConcurrencyException e)
                 {

@@ -47,6 +47,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             AssertEquals(retrieved3, asset);
         }
 
+
         private AssetInfo BuildRandomAssetInfo()
         {
             return new AssetInfo(Guid.NewGuid().ToString(), new Asset(Guid.NewGuid().ToString()), new Random().Next() );
