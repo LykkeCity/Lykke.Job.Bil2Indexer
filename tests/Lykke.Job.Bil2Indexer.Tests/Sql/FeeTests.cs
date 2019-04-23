@@ -7,7 +7,6 @@ using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes;
 using Lykke.Job.Bil2Indexer.Tests.Sql.Mocks;
-using Lykke.Logs;
 using Lykke.Numerics;
 using NUnit.Framework;
 
@@ -26,7 +25,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var asset = new Asset(Guid.NewGuid().ToString());
 
             var fees = new List<FeeEnvelope>();
-            var max = 999999;
+            var max = 33;
             var count = 0;
 
             do
@@ -39,7 +38,6 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var repo = new FeeEnvelopesRepository(ContextFactory.GetPosgresTestsConnString());
 
             await repo.AddIfNotExistsAsync(fees);
-            return;
             await repo.AddIfNotExistsAsync(fees);
             await repo.AddIfNotExistsAsync(fees);
 

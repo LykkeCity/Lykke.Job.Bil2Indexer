@@ -114,7 +114,7 @@ create table assets
     asset_address   text,
 	blockchain_type text                            not null,
 	scale int not null,
-	constraint assets_pk
+	constraint assets_natural_key_pk
 		primary key (blockchain_type, id)
 );
 

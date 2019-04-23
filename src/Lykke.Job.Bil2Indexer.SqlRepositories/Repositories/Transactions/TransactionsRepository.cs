@@ -48,15 +48,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 {
                     await db.SaveChangesAsync();
                 }
-                catch (DbUpdateException e) when(e.IsUniqueConstraintViolationException())
+                catch (DbUpdateException e) when(e.IsNaturalKeyViolationException())
                 {
-                    var exist = await db.Transactions.AnyAsync(BuildPredicate(transaction.BlockchainType, 
-                        new TransactionId(transaction.TransactionId)));
-
-                    if (!exist)
-                    {
-                        throw;
-                    }
+                    //assume entity already exist in db
                 }
             }
         }
