@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lykke.Job.Bil2Indexer.Domain\Lykke.Job.Bil2Indexer.Domain.csproj" />
+    <ProjectReference Include="..\Lykke.Job.Bil2Indexer.SqlRepositories\Lykke.Job.Bil2Indexer.SqlRepositories.csproj" />
+  </ItemGroup>
+
+</Project>
