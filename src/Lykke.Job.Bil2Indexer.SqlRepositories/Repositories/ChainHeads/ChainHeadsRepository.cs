@@ -4,7 +4,9 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
 {
@@ -52,19 +54,30 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
                 if (isExisted)
                 {
                     db.ChainHeads.Update(dbEntity);
+
+                    try
+                    {
+                        await db.SaveChangesAsync();
+                    }
+                    catch (DbUpdateConcurrencyException e)
+                    {
+                        throw new OptimisticConcurrencyException(e);
+                    }
                 }
                 else
                 {
                     await db.ChainHeads.AddAsync(dbEntity);
+
+                    try
+                    {
+                        await db.SaveChangesAsync();
+                    }
+                    catch (PostgresException e) when (e.IsUniqueConstraintViolationException())
+                    {
+                        throw new OptimisticConcurrencyException(e);
+                    }
                 }
-                try
-                {
-                    await db.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException e)
-                {
-                    throw new OptimisticConcurrencyException(e);
-                }
+
             }
         }
 
