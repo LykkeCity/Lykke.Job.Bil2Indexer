@@ -7,6 +7,7 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
 {
@@ -51,19 +52,30 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
                 if (isExisted)
                 {
                     db.Crawlers.Update(dbEntity);
+
+                    try
+                    {
+                        await db.SaveChangesAsync();
+                    }
+                    catch (DbUpdateConcurrencyException e)
+                    {
+                        throw new OptimisticConcurrencyException(e);
+                    }
                 }
                 else
                 {
                     await db.Crawlers.AddAsync(dbEntity);
+
+                    try
+                    {
+                        await db.SaveChangesAsync();
+                    }
+                    catch (PostgresException e) when (e.IsUniqueConstraintViolationException())
+                    {
+                        throw new OptimisticConcurrencyException(e);
+                    }
                 }
-                try
-                {
-                    await db.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException e)
-                {
-                    throw new OptimisticConcurrencyException(e);
-                }
+
             }
         }
 
