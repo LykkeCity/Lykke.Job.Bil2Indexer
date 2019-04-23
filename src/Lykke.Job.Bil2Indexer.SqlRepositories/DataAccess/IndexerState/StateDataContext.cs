@@ -1,5 +1,6 @@
 ﻿using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState
 {
@@ -18,7 +19,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql(_connectionString);
+            optionsBuilder.UseNpgsql(_connectionString)
+                .ConfigureWarnings(bulder => bulder.Throw(RelationalEventId.QueryClientEvaluationWarning));
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -34,7 +35,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
                 catch (DbUpdateException dbUpdEx) when (dbUpdEx.IsUniqueConstraintViolationException())
                 {
                     var existed = await db.BlockHeaders
-                        .SingleOrDefaultAsync(p => p.BlockchainType == block.BlockchainType && p.Id == block.Id);
+                        .SingleOrDefaultAsync(BuildPredicate(block.BlockchainType, block.Id));
 
                     if (existed == null)
                     {
@@ -76,7 +77,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             using (var db = new StateDataContext(_posgresConnString))
             {
                 var existed = await db.BlockHeaders
-                    .SingleOrDefaultAsync(p => p.BlockchainType == blockchainType && p.Id == blockId);
+                    .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockId));
 
                 return existed != null ? Map(existed) : null;
             }
@@ -87,7 +88,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             using (var db = new StateDataContext(_posgresConnString))
             {
                 var existed = await db.BlockHeaders
-                    .SingleOrDefaultAsync(p => p.BlockchainType == blockchainType && p.Id == blockId);
+                    .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockId));
 
                 if (existed == null)
                 {
@@ -103,7 +104,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             using (var db = new StateDataContext(_posgresConnString))
             {
                 var existed = await db.BlockHeaders
-                    .SingleOrDefaultAsync(p => p.BlockchainType == blockchainType && p.Id == blockId);
+                    .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockId));
 
                 if (existed != null)
                 {
@@ -112,6 +113,14 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
                     await db.SaveChangesAsync();
                 }
             }
+        }
+
+        private Expression<Func<BlockHeaderEntity, bool>> BuildPredicate(string blockchainType, BlockId blockId)
+        {
+            var stringBlockId = blockId.ToString();
+
+            return p => p.BlockchainType == blockchainType && p.Id == stringBlockId;
+
         }
 
         private BlockState Map(BlockHeaderEntity.BlockState source)
