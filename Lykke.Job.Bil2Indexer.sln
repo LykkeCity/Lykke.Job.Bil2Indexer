@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Job.Bil2Indexer.Domai
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2. Repositories", "2. Repositories", "{BF745453-B940-470E-81BC-43FB67703D4E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Job.Bil2Indexer.AzureRepositories", "src\Lykke.Job.Bil2Indexer.AzureRepositories\Lykke.Job.Bil2Indexer.AzureRepositories.csproj", "{4BE49E02-AAAD-460B-8D00-57F412A3D181}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Job.Bil2Indexer.InMemoryRepositories", "src\Lykke.Job.Bil2Indexer.InMemoryRepositories\Lykke.Job.Bil2Indexer.InMemoryRepositories.csproj", "{4BE49E02-AAAD-460B-8D00-57F412A3D181}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3. Contract", "3. Contract", "{14B5AF15-F733-4EF0-9FB9-3E61C4C83ADD}"
 EndProject
@@ -50,9 +50,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lykke.Job.Bil2Indexer.VerifyingTool", "tools\Lykke.Job.Bil2Indexer.VerifyingTool\Lykke.Job.Bil2Indexer.VerifyingTool.csproj", "{62C22D19-D59D-45FF-ACAF-44999BBF9763}"
 EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -126,5 +123,8 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EB6C0EF4-AA6A-444D-8603-3669F73A58BC}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal
