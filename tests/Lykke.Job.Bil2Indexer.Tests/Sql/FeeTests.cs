@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -24,26 +25,21 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var blockId = Guid.NewGuid().ToString();
             var asset = new Asset(Guid.NewGuid().ToString());
 
-            var fees = new[]
+            var fees = new List<FeeEnvelope>();
+            var max = 999999;
+            var count = 0;
+
+            do
             {
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset),
-                BuildRandmon(btype, scale, blockId, asset)
-            };
+                fees.Add(BuildRandmon(btype, scale, blockId, asset));
+                count++;
+
+            } while (count<=max);
 
             var repo = new FeeEnvelopesRepository(ContextFactory.GetPosgresTestsConnString());
 
             await repo.AddIfNotExistsAsync(fees);
+            return;
             await repo.AddIfNotExistsAsync(fees);
             await repo.AddIfNotExistsAsync(fees);
 
@@ -60,7 +56,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             Assert.Null(retrieved2.Continuation);
 
-            Assert.AreEqual(fees.Length, retrieved2.Items.Count);
+            Assert.AreEqual(fees.Count, retrieved2.Items.Count);
 
             foreach (var feeEnvelope in fees)
             {

@@ -2,10 +2,8 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Common.Log;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions;
@@ -19,12 +17,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
     public class TransactionsRepository : ITransactionsRepository
     {
         private readonly string _postgresConnString;
-        private readonly ILog _log;
 
-        public TransactionsRepository(string postgresConnString, ILogFactory logFactory)
+        public TransactionsRepository(string postgresConnString)
         {
             _postgresConnString = postgresConnString;
-            _log = logFactory.CreateLog(this);
         }
 
         public Task AddIfNotExistsAsync(string blockchainType, TransferAmountTransactionExecutedEvent transaction)
@@ -61,10 +57,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                     {
                         throw;
                     }
-
-                    _log.Info("Transaction already exists. Skipping", 
-                        context: transaction,
-                        exception: e);
                 }
             }
         }

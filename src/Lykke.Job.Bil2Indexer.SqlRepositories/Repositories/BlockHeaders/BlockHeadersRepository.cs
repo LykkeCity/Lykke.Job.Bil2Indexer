@@ -22,41 +22,26 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task SaveAsync(BlockHeader block)
         {
+            var dbEntity = Map(block);
+            var isExisted = block.Version != 0;
+
             using (var db = new StateDataContext(_posgresConnString))
             {
-                var newValues = Map(block);
-
-                await db.BlockHeaders.AddAsync(newValues);
-
+                if (isExisted)
+                {
+                    db.BlockHeaders.Update(dbEntity);
+                }
+                else
+                {
+                    await db.BlockHeaders.AddAsync(dbEntity);
+                }
                 try
                 {
                     await db.SaveChangesAsync();
                 }
-                catch (DbUpdateException dbUpdEx) when (dbUpdEx.IsUniqueConstraintViolationException())
+                catch (DbUpdateConcurrencyException e)
                 {
-                    var existed = await db.BlockHeaders
-                        .SingleOrDefaultAsync(BuildPredicate(block.BlockchainType, block.Id));
-
-                    if (existed == null)
-                    {
-                        throw;
-                    }
-
-                    db.Entry(newValues).State = EntityState.Detached;
-
-                    db.Entry(existed).Property(nameof(BlockHeaderEntity.Version)).OriginalValue = newValues.Version;
-                    db.Entry(existed).State = EntityState.Modified; //forces to update xmin even if actual prop is the same
-
-                    db.Entry(existed).CurrentValues.SetValues(newValues);
-
-                    try
-                    {
-                        await db.SaveChangesAsync();
-                    }
-                    catch (DbUpdateConcurrencyException e)
-                    {
-                        throw new OptimisticConcurrencyException(e);
-                    }
+                    throw new OptimisticConcurrencyException(e);
                 }
             }
         }

@@ -105,7 +105,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             (
                 Guid.NewGuid().ToString(),
                 rnd.Next(),
-                rnd.Next(),
+                0,
                 rnd.Next(),
                 Guid.NewGuid().ToString(),
                 Guid.NewGuid().ToString()

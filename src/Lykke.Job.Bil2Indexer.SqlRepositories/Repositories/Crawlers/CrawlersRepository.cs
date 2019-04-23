@@ -43,40 +43,26 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
                 throw new ArgumentNullException(nameof(crawler.Configuration));
             }
 
+            var dbEntity = Map(crawler);
+            var isExisted = crawler.Version != 0;
+
             using (var db = new StateDataContext(_posgresConnString))
             {
-                var newValues = Map(crawler);
-
-                await db.Crawlers.AddAsync(newValues);
-
+                if (isExisted)
+                {
+                    db.Crawlers.Update(dbEntity);
+                }
+                else
+                {
+                    await db.Crawlers.AddAsync(dbEntity);
+                }
                 try
                 {
                     await db.SaveChangesAsync();
                 }
-                catch (DbUpdateException dbUpdEx) when (dbUpdEx.IsUniqueConstraintViolationException())
+                catch (DbUpdateConcurrencyException e)
                 {
-                    var existed = await db.Crawlers
-                        .SingleOrDefaultAsync(BuildIdPredicate(crawler.BlockchainType, crawler.Configuration.StartBlock, crawler.Configuration.StopAssemblingBlock));
-
-                    if (existed == null)
-                    {
-                        throw;
-                    }
-
-                    db.Entry(newValues).State = EntityState.Detached;
-
-                    db.Entry(existed).Property(nameof(ChainHeadEntity.Version)).OriginalValue = newValues.Version;
-                    db.Entry(existed).State = EntityState.Modified; //forces to update xmin even if actual prop is the same
-                    db.Entry(existed).CurrentValues.SetValues(newValues);
-
-                    try
-                    {
-                        await db.SaveChangesAsync();
-                    }
-                    catch (DbUpdateConcurrencyException e)
-                    {
-                        throw new OptimisticConcurrencyException(e);
-                    }
+                    throw new OptimisticConcurrencyException(e);
                 }
             }
         }
@@ -105,7 +91,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
             return new CrawlerEntity
             {
                 Version = source.Version,
-                StopAssemblingBlock = source.Configuration.StopAssemblingBlock?? StopAccemblingNullSqlMagicValue,
+                StopAssemblingBlock = source.Configuration.StopAssemblingBlock ?? StopAccemblingNullSqlMagicValue,
                 StartBlock = source.Configuration.StartBlock,
                 BlockchainType = source.BlockchainType,
                 Sequence = source.Sequence,
