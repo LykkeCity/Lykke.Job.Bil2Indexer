@@ -1,5 +1,6 @@
 ﻿using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions
 {
@@ -16,7 +17,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql(_connectionString);
+            optionsBuilder.UseNpgsql(_connectionString)
+                .ConfigureWarnings(bulder => bulder.Throw(RelationalEventId.QueryClientEvaluationWarning));
         }
     }
 }

@@ -30,7 +30,7 @@ create table coins
         primary key (id)
 );
 
-create unique index coins_blockchain_type_coin_id_uindex
+create unique index coins_natural_key_index
     on coins (blockchain_type, coin_id);
 
 create index coins_blockchain_type_transaction_id_index
@@ -55,16 +55,21 @@ create table fees
         primary key (id)
 );
 
-create unique index fees_blockchain_type_transaction_id_asset_id_uindex
+create unique index fees_natural_key_index_1
     on fees (blockchain_type, transaction_id, asset_id)
 where asset_address is null;
 
-create unique index fees_blockchain_type_transaction_id_asset_id_asset_address_uindex
+create unique index fees_natural_key_index_2
     on fees (blockchain_type, transaction_id, asset_id, asset_address)
 where asset_address is not null;
 
 create index fees_blockchain_type_block_id_index
 	on fees (blockchain_type, block_id);
+
+
+create index fees_blockchain_type_transaction_id_index
+	on fees (blockchain_type, transaction_id);
+
 
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on fees for each row
@@ -85,15 +90,15 @@ create table balance_actions
     address         text    not null
 );
 
-create unique index ba_btype_trid_address_asid_uindex
+create unique index balance_actions_natural_key_index_1
     on balance_actions (blockchain_type, transaction_id, address, asset_id)
     where asset_address is null;
 
-create unique index ba_btype_trid_address_asid_asaddress_uindex
+create unique index balance_actions_natural_key_index_2
     on balance_actions (blockchain_type, transaction_id, address, asset_id, asset_address)
     where asset_address is not null;
 
-create index ba_blockchain_type_address_block_number_asset_id_v
+create index query_covered_by_address
     on balance_actions (blockchain_type, address, block_number desc, asset_id, asset_address, value);
 
 create  trigger set_numeric_value_from_string_trigger before insert or update
@@ -112,5 +117,5 @@ create table assets
 	constraint assets_pk
 		primary key (blockchain_type, id)
 );
-    
+
 COMMIT;

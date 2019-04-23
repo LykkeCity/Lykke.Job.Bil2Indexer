@@ -1,5 +1,6 @@
 ﻿using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain
 {
@@ -22,7 +23,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseNpgsql(_connectionString);
+            optionsBuilder.UseNpgsql(_connectionString)
+                .ConfigureWarnings(bulder => bulder.Throw(RelationalEventId.QueryClientEvaluationWarning));
         }
 
 

@@ -77,7 +77,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             {
                 var blockchainType = dbEntities.First().BlockchainType;
                 var txIds = dbEntities.Select(p => p.TransactionId).ToList();
-                
 
                 var query = db.BalanceActions
                         .Where(p => p.BlockchainType == blockchainType)
@@ -110,18 +109,23 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             //TODO rewrite via dapper and plain sql
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
+                var addresString = address.ToString();
+                var assetIdString = asset.Id.ToString();
+                var assetAddressString = asset.Address?.ToString();
+
                 var queryRes = (await db.BalanceActions.Where(p =>
                         p.BlockchainType == blockchainType 
                         && p.BlockNumber <= atBlockNumber 
-                        && p.Address == address 
-                        && p.AssetId == asset.Id
-                        && p.AssetAddress == asset.Address)
+                        && p.Address == addresString
+                        && p.AssetId == assetIdString
+                        && p.AssetAddress == assetAddressString)
+                    .ToListAsync())
                     .GroupBy(p=>p.AssetId)
                     .Select(p => new
                     {
                         Sum = p.Sum(x => x.Value).ToString(CultureInfo.InvariantCulture),
                         Scale = p.First().ValueScale
-                    }).ToListAsync()).FirstOrDefault();
+                    }).FirstOrDefault();
 
                 return queryRes != null ? MoneyHelper.BuildMoney(queryRes.Sum, queryRes.Scale) : Money.Parse("0");
             }
@@ -132,10 +136,13 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             //TODO rewrite via dapper and plain sql
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
-                var queryRes = await db.BalanceActions.Where(p =>
+                var addresString = address.ToString();
+
+                var queryRes = (await db.BalanceActions.Where(p =>
                         p.BlockchainType == blockchainType
-                        && p.Address == address
+                        && p.Address == addresString
                         && p.BlockNumber <= atBlockNumber)
+                        .ToListAsync())
                     .GroupBy(p => p.AssetId)
                     .Select(p => new
                     {
@@ -143,7 +150,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                         Scale = p.First().ValueScale,
                         p.First().AssetId,
                         p.First().AssetAddress
-                    }).ToListAsync();
+                    });
 
                 return queryRes.ToDictionary(
                     p => new Asset(new AssetId(p.AssetId), new AssetAddress(p.AssetAddress)),

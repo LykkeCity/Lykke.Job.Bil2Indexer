@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.Contract.BlocksReader.Events;
@@ -53,9 +54,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 }
                 catch (DbUpdateException e) when(e.IsUniqueConstraintViolationException())
                 {
-                    var exist = await db.Transactions.AnyAsync(p =>
-                        p.BlockchainType == transaction.BlockchainType &&
-                        p.TransactionId == transaction.TransactionId);
+                    var exist = await db.Transactions.AnyAsync(BuildPredicate(transaction.BlockchainType, 
+                        new TransactionId(transaction.TransactionId)));
 
                     if (!exist)
                     {
@@ -74,7 +74,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             using (var db = new TransactionsDataContext(_postgresConnString))
             {
                 return await db.Transactions
-                    .Where(p => p.BlockchainType == blockchainType && p.BlockId == blockId)
+                    .Where(BuildPredicate(blockchainType, blockId))
                     .CountAsync();
             }
         }
@@ -91,7 +91,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             using (var db = new TransactionsDataContext(_postgresConnString))
             {
                 var entities = await db.Transactions
-                    .Where(p => p.BlockchainType == blockchainType && p.BlockId == blockId)
+                    .Where(BuildPredicate(blockchainType, blockId))
                     .Skip(skip)
                     .Take(limit)
                     .ToListAsync();
@@ -123,7 +123,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             using (var db = new TransactionsDataContext(_postgresConnString))
             {
                 var entity = await db.Transactions
-                    .SingleOrDefaultAsync(p => p.BlockchainType == blockchainType && p.TransactionId == transactionId);
+                    .SingleOrDefaultAsync(BuildPredicate(blockchainType, transactionId));
 
                 return entity?.MapToTransactionEnvelope();
             }
@@ -134,9 +134,23 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             using (var db = new TransactionsDataContext(_postgresConnString))
             {
                 await db.Transactions
-                    .Where(p => p.BlockchainType == blockchainType && p.BlockId == blockId)
+                    .Where(BuildPredicate(blockchainType, blockId))
                     .DeleteAsync();
             }
+        }
+
+        private Expression<Func<TransactionEntity, bool>> BuildPredicate(string blockchainType, BlockId blockId)
+        {
+            var stringBlockId = blockId.ToString();
+
+            return p => p.BlockchainType == blockchainType && p.BlockId == stringBlockId;
+        }
+
+        private Expression<Func<TransactionEntity, bool>> BuildPredicate(string blockchainType, TransactionId transactionId)
+        {
+            var stringTransactionId = transactionId.ToString();
+
+            return p => p.BlockchainType == blockchainType && p.TransactionId == stringTransactionId;
         }
     }
 }
