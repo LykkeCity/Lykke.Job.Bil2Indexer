@@ -1,17 +1,14 @@
-﻿using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.DataContracts;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
 
-namespace Lykke.Job.Bil2Indexer.Decorators
+namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
 {
     public class AppInsightTelemetryProvider : IAppInsightTelemetryProvider
     {
         private static readonly TelemetryClient TelemetryClient= new TelemetryClient();
-
-        public AppInsightTelemetryProvider()
-        {
-        }
 
         public async Task ExecuteMethodWithTelemetryAsync(string operationName, string operationId, Func<Task> awaitableFunc)
         {

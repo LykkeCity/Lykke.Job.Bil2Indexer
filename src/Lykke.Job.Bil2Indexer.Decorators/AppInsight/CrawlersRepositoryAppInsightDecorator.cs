@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure;
 
-namespace Lykke.Job.Bil2Indexer.Decorators
+namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 {
-    public class CrawlersDecoratorRepository : ICrawlersRepository
+    [UsedImplicitly]
+    public class CrawlersRepositoryAppInsightDecorator : ICrawlersRepository
     {
         private readonly ICrawlersRepository _crawlersRepository;
         private readonly IAppInsightTelemetryProvider _appInsightTelemetryProvider;
 
-        public CrawlersDecoratorRepository(ICrawlersRepository crawlersRepository,
+        public CrawlersRepositoryAppInsightDecorator(ICrawlersRepository crawlersRepository,
             IAppInsightTelemetryProvider appInsightTelemetryProvider)
         {
             _crawlersRepository = crawlersRepository;
@@ -19,7 +22,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<Crawler> GetOrDefaultAsync(string blockchainType, CrawlerConfiguration configuration)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(CrawlersDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(CrawlersRepositoryAppInsightDecorator),
                 nameof(GetOrDefaultAsync));
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
@@ -30,7 +33,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task SaveAsync(Crawler crawler)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(CrawlersDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(CrawlersRepositoryAppInsightDecorator),
                 nameof(SaveAsync));
             var operationId = $"{crawler.BlockchainType}-{Guid.NewGuid()}";
 

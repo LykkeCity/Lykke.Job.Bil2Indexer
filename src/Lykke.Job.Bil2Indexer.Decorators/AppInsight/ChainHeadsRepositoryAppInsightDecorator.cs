@@ -1,15 +1,18 @@
 ﻿using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure;
 
-namespace Lykke.Job.Bil2Indexer.Decorators
+namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 {
-    public class ChainHeadsDecoratorRepository : IChainHeadsRepository
+    [UsedImplicitly]
+    public class ChainHeadsRepositoryAppInsightDecorator : IChainHeadsRepository
     {
-        private IChainHeadsRepository _chainHeadsRepository;
-        private IAppInsightTelemetryProvider _appInsightTelemetryProvider;
+        private readonly IChainHeadsRepository _chainHeadsRepository;
+        private readonly IAppInsightTelemetryProvider _appInsightTelemetryProvider;
 
-        public ChainHeadsDecoratorRepository(IChainHeadsRepository chainHeadsRepository,
+        public ChainHeadsRepositoryAppInsightDecorator(IChainHeadsRepository chainHeadsRepository,
             IAppInsightTelemetryProvider appInsightTelemetryProvider)
         {
             _chainHeadsRepository = chainHeadsRepository;
@@ -18,7 +21,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<ChainHead> GetOrDefaultAsync(string blockchainType)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsRepositoryAppInsightDecorator),
                 nameof(GetOrDefaultAsync));
             var operationId = $"{blockchainType}";
 
@@ -29,7 +32,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<ChainHead> GetAsync(string blockchainType)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsRepositoryAppInsightDecorator),
                 nameof(GetAsync));
             var operationId = $"{blockchainType}";
 
@@ -40,7 +43,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task SaveAsync(ChainHead head)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsRepositoryAppInsightDecorator),
                 nameof(SaveAsync));
             var operationId = $"{head.BlockId}";
 

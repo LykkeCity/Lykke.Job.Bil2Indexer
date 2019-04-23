@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Lykke.Job.Bil2Indexer.Decorators
+namespace Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure
 {
     public interface IAppInsightTelemetryProvider
     {

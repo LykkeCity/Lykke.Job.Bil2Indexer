@@ -62,15 +62,16 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return MessageHandlingResult.Success();
             }
 
-            var blockHeader = BlockHeader.StartAssembling
-            (
-                evt.BlockId,
-                blockchainType,
-                evt.BlockNumber,
-                evt.BlockMiningMoment,
-                evt.BlockSize, evt.BlockTransactionsCount, evt.PreviousBlockId
-            );
-            
+            var blockHeader = await _blockHeadersRepository.GetOrDefaultAsync(blockchainType, evt.BlockId)
+                              ?? BlockHeader.StartAssembling
+                              (
+                                  evt.BlockId,
+                                  blockchainType,
+                                  evt.BlockNumber,
+                                  evt.BlockMiningMoment,
+                                  evt.BlockSize, evt.BlockTransactionsCount, evt.PreviousBlockId
+                              );
+
             var commandsSender = _messageSendersFactory.CreateCommandsSender();
 
             await _blockHeadersRepository.SaveAsync(blockHeader);

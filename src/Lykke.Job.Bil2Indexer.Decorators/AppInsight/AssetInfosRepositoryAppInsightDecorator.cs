@@ -1,18 +1,21 @@
-﻿using Lykke.Bil2.SharedDomain;
-using Lykke.Job.Bil2Indexer.Domain;
-using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
+using Lykke.Bil2.SharedDomain;
+using Lykke.Job.Bil2Indexer.Domain;
+using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure;
 
-namespace Lykke.Job.Bil2Indexer.Decorators
+namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 {
-    public class AssetInfosDecoratorRepository : IAssetInfosRepository
+    [UsedImplicitly]
+    public class AssetInfosRepositoryAppInsightDecorator : IAssetInfosRepository
     {
         private readonly IAssetInfosRepository _assetInfosRepository;
         private readonly IAppInsightTelemetryProvider _appInsightTelemetryProvider;
 
-        public AssetInfosDecoratorRepository(IAssetInfosRepository assetInfosRepository,
+        public AssetInfosRepositoryAppInsightDecorator(IAssetInfosRepository assetInfosRepository,
             IAppInsightTelemetryProvider appInsightTelemetryProvider)
         {
             _assetInfosRepository = assetInfosRepository;
@@ -21,7 +24,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task AddIfNotExistsAsync(IEnumerable<AssetInfo> assetInfos)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosDecoratorRepository), 
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosRepositoryAppInsightDecorator), 
                 nameof(AddIfNotExistsAsync));
             var operationId = Guid.NewGuid().ToString();
 
@@ -32,7 +35,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<AssetInfo> GetOrDefaultAsync(string blockchainType, Asset asset)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosDecoratorRepository), 
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosRepositoryAppInsightDecorator), 
                 nameof(GetOrDefaultAsync));
             var operationId = $"{blockchainType}-{asset?.Id}";
 
@@ -43,7 +46,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<AssetInfo> GetAsync(string blockchainType, Asset asset)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosRepositoryAppInsightDecorator),
                 nameof(GetAsync));
             var operationId = $"{blockchainType}-{asset?.Id}";
 
@@ -54,7 +57,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<IReadOnlyCollection<AssetInfo>> GetSomeOfAsync(string blockchainType, IEnumerable<Asset> assets)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosRepositoryAppInsightDecorator),
                 nameof(GetSomeOfAsync));
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
@@ -65,7 +68,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<PaginatedItems<AssetInfo>> GetAllAsync(string blockchainType, int limit, string continuation)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosRepositoryAppInsightDecorator),
                 nameof(GetSomeOfAsync));
             var operationId = $"{blockchainType}-{limit}-{continuation}";
 

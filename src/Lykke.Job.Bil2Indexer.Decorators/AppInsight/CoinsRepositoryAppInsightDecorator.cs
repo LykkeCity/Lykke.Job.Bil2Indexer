@@ -1,19 +1,21 @@
-﻿using Lykke.Bil2.SharedDomain;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using JetBrains.Annotations;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure;
 
-namespace Lykke.Job.Bil2Indexer.Decorators
+namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 {
-    public class CoinsDecoratorRepository : ICoinsRepository
+    [UsedImplicitly]
+    public class CoinsRepositoryAppInsightDecorator : ICoinsRepository
     {
-        private IAppInsightTelemetryProvider _appInsightTelemetryProvider;
-        private ICoinsRepository _coinsRepository;
+        private readonly IAppInsightTelemetryProvider _appInsightTelemetryProvider;
+        private readonly ICoinsRepository _coinsRepository;
 
-        public CoinsDecoratorRepository(ICoinsRepository coinsRepository,
+        public CoinsRepositoryAppInsightDecorator(ICoinsRepository coinsRepository,
             IAppInsightTelemetryProvider appInsightTelemetryProvider)
         {
             _coinsRepository = coinsRepository;
@@ -22,7 +24,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task AddIfNotExistsAsync(IReadOnlyCollection<Coin> coins)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsRepositoryAppInsightDecorator),
                 nameof(AddIfNotExistsAsync));
             var operationId = $"{Guid.NewGuid()}";
 
@@ -33,7 +35,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task SpendAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsRepositoryAppInsightDecorator),
                 nameof(SpendAsync));
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
@@ -44,7 +46,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task RevertSpendingAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsRepositoryAppInsightDecorator),
                 nameof(RevertSpendingAsync));
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
@@ -55,7 +57,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsRepositoryAppInsightDecorator),
                 nameof(GetSomeOfAsync));
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
@@ -66,7 +68,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(ChainHeadsRepositoryAppInsightDecorator),
                 nameof(RemoveIfExistAsync));
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 

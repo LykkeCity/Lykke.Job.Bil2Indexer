@@ -1,16 +1,19 @@
 ﻿using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure;
 
-namespace Lykke.Job.Bil2Indexer.Decorators
+namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 {
-    public class BlockHeadersDecoratorRepository : IBlockHeadersRepository
+    [UsedImplicitly]
+    public class BlockHeadersRepositoryAppInsightDecorator : IBlockHeadersRepository
     {
-        private IBlockHeadersRepository _blockHeadersRepository;
-        private IAppInsightTelemetryProvider _appInsightTelemetryProvider;
+        private readonly IBlockHeadersRepository _blockHeadersRepository;
+        private readonly IAppInsightTelemetryProvider _appInsightTelemetryProvider;
 
-        public BlockHeadersDecoratorRepository(IBlockHeadersRepository blockHeadersRepository,
+        public BlockHeadersRepositoryAppInsightDecorator(IBlockHeadersRepository blockHeadersRepository,
             IAppInsightTelemetryProvider appInsightTelemetryProvider)
         {
             _blockHeadersRepository = blockHeadersRepository;
@@ -19,7 +22,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task SaveAsync(BlockHeader block)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersRepositoryAppInsightDecorator),
                 nameof(SaveAsync));
             var operationId = $"{block.Id}";
 
@@ -30,7 +33,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, long blockNumber)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersRepositoryAppInsightDecorator),
                 nameof(GetOrDefaultAsync));
             var operationId = $"{blockchainType}-{blockNumber}";
 
@@ -41,7 +44,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, BlockId blockId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersRepositoryAppInsightDecorator),
                 nameof(GetOrDefaultAsync));
             var operationId = $"{blockchainType}-{blockId}";
 
@@ -52,7 +55,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersRepositoryAppInsightDecorator),
                 nameof(GetAsync));
             var operationId = $"{blockchainType}-{blockId}";
 
@@ -63,7 +66,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators
 
         public async Task TryRemoveAsync(string blockchainType, BlockId blockId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersDecoratorRepository),
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersRepositoryAppInsightDecorator),
                 nameof(TryRemoveAsync));
             var operationId = $"{blockchainType}-{blockId}";
 
