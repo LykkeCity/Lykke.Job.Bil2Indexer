@@ -52,8 +52,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 catch (PostgresException e) when(e.IsUniqueConstraintViolationException())
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
-                    
-                    _copyMapper.SaveAll(conn, notExisted);
+
+                    if (notExisted.Any())
+                    {
+                        _copyMapper.SaveAll(conn, notExisted);
+                    }
                 }
             }
         }
@@ -65,27 +68,28 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 throw new ArgumentException("Unable to save batch with multiple blockchain type");
             }
 
-            string BuildId(string bType, string transactionId, string assetId, string assetAddress)
+            string BuildId(string bType, string transactionId, string address,  string assetId, string assetAddress)
             {
-                return $"{bType}_{transactionId}_{assetId}_{assetAddress}";
+                return $"{bType}_{transactionId}_{address}_{assetId}_{assetAddress}";
             }
 
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var blockchainType = dbEntities.First().BlockchainType;
                 var txIds = dbEntities.Select(p => p.TransactionId).ToList();
+                
 
                 var query = db.BalanceActions
                         .Where(p => p.BlockchainType == blockchainType)
                         .Where(p => txIds.Contains(p.TransactionId))
-                    .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress });
+                    .Select(p => new { p.BlockchainType, p.TransactionId, p.Address,  p.AssetId, p.AssetAddress });
 
                 var existedNaturalIds = (await query
                         .ToListAsync())
-                    .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress));
+                    .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.Address, p.AssetId, p.AssetAddress));
 
                 var dbEntitiesDic = dbEntities.ToDictionary(p =>
-                    BuildId(p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress));
+                    BuildId(p.BlockchainType, p.TransactionId, p.Address, p.AssetId, p.AssetAddress));
 
                 return dbEntitiesDic.Where(p => !existedNaturalIds.ContainsKey(p.Key)).Select(p => p.Value).ToList();
             }
@@ -110,7 +114,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                         p.BlockchainType == blockchainType 
                         && p.BlockNumber <= atBlockNumber 
                         && p.Address == address 
-                        && p.AssetId == asset.Id)
+                        && p.AssetId == asset.Id
+                        && p.AssetAddress == asset.Address)
                     .GroupBy(p=>p.AssetId)
                     .Select(p => new
                     {

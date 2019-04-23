@@ -85,16 +85,16 @@ create table balance_actions
     address         text    not null
 );
 
-create unique index balance_actions_blockchain_type_asset_id_transaction_id_uindex
-    on balance_actions (blockchain_type, asset_id, transaction_id)
+create unique index ba_btype_trid_address_asid_uindex
+    on balance_actions (blockchain_type, transaction_id, address, asset_id)
     where asset_address is null;
 
-create unique index balance_actions_blockchain_type_asset_id_asset_address_transaction_id_uindex
-    on balance_actions (blockchain_type, asset_id, asset_address, transaction_id)
+create unique index ba_btype_trid_address_asid_asaddress_uindex
+    on balance_actions (blockchain_type, transaction_id, address, asset_id, asset_address)
     where asset_address is not null;
 
-create index balance_actions_blockchain_type_address_block_number_asset_id_v
-    on balance_actions (blockchain_type asc, address asc, block_number desc, asset_id asc, value);
+create index ba_blockchain_type_address_block_number_asset_id_v
+    on balance_actions (blockchain_type, address, block_number desc, asset_id, asset_address, value);
 
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on balance_actions for each row
