@@ -88,6 +88,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             
             await repo.SaveAsync(retrieved1);
 
+            Assert.ThrowsAsync<OptimisticConcurrencyException>(async () => { await repo.SaveAsync(source1); });
+
             var retrieved2 = await repo.GetOrDefaultAsync(source1.BlockchainType, source1.Id);
             Assert.AreNotEqual(retrieved1.Version, retrieved2.Version);
 

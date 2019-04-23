@@ -72,6 +72,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var retrieved1 = await repo.GetOrDefaultAsync(source1.BlockchainType, new CrawlerConfiguration(source1.Configuration.StartBlock, source1.Configuration.StopAssemblingBlock));
             Assert.AreNotEqual(source1.Version, retrieved1.Version);
 
+            Assert.ThrowsAsync<OptimisticConcurrencyException>(async () => { await repo.SaveAsync(source1); });
+
             retrieved1.RetryCurrentBlock();
             await repo.SaveAsync(retrieved1);
 
