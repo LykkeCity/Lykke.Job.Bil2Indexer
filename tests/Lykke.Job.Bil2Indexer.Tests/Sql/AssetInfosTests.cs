@@ -39,7 +39,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var retrieved1 = await repo.GetOrDefaultAsync(asset.BlockchainType, asset.Asset);
             var retrieved2 = await repo.GetAsync(asset.BlockchainType, asset.Asset);
-            var retrieved3 = (await repo.GetSomeOfAsync(asset.BlockchainType, new []{ asset.Asset.Id }))
+            var retrieved3 = (await repo.GetSomeOfAsync(asset.BlockchainType, new []{ asset.Asset }))
                 .Single();
 
             AssertEquals(retrieved1, asset);

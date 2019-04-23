@@ -45,7 +45,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
 
-                    _copyMapper.SaveAll(conn, notExisted);
+                    if (notExisted.Any())
+                    {
+                        _copyMapper.SaveAll(conn, notExisted);
+                    }
                 }
             }
         }
@@ -53,39 +56,32 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         private async Task<IReadOnlyCollection<FeeEnvelopeEntity>> ExcludeExistedInDbAsync(IReadOnlyCollection<FeeEnvelopeEntity> dbEntities)
         {
-            if (dbEntities.GroupBy(p => p.AssetId).Count() > 1)
-            {
-                throw new ArgumentException("Unable to save batch with multiple assetIds");
-            }
-
             if (dbEntities.GroupBy(p => p.BlockchainType).Count() > 1)
             {
                 throw new ArgumentException("Unable to save batch with multiple blockchain type");
             }
 
-            string BuildId(string bType, string transactionId, string assetId)
+            string BuildId(string bType, string transactionId, string assetId, string assetAddress)
             {
-                return $"{bType}_{transactionId}_{assetId}";
+                return $"{bType}_{transactionId}_{assetId}_{assetAddress}";
             }
 
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var blockchainType = dbEntities.First().BlockchainType;
                 var txIds = dbEntities.Select(p => p.TransactionId).ToList();
-                var assetId = dbEntities.First().AssetId;
 
                 var query = db.FeeEnvelopes
                         .Where(p => p.BlockchainType == blockchainType)
-                        .Where(p=> txIds.Contains(p.TransactionId))
-                        .Where(p => p.AssetId == assetId)
-                    .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId });
+                        .Where(p => txIds.Contains(p.TransactionId))
+                    .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress });
 
                 var existedNaturalIds = (await query
                         .ToListAsync())
-                    .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
+                    .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress));
 
                 var dbEntitiesDic = dbEntities.ToDictionary(p =>
-                    BuildId(p.BlockchainType, p.TransactionId, p.AssetId));
+                    BuildId(p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress));
 
                 return dbEntitiesDic.Where(p => !existedNaturalIds.ContainsKey(p.Key)).Select(p => p.Value).ToList();
             }
