@@ -25,6 +25,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain
             optionsBuilder.UseNpgsql(_connectionString);
         }
 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AssetInfoEntity>()

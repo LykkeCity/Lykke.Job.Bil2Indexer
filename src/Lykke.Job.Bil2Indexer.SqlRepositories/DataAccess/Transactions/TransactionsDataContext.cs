@@ -18,11 +18,5 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions
         {
             optionsBuilder.UseNpgsql(_connectionString);
         }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<TransactionEntity>()
-                .HasKey(o => o.Id);
-        }
     }
 }

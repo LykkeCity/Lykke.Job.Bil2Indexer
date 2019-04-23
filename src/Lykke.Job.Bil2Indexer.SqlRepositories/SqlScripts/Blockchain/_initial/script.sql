@@ -56,7 +56,12 @@ create table fees
 );
 
 create unique index fees_blockchain_type_transaction_id_asset_id_uindex
-    on fees (blockchain_type, transaction_id, asset_id);
+    on fees (blockchain_type, transaction_id, asset_id)
+where asset_address is null;
+
+create unique index fees_blockchain_type_transaction_id_asset_id_asset_address_uindex
+    on fees (blockchain_type, transaction_id, asset_id, asset_address)
+where asset_address is not null;
 
 create index fees_blockchain_type_block_id_index
 	on fees (blockchain_type, block_id);
@@ -75,13 +80,18 @@ create table balance_actions
     asset_address   text,
     transaction_id  text    not null,
     value           numeric not null,
-    value_string    text not null,
+    value_string    text    not null,
     value_scale     integer not null,
     address         text    not null
 );
 
 create unique index balance_actions_blockchain_type_asset_id_transaction_id_uindex
-    on balance_actions (blockchain_type, asset_id, transaction_id);
+    on balance_actions (blockchain_type, asset_id, transaction_id)
+    where asset_address is null;
+
+create unique index balance_actions_blockchain_type_asset_id_asset_address_transaction_id_uindex
+    on balance_actions (blockchain_type, asset_id, asset_address, transaction_id)
+    where asset_address is not null;
 
 create index balance_actions_blockchain_type_address_block_number_asset_id_v
     on balance_actions (blockchain_type asc, address asc, block_number desc, asset_id asc, value);
@@ -94,13 +104,13 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
 
 create table assets
 (
-	blockchain_type text not null,
-	id text not null,
+    id              text                            not null,
+    asset_id        text                            not null,
+    asset_address   text,
+	blockchain_type text                            not null,
 	scale int not null,
 	constraint assets_pk
 		primary key (blockchain_type, id)
 );
-
-
     
 COMMIT;
