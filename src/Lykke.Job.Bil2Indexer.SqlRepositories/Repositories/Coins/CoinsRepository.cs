@@ -51,7 +51,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
 
-                    _copyMapper.SaveAll(conn, notExisted);
+                    if (notExisted.Any())
+                    {
+                        _copyMapper.SaveAll(conn, notExisted);
+                    }
                 }
             }
         }

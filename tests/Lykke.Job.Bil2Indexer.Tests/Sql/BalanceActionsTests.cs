@@ -72,12 +72,35 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.AreEqual(asset, allAssets.Keys.Single());
         }
 
-        private BalanceAction BuildRandomBalanceAction(Asset asset, Address address, int scale)
+        [Test]
+        public async Task CanSaveMultipleAddressBalanceChangesInTransaction()
+        {
+            var txId = Guid.NewGuid().ToString();
+
+            var address = BuildRandmomAddress();
+            var address2 = BuildRandmomAddress();
+            var asset = BuildRandmomAsset();
+            var scale = new Random().Next(0, 15);
+            var bType = Guid.NewGuid().ToString();
+
+            var actions = new[]
+            {
+                BuildRandomBalanceAction(asset, address, scale, txId),
+                BuildRandomBalanceAction(asset, address2, scale, txId)
+
+            };
+
+            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
+                BuildProviderMock(asset, bType, scale).Object);
+            await repo.AddIfNotExistsAsync(bType, actions);
+        }
+
+        private BalanceAction BuildRandomBalanceAction(Asset asset, Address address, int scale, string transactionId = null)
         {
             var rdm = new Random();
             return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(rdm.Next()), scale),
                 rdm.Next(1, 123333), new BlockId(Guid.NewGuid().ToString()),
-                new TransactionId(Guid.NewGuid().ToString()));
+                new TransactionId(transactionId ?? Guid.NewGuid().ToString()));
         }
         private Asset BuildRandmomAsset()
         {

@@ -45,7 +45,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
 
-                    _copyMapper.SaveAll(conn, notExisted);
+                    if (notExisted.Any())
+                    {
+                        _copyMapper.SaveAll(conn, notExisted);
+                    }
                 }
             }
         }
