@@ -14,69 +14,64 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
     [UsedImplicitly]
     public class BalanceActionsRepositoryAppInsightDecorator : IBalanceActionsRepository
     {
-        private readonly IBalanceActionsRepository _balanceActionsRepository;
+        private readonly IBalanceActionsRepository _impl;
         private readonly IAppInsightTelemetryProvider _appInsightTelemetryProvider;
 
         public BalanceActionsRepositoryAppInsightDecorator(IBalanceActionsRepository balanceActionsRepository,
             IAppInsightTelemetryProvider appInsightTelemetryProvider)
         {
-            _balanceActionsRepository = balanceActionsRepository;
+            _impl = balanceActionsRepository;
             _appInsightTelemetryProvider = appInsightTelemetryProvider;
         }
 
         public async Task AddIfNotExistsAsync(string blockchainType, IReadOnlyCollection<BalanceAction> actions)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BalanceActionsRepositoryAppInsightDecorator),
-                nameof(AddIfNotExistsAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _balanceActionsRepository.AddIfNotExistsAsync(blockchainType, actions));
+                async () => await _impl.AddIfNotExistsAsync(blockchainType, actions));
         }
 
         public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BalanceActionsRepositoryAppInsightDecorator),
-                nameof(TryRemoveAllOfBlockAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{blockId}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _balanceActionsRepository.TryRemoveAllOfBlockAsync(blockchainType, blockId));
+                async () => await _impl.TryRemoveAllOfBlockAsync(blockchainType, blockId));
         }
 
         public async Task<Money> GetBalanceAsync(string blockchainType, Address address, Asset asset, long atBlockNumber)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BalanceActionsRepositoryAppInsightDecorator),
-                nameof(GetBalanceAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{address}-{asset.Id}-{atBlockNumber}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _balanceActionsRepository.GetBalanceAsync(blockchainType, address, asset, atBlockNumber));
+                async () => await _impl.GetBalanceAsync(blockchainType, address, asset, atBlockNumber));
         }
 
         public async Task<IReadOnlyDictionary<Asset, Money>> GetBalancesAsync(string blockchainType, Address address, long atBlockNumber)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BalanceActionsRepositoryAppInsightDecorator),
-                nameof(GetBalancesAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{address}-{atBlockNumber}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _balanceActionsRepository.GetBalancesAsync(blockchainType, address, atBlockNumber));
+                async () => await _impl.GetBalancesAsync(blockchainType, address, atBlockNumber));
         }
 
         public async Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetSomeOfBalancesAsync(string blockchainType, ISet<TransactionId> transactionIds)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BalanceActionsRepositoryAppInsightDecorator),
-                nameof(GetSomeOfBalancesAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _balanceActionsRepository.GetSomeOfBalancesAsync(blockchainType, transactionIds));
+                async () => await _impl.GetSomeOfBalancesAsync(blockchainType, transactionIds));
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure;
 using Microsoft.ApplicationInsights;
@@ -60,9 +61,9 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
             }
         }
 
-        public string FormatOperationName(string repositoryName, string methodName)
+        public string FormatOperationName<TDecorated>(TDecorated repositoryName, [CallerMemberName]string methodName = null)
         {
-            return $"Repository: {repositoryName}:{methodName}";
+            return $"{typeof(TDecorated).Name}:{methodName}";
         }
     }
 }

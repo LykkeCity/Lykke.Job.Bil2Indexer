@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure
@@ -9,6 +10,6 @@ namespace Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure
 
         Task<T> ExecuteMethodWithTelemetryAndReturnAsync<T>(string operationName, string operationId, Func<Task<T>> awaitableFunc);
 
-        string FormatOperationName(string repositoryName, string methodName);
+        string FormatOperationName<TDecorated>(TDecorated repositoryName, [CallerMemberName] string methodName = null);
     }
 }
