@@ -22,8 +22,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<Crawler> GetOrDefaultAsync(string blockchainType, CrawlerConfiguration configuration)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(CrawlersRepositoryAppInsightDecorator),
-                nameof(GetOrDefaultAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_crawlersRepository);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
@@ -33,8 +32,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task SaveAsync(Crawler crawler)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(CrawlersRepositoryAppInsightDecorator),
-                nameof(SaveAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_crawlersRepository);
             var operationId = $"{crawler.BlockchainType}-{Guid.NewGuid()}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,

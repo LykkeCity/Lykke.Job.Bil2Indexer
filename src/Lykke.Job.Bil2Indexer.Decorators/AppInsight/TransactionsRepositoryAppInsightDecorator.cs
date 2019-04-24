@@ -23,8 +23,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task AddIfNotExistsAsync(string blockchainType, TransferAmountTransactionExecutedEvent transaction)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(TransactionsRepositoryAppInsightDecorator),
-                nameof(AddIfNotExistsAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_transactionsRepository);
             var operationId = $"{blockchainType}-{transaction.TransactionId}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
@@ -34,8 +33,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(TransactionsRepositoryAppInsightDecorator),
-                nameof(TryRemoveAllOfBlockAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_transactionsRepository);
             var operationId = $"{blockchainType}-{blockId}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
@@ -45,8 +43,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task AddIfNotExistsAsync(string blockchainType, TransferCoinsTransactionExecutedEvent transaction)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(TransactionsRepositoryAppInsightDecorator),
-                nameof(AddIfNotExistsAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_transactionsRepository);
             var operationId = $"{blockchainType}-{transaction.TransactionId}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
@@ -56,8 +53,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task AddIfNotExistsAsync(string blockchainType, TransactionFailedEvent transaction)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(TransactionsRepositoryAppInsightDecorator),
-                nameof(AddIfNotExistsAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_transactionsRepository);
             var operationId = $"{blockchainType}-{transaction.TransactionId}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
@@ -67,8 +63,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<int> CountInBlockAsync(string blockchainType, BlockId blockId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(FeeEnvelopesRepositoryAppInsightDecorator),
-                nameof(CountInBlockAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_transactionsRepository);
             var operationId = $"{blockchainType}-{blockId}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
@@ -78,8 +73,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<PaginatedItems<TransactionEnvelope>> GetAllOfBlockAsync(string blockchainType, BlockId blockId, int limit, string continuation)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(FeeEnvelopesRepositoryAppInsightDecorator),
-                nameof(GetAllOfBlockAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_transactionsRepository);
             var operationId = $"{blockchainType}-{blockId}-{limit}-{continuation}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
@@ -89,8 +83,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<TransactionEnvelope> GetAsync(string blockchainType, TransactionId transactionId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(FeeEnvelopesRepositoryAppInsightDecorator),
-                nameof(GetAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_transactionsRepository);
             var operationId = $"{blockchainType}-{transactionId}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
@@ -100,8 +93,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<TransactionEnvelope> GetOrDefaultAsync(string blockchainType, TransactionId transactionId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(FeeEnvelopesRepositoryAppInsightDecorator),
-                nameof(GetOrDefaultAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_transactionsRepository);
             var operationId = $"{blockchainType}-{transactionId}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,

@@ -24,8 +24,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task AddIfNotExistsAsync(IEnumerable<AssetInfo> assetInfos)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosRepositoryAppInsightDecorator), 
-                nameof(AddIfNotExistsAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_assetInfosRepository);
             var operationId = Guid.NewGuid().ToString();
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName, 
@@ -35,8 +34,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<AssetInfo> GetOrDefaultAsync(string blockchainType, Asset asset)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosRepositoryAppInsightDecorator), 
-                nameof(GetOrDefaultAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_assetInfosRepository);
             var operationId = $"{blockchainType}-{asset?.Id}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
@@ -46,8 +44,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<AssetInfo> GetAsync(string blockchainType, Asset asset)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosRepositoryAppInsightDecorator),
-                nameof(GetAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_assetInfosRepository);
             var operationId = $"{blockchainType}-{asset?.Id}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
@@ -57,8 +54,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<IReadOnlyCollection<AssetInfo>> GetSomeOfAsync(string blockchainType, IEnumerable<Asset> assets)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosRepositoryAppInsightDecorator),
-                nameof(GetSomeOfAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_assetInfosRepository);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
@@ -68,8 +64,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<PaginatedItems<AssetInfo>> GetAllAsync(string blockchainType, int limit, string continuation)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(AssetInfosRepositoryAppInsightDecorator),
-                nameof(GetSomeOfAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_assetInfosRepository);
             var operationId = $"{blockchainType}-{limit}-{continuation}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,

@@ -22,8 +22,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task SaveAsync(BlockHeader block)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersRepositoryAppInsightDecorator),
-                nameof(SaveAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_blockHeadersRepository);
             var operationId = $"{block.Id}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
@@ -33,8 +32,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, long blockNumber)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersRepositoryAppInsightDecorator),
-                nameof(GetOrDefaultAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_blockHeadersRepository);
             var operationId = $"{blockchainType}-{blockNumber}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
@@ -44,8 +42,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, BlockId blockId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersRepositoryAppInsightDecorator),
-                nameof(GetOrDefaultAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_blockHeadersRepository);
             var operationId = $"{blockchainType}-{blockId}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
@@ -55,8 +52,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersRepositoryAppInsightDecorator),
-                nameof(GetAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_blockHeadersRepository);
             var operationId = $"{blockchainType}-{blockId}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
@@ -66,8 +62,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public async Task TryRemoveAsync(string blockchainType, BlockId blockId)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(nameof(BlockHeadersRepositoryAppInsightDecorator),
-                nameof(TryRemoveAsync));
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_blockHeadersRepository);
             var operationId = $"{blockchainType}-{blockId}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
