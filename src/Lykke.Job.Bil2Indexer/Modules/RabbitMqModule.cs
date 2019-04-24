@@ -30,7 +30,7 @@ namespace Lykke.Job.Bil2Indexer.Modules
             
             builder.RegisterType<BlockReaderEventsHandler>().As<IBlockEventsHandler>();
             builder.RegisterType<BlockAssembledEventsHandler>().AsSelf();
-            builder.RegisterType<BlockExecutionEventsHandler>().AsSelf();
+            builder.RegisterType<BlockExecutedEventsHandler>().AsSelf();
             builder.RegisterType<CrawlerMovedEventsHandler>().AsSelf();
             builder.RegisterType<ChainHeadExtendedEventsHandler>().AsSelf();
             builder.RegisterType<ChainHeadReducedEventsHandler>().AsSelf();

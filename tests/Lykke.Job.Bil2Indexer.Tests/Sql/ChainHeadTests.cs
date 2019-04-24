@@ -70,7 +70,9 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             await repo.SaveAsync(source1);
             var retrieved1 = await repo.GetOrDefaultAsync(source1.BlockchainType);
             Assert.AreNotEqual(source1.Version, retrieved1.Version);
-            
+
+            Assert.ThrowsAsync<OptimisticConcurrencyException>(async () => { await repo.SaveAsync(source1); });
+
             await repo.SaveAsync(retrieved1);
 
             var retrieved2 = await repo.GetOrDefaultAsync(source1.BlockchainType);
@@ -105,6 +107,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             (
                 Guid.NewGuid().ToString(),
                 rnd.Next(),
+                0,
                 0,
                 rnd.Next(),
                 Guid.NewGuid().ToString(),

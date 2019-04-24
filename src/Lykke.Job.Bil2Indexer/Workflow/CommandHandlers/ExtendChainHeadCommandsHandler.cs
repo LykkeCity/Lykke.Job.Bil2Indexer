@@ -15,7 +15,6 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Infrastructure;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Infrastructure;
-using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Numerics;
 using Lykke.Numerics.Linq;
@@ -37,8 +36,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             ITransactionsRepository transactionsRepository,
             IFeeEnvelopesRepository feeEnvelopesRepository,
             IBalanceActionsRepository balanceActionsRepository,
-            ICoinsRepository coinsRepository,
-            IntegrationSettingsProvider settingsProvider)
+            ICoinsRepository coinsRepository)
         {
             _chainHeadsRepository = chainHeadsRepository;
             _transactionsRepository = transactionsRepository;
@@ -50,26 +48,53 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
         public async Task<MessageHandlingResult> HandleAsync(ExtendChainHeadCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
+            var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
             var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
+            var chainHeadCorrelationId = chainHead.GetCorrelationId();
 
-            if (!(chainHead.CanExtendTo(command.ToBlockNumber) ||
-                chainHead.IsOnBlock(command.ToBlockNumber)))
+            if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId) &&
+                // In case of retry after chain head sequence incremented and saved,
+                // the message is became previous relative to the updated chain head,
+                // we should process the message, since we not sure if the events
+                // are published.
+                !messageCorrelationId.IsPreviousOf(chainHeadCorrelationId))
             {
-                // TODO: Not sure yet what to do here. Probably we need to check block header state.
-                // We need to determine somehow if this message is outdated or premature and ignore or 
-                // retry it correspondingly.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
             }
 
-            if (chainHead.CanExtendTo(command.ToBlockNumber))
+            if(messageCorrelationId.IsPrematureRelativeTo(chainHeadCorrelationId))
             {
-                await PublishTransactionsAsync(command.BlockchainType, command.ToBlockId, command.ToBlockNumber, replyPublisher);
-                
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
+            }
+
+            if (messageCorrelationId.IsTheSameAs(chainHeadCorrelationId))
+            {
                 chainHead.ExtendTo(command.ToBlockNumber, command.ToBlockId);
 
                 // TODO: Update balance snapshots
 
-                replyPublisher.Publish(new ChainHeadExtendedEvent
+                await _chainHeadsRepository.SaveAsync(chainHead);
+
+                chainHeadCorrelationId = chainHead.GetCorrelationId();
+            }
+
+            if (messageCorrelationId.IsPreviousOf(chainHeadCorrelationId))
+            {
+                _log.Info("Chain head extended", chainHead);
+
+                var eventsPublisher = replyPublisher.ChangeCorrelationId(chainHeadCorrelationId.ToString());
+
+                await PublishTransactionsAsync
+                (
+                    command.BlockchainType,
+                    command.ToBlockId,
+                    command.ToBlockNumber,
+                    eventsPublisher
+                );
+
+                eventsPublisher.Publish(new ChainHeadExtendedEvent
                 {
                     BlockchainType = command.BlockchainType,
                     ChainHeadSequence = chainHead.Version,
@@ -77,16 +102,15 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     BlockId = command.ToBlockId,
                     PreviousBlockId = chainHead.PreviousBlockId
                 });
-
-                await _chainHeadsRepository.SaveAsync(chainHead);
             }
-
-            _log.Info("Chain head extended", chainHead);
-
+            
             return MessageHandlingResult.Success();
         }
 
-        private async Task PublishTransactionsAsync(string blockchainType, string blockId, long blockNumber, IMessagePublisher publisher)
+        private async Task PublishTransactionsAsync(string blockchainType,
+            string blockId, 
+            long blockNumber,
+            IMessagePublisher publisher)
         {
             PaginatedItems<TransactionEnvelope> envelopes = null;
 
@@ -139,9 +163,9 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         }
 
         private async Task PublishTransferAmountTransactionsAsync(
-            string blockchainType, 
-            string blockId, 
-            long blockNumber, 
+            string blockchainType,
+            string blockId,
+            long blockNumber,
             IReadOnlyCollection<TransferAmountTransactionExecutedEvent> transactions,
             IMessagePublisher publisher)
         {
@@ -236,10 +260,9 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             publisher.Publish(evt);
         }
 
-        private async Task PublishTransferCoinsTransactionsAsync(
-            string blockchainType,
+        private async Task PublishTransferCoinsTransactionsAsync(string blockchainType,
             string blockId,
-            long blockNumber, 
+            long blockNumber,
             IReadOnlyCollection<TransferCoinsTransactionExecutedEvent> transactions,
             IMessagePublisher publisher)
         {
@@ -391,11 +414,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             publisher.Publish(evt);
         }
 
-        private Task PublishFailedTransactionsAsync(
-            string blockchainType, 
+        private Task PublishFailedTransactionsAsync(string blockchainType,
             string blockId,
             long blockNumber,
-            IEnumerable<Bil2.Contract.BlocksReader.Events.TransactionFailedEvent> transactions, 
+            IEnumerable<Bil2.Contract.BlocksReader.Events.TransactionFailedEvent> transactions,
             IMessagePublisher publisher)
         {
             return transactions.ForEachAsync

@@ -15,12 +15,9 @@ namespace Lykke.Job.Bil2Indexer.Workflow.Commands
         [DataMember(Order = 2)]
         public BlockId ToBlockId { get; set; }
         
-        [DataMember(Order = 3)]
-        public long ChainHeadVersion { get; set; }
-
         public override string ToString()
         {
-            return $"{BlockchainType}:{ToBlockNumber}({ChainHeadVersion})";
+            return $"{BlockchainType}:{ToBlockNumber}";
         }
     }
 }

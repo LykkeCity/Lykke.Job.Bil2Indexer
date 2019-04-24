@@ -28,17 +28,23 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             var crawler = await _crawlersManager.GetCrawlerAsync(evt.BlockchainType, messageCorrelationId.Configuration);
             var crawlerCorrelationId = crawler.GetCorrelationId();
 
-            if (crawlerCorrelationId.Equals(messageCorrelationId))
+            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
-                // Disordered message, we should ignore it.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
+            }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
             }
 
             if (crawler.Configuration.CanProcess(crawler.ExpectedBlockNumber))
             {
                 var blocksReaderApi = _blocksReaderApiFactory.Create(evt.BlockchainType);
 
-                await blocksReaderApi.SendAsync(new ReadBlockCommand(evt.BlockNumber), crawler.GetCorrelationId().ToString());
+                await blocksReaderApi.SendAsync(new ReadBlockCommand(evt.BlockNumber), crawlerCorrelationId.ToString());
             }
 
             return MessageHandlingResult.Success();

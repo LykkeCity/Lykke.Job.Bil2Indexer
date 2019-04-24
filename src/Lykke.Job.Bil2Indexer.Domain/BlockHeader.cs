@@ -32,10 +32,6 @@ namespace Lykke.Job.Bil2Indexer.Domain
             State == BlockState.Executed ||
             State == BlockState.PartiallyExecuted;
 
-        public bool IsNotExecutedYet =>
-            State == BlockState.Assembling ||
-            State == BlockState.Assembled;
-
         public bool IsExecuted => State == BlockState.Executed;
 
         public bool IsPartiallyExecuted => State == BlockState.PartiallyExecuted;

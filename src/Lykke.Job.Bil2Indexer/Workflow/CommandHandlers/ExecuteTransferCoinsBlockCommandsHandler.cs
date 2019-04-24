@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Job.Bil2Indexer.Workflow.Events;
@@ -10,6 +11,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 {
     public class ExecuteTransferCoinsBlockCommandsHandler : IMessageHandler<ExecuteTransferCoinsBlockCommand>
     {
+        private readonly IChainHeadsRepository _chainHeadsRepository;
         private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly ITransactionsRepository _transactionsRepository;
         private readonly ICoinsRepository _coinsRepository;
@@ -17,12 +19,14 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
 
         public ExecuteTransferCoinsBlockCommandsHandler(
+            IChainHeadsRepository chainHeadsRepository,
             IBlockHeadersRepository blockHeadersRepository,
             ITransactionsRepository transactionsRepository,
             ICoinsRepository coinsRepository,
             IBalanceActionsRepository balanceActionsRepository,
             IFeeEnvelopesRepository feeEnvelopesRepository)
         {
+            _chainHeadsRepository = chainHeadsRepository;
             _blockHeadersRepository = blockHeadersRepository;
             _transactionsRepository = transactionsRepository;
             _coinsRepository = coinsRepository;
@@ -32,14 +36,23 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
         public async Task<MessageHandlingResult> HandleAsync(ExecuteTransferCoinsBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
-            var block = await _blockHeadersRepository.GetOrDefaultAsync(command.BlockchainType, command.BlockId);
+            var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
+            var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
+            var chainHeadCorrelationId = chainHead.GetCorrelationId();
 
-            if (block == null || !(block.CanBeExecuted || block.IsExecuted || block.IsPartiallyExecuted))
+            if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId))
             {
-                // Block either already rolled back, or not ready to be executed yet and
-                // not executed yet and not partially executed yet, command should be skipped.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
             }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(chainHeadCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
+            }
+
+            var block = await _blockHeadersRepository.GetAsync(command.BlockchainType, command.BlockId);
 
             if (block.CanBeExecuted)
             {
@@ -48,16 +61,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 await _blockHeadersRepository.SaveAsync(block);
             }
 
-            if (block.IsPartiallyExecuted)
-            {
-                replyPublisher.Publish(new BlockPartiallyExecutedEvent
-                {
-                    BlockchainType = command.BlockchainType,
-                    BlockId = command.BlockId,
-                    BlockNumber = block.Number
-                });
-            }
-            else if(block.IsExecuted)
+            if(block.IsExecuted)
             {
                 replyPublisher.Publish(new BlockExecutedEvent
                 {
@@ -66,7 +70,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     BlockNumber = block.Number
                 });
             }
-            else
+            else if(!block.IsPartiallyExecuted)
             {
                 throw new InvalidOperationException($"Unexpected block state: {block.State}");
             }

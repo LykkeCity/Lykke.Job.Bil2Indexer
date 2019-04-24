@@ -88,6 +88,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
                 source.BlockchainType,
                 source.FirstBlockNumber,
                 source.Version,
+                source.Sequence,
                 source.BlockNumber,
                 source.BlockId,
                 source.PreviousBlockId
@@ -99,6 +100,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
             return new ChainHeadEntity
             {
                 Version = (uint) source.Version,
+                Sequence = source.Sequence,
                 BlockchainType = source.BlockchainType,
                 FirstBlockNumber = source.FirstBlockNumber,
                 BlockId = source.BlockId,

@@ -1,6 +1,7 @@
 ﻿using JetBrains.Annotations;
 using Lykke.Bil2.RabbitMq;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Bil2.RabbitMq.Subscription.MessageFilters;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Settings.JobSettings;
@@ -15,7 +16,7 @@ namespace Lykke.Job.Bil2Indexer.Services
     public class RabbitMqConfigurator
     {
         public const string CommandsExchangeName = "bil-v2.indexer.commands";
-        
+
         private readonly IRabbitMqEndpoint _endpoint;
         private readonly RabbitMqSettings _settings;
 
@@ -39,11 +40,11 @@ namespace Lykke.Job.Bil2Indexer.Services
 
             var eventsSubscriptions = new MessageSubscriptionsRegistry()
                 .Handle<BlockAssembledEvent>(o => { o.WithHandler<BlockAssembledEventsHandler>(); })
-                .Handle<BlockExecutedEvent>(o => o.WithHandler<BlockExecutionEventsHandler>())
-                .Handle<BlockPartiallyExecutedEvent>(o => o.WithHandler<BlockExecutionEventsHandler>())
+                .Handle<BlockExecutedEvent>(o => o.WithHandler<BlockExecutedEventsHandler>())
                 .Handle<CrawlerMovedEvent>(o => o.WithHandler<CrawlerMovedEventsHandler>())
                 .Handle<ChainHeadExtendedEvent>(o => o.WithHandler<ChainHeadExtendedEventsHandler>())
-                .Handle<ChainHeadReducedEvent>(o => o.WithHandler<ChainHeadReducedEventsHandler>());
+                .Handle<ChainHeadReducedEvent>(o => o.WithHandler<ChainHeadReducedEventsHandler>())
+                .AddFilter(new AppInsightTelemetryMessageFilter());
 
             _endpoint.Subscribe(
                 eventsSubscriptions,
@@ -69,7 +70,8 @@ namespace Lykke.Job.Bil2Indexer.Services
                 .Handle<WaitForBlockAssemblingCommand>(o => { o.WithHandler<WaitForBlockAssemblingCommandsHandler>(); })
                 .Handle<ExecuteTransferCoinsBlockCommand>(o => { o.WithHandler<ExecuteTransferCoinsBlockCommandsHandler>(); })
                 .Handle<ExtendChainHeadCommand>(o => { o.WithHandler<ExtendChainHeadCommandsHandler>(); })
-                .Handle<ReduceChainHeadCommand>(o => { o.WithHandler<ReduceChainHeadCommandsHandler>(); });
+                .Handle<ReduceChainHeadCommand>(o => { o.WithHandler<ReduceChainHeadCommandsHandler>(); })
+                .AddFilter(new AppInsightTelemetryMessageFilter());
             
             _endpoint.Subscribe(
                 commandsSubscriptions,

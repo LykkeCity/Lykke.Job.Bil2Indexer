@@ -28,21 +28,44 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             var crawler = await _crawlersManager.GetCrawlerAsync(command.BlockchainType, messageCorrelationId.Configuration);
             var crawlerCorrelationId = crawler.GetCorrelationId();
 
-            if (!(messageCorrelationId.IsPreviousOf(crawlerCorrelationId) || crawlerCorrelationId.Equals(messageCorrelationId)))
+            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId) &&
+                // In case of retry after crawler sequence incremented and saved,
+                // the message is became previous relative to the updated crawler,
+                // we should process the message, since we not sure if the event
+                // is published.
+                !messageCorrelationId.IsPreviousOf(crawlerCorrelationId))
             {
-                // Disordered message, we should ignore it.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
             }
 
-            crawler.MoveTo(command.NextBlockNumber);
-
-            await _crawlersRepository.SaveAsync(crawler);
-            
-            eventsPublisher.Publish(new CrawlerMovedEvent
+            if(messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
             {
-                BlockchainType = command.BlockchainType,
-                BlockNumber = command.NextBlockNumber
-            });
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
+            }
+
+            if (messageCorrelationId.IsTheSameAs(crawlerCorrelationId))
+            {
+                crawler.MoveTo(command.NextBlockNumber);
+
+                await _crawlersRepository.SaveAsync(crawler);
+
+                crawlerCorrelationId = crawler.GetCorrelationId();
+            }
+
+            if (messageCorrelationId.IsPreviousOf(crawlerCorrelationId))
+            {
+                eventsPublisher.Publish
+                (
+                    new CrawlerMovedEvent
+                    {
+                        BlockchainType = command.BlockchainType,
+                        BlockNumber = command.NextBlockNumber
+                    },
+                    crawlerCorrelationId.ToString()
+                );
+            }
 
             return MessageHandlingResult.Success();
         }

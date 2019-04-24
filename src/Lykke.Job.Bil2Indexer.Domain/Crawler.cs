@@ -114,7 +114,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public CrawlerCorrelationId GetCorrelationId()
         {
-            return new CrawlerCorrelationId(Configuration, Sequence);
+            return new CrawlerCorrelationId(BlockchainType, Configuration, Sequence);
         }
 
         public override string ToString()

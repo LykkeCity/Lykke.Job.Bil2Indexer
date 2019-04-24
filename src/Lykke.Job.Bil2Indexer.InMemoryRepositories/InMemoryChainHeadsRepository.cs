@@ -6,7 +6,7 @@ using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
-namespace Lykke.Job.Bil2Indexer.AzureRepositories
+namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
 {
     public class InMemoryChainHeadsRepository : IChainHeadsRepository
     {
@@ -62,6 +62,7 @@ namespace Lykke.Job.Bil2Indexer.AzureRepositories
                         head.BlockchainType,
                         head.FirstBlockNumber,
                         head.Version + 1,
+                        head.Sequence,
                         head.BlockNumber,
                         head.BlockId,
                         head.PreviousBlockId

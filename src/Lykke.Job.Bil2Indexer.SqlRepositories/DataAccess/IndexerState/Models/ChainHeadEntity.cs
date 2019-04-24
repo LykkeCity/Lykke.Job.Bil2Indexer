@@ -20,6 +20,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
         [Column("prev_block_id")]
         public string PreviousBlockId { get; set; }
 
+        [Column("sequence")]
+        public long Sequence { get; set; }
+
         public uint Version { get; set; }
     }
 }

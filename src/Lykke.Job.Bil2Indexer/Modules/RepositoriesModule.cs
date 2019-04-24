@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using JetBrains.Annotations;
+using Lykke.Job.Bil2Indexer.Decorators.AppInsight;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Settings;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos;
@@ -65,6 +66,19 @@ namespace Lykke.Job.Bil2Indexer.Modules
                 .As<IAssetInfosRepository>()
                 .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.Db.PgBlockchainDataConnString))
                 .SingleInstance();
+
+            #region Decorators
+
+            builder.RegisterDecorator<BalanceActionsRepositoryAppInsightDecorator, IBalanceActionsRepository>();
+            builder.RegisterDecorator<BlockHeadersRepositoryAppInsightDecorator, IBlockHeadersRepository>();
+            builder.RegisterDecorator<CoinsRepositoryAppInsightDecorator, ICoinsRepository>();
+            builder.RegisterDecorator<CrawlersRepositoryAppInsightDecorator, ICrawlersRepository>();
+            builder.RegisterDecorator<TransactionsRepositoryAppInsightDecorator, ITransactionsRepository>();
+            builder.RegisterDecorator<ChainHeadsRepositoryAppInsightDecorator, IChainHeadsRepository>();
+            builder.RegisterDecorator<FeeEnvelopesRepositoryAppInsightDecorator, IFeeEnvelopesRepository>();
+            builder.RegisterDecorator<AssetInfosRepositoryAppInsightDecorator, IAssetInfosRepository>();
+            
+            #endregion
         }
     }
 }

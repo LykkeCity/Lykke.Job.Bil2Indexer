@@ -1,21 +1,28 @@
 ﻿using Autofac;
-using Lykke.Service.Bil2IndexerWebApi.Settings;
-using Lykke.SettingsReader;
+using DataApi.Factories;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Modules
 {
     public class ServiceModule : Module
     {
-        private readonly IReloadingManager<AppSettings> _appSettings;
-
-        public ServiceModule(IReloadingManager<AppSettings> appSettings)
-        {
-            _appSettings = appSettings;
-        }
-
         protected override void Load(ContainerBuilder builder)
         {
-            // Do not register entire settings in container, pass necessary settings to services which requires them
+            //ToDo: register all services / factories from assembly, not 1 by 1
+            services.AddSingleton<IAddressService, AddressService>();
+
+            services.AddSingleton<IBlockService, BlockService>();
+
+            services.AddSingleton<IAddressService, AddressService>();
+
+            services.AddSingleton<IAssetService, AssetService>();
+
+            services.AddSingleton<ITransactionService, TransactionService>();
+
+            services.AddSingleton<IAssetModelFactory, AssetModelFactory>();
+
+            services.AddSingleton<IBlockModelFactory, BlockModelFactory>();
+
+            services.AddSingleton<ITransactionModelFactory, TransactionModelFactory>();
         }
     }
 }

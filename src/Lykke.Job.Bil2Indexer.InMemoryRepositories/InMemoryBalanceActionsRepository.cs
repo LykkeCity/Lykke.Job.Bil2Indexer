@@ -1,14 +1,14 @@
-﻿using Lykke.Bil2.SharedDomain;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Numerics;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Lykke.Job.Bil2Indexer.AzureRepositories
+namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
 {
     public class InMemoryBalanceActionsRepository : IBalanceActionsRepository
     {

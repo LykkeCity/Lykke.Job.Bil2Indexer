@@ -2,8 +2,8 @@
 using JetBrains.Annotations;
 using Lykke.Logs.Loggers.LykkeSlack;
 using Lykke.Sdk;
-using Lykke.Service.Bil2IndexerWebApi.Settings;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lykke.Service.Bil2IndexerWebApi
@@ -22,6 +22,9 @@ namespace Lykke.Service.Bil2IndexerWebApi
         {
             return services.BuildServiceProvider<AppSettings>(options =>
             {
+                options.DisableFluentValidation();
+                options.DisableValidationFilter();
+
                 options.SwaggerOptions = _swaggerOptions;
 
                 options.Logs = logs =>
@@ -52,10 +55,24 @@ namespace Lykke.Service.Bil2IndexerWebApi
         }
 
         [UsedImplicitly]
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+
             app.UseLykkeConfiguration(options =>
             {
+                options.DisableUnhandledExceptionLoggingMiddleware();
+                options.DisableValidationExceptionMiddleware();
                 options.SwaggerOptions = _swaggerOptions;
             });
         }

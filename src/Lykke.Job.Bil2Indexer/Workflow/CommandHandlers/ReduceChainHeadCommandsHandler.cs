@@ -29,52 +29,46 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         public async Task<MessageHandlingResult> HandleAsync(ReduceChainHeadCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
-            
-            if (!(chainHead.CanReduceTo(command.ToBlockNumber) ||
-                  chainHead.IsOnBlock(command.ToBlockNumber)))
-            {
-                // TODO: Not sure yet what to do here. Probably we need to check block header state.
-                // We need to determine somehow if this message is outdated or premature and ignore or 
-                // retry it correspondingly.
-                return MessageHandlingResult.Success();
-            }
 
-            var previousBlockNumber = command.ToBlockNumber - 1;
-            var previousBlock = await _blockHeadersRepository.GetOrDefaultAsync(command.BlockchainType, previousBlockNumber);
-
-            var settings = _settingsProvider.Get(command.BlockchainType);
-
-            if (settings.Capabilities.TransferModel != BlockchainTransferModel.Amount &&
-                settings.Capabilities.TransferModel != BlockchainTransferModel.Coins)
-            {
-                throw new ArgumentOutOfRangeException(nameof(settings.Capabilities.TransferModel), settings.Capabilities.TransferModel, "");
-            }
-
-            if (previousBlock == null ||
-                settings.Capabilities.TransferModel == BlockchainTransferModel.Amount && !previousBlock.IsAssembled ||
-                settings.Capabilities.TransferModel == BlockchainTransferModel.Coins && !previousBlock.IsExecuted)
-            {
-                return MessageHandlingResult.Success();
-            }
-
-            if (chainHead.CanReduceTo(command.ToBlockNumber))
+            if(chainHead.CanReduceTo(command.ToBlockNumber))
             {
                 chainHead.ReduceTo(command.ToBlockNumber, command.ToBlockId);
+
+                // TODO: Update balance snapshots
 
                 await _chainHeadsRepository.SaveAsync(chainHead);
             }
 
-            // TODO: Update balance snapshots
-
-            replyPublisher.Publish(new ChainHeadReducedEvent
+            if (chainHead.IsOnBlock(command.ToBlockNumber))
             {
-                BlockchainType = command.BlockchainType,
-                ChainHeadSequence = chainHead.Version,
-                ToBlockNumber = command.ToBlockNumber,
-                ToBlockId = command.ToBlockId,
-                PreviousBlockId = previousBlock.Id,
-                BlockIdToRollback = command.BlockIdToRollback
-            });
+                var previousBlockNumber = command.ToBlockNumber - 1;
+                var previousBlock = await _blockHeadersRepository.GetOrDefaultAsync(command.BlockchainType, previousBlockNumber);
+
+                var settings = _settingsProvider.Get(command.BlockchainType);
+
+                if (settings.Capabilities.TransferModel != BlockchainTransferModel.Amount &&
+                    settings.Capabilities.TransferModel != BlockchainTransferModel.Coins)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(settings.Capabilities.TransferModel), settings.Capabilities.TransferModel, "");
+                }
+
+                if (previousBlock == null ||
+                    settings.Capabilities.TransferModel == BlockchainTransferModel.Amount && !previousBlock.IsAssembled ||
+                    settings.Capabilities.TransferModel == BlockchainTransferModel.Coins && !previousBlock.IsExecuted)
+                {
+                    return MessageHandlingResult.Success();
+                }
+
+                replyPublisher.Publish(new ChainHeadReducedEvent
+                {
+                    BlockchainType = command.BlockchainType,
+                    ChainHeadSequence = chainHead.Version,
+                    ToBlockNumber = command.ToBlockNumber,
+                    ToBlockId = command.ToBlockId,
+                    PreviousBlockId = previousBlock.Id,
+                    BlockIdToRollback = command.BlockIdToRollback
+                });
+            }
 
             return MessageHandlingResult.Success();
         }

@@ -7,7 +7,7 @@ using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
-namespace Lykke.Job.Bil2Indexer.AzureRepositories
+namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
 {
     public class InMemoryFeeEnvelopesRepository : IFeeEnvelopesRepository
     {
