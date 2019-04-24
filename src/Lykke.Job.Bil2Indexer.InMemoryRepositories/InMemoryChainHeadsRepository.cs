@@ -62,6 +62,7 @@ namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
                         head.BlockchainType,
                         head.FirstBlockNumber,
                         head.Version + 1,
+                        head.Sequence,
                         head.BlockNumber,
                         head.BlockId,
                         head.PreviousBlockId

@@ -1,5 +1,4 @@
 ﻿using System.Runtime.Serialization;
-using MessagePack;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.Commands
 {
@@ -11,13 +10,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.Commands
         
         [DataMember(Order = 1)]
         public string BlockId { get; set; }
-
-        [DataMember(Order = 2)]
-        public long BlockVersion { get; set; }
-
+        
         public override string ToString()
         {
-            return $"{BlockchainType}:{BlockId}:{BlockVersion}";
+            return $"{BlockchainType}:{BlockId}";
         }
     }
 }

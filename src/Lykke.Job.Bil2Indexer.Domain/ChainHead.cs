@@ -11,11 +11,13 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public long? BlockNumber { get; private set; }
         public BlockId BlockId { get; private set; }
         public BlockId PreviousBlockId { get; private set; }
+        public long Sequence { get; private set; }
 
         public ChainHead(
             string blockchainType,
             long firstBlockNumber,
             long version,
+            long sequence,
             long? blockNumber,
             BlockId blockId,
             BlockId previousBlockId)
@@ -23,6 +25,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             BlockchainType = blockchainType;
             FirstBlockNumber = firstBlockNumber;
             Version = version;
+            Sequence = sequence;
             BlockNumber = blockNumber;
             BlockId = blockId;
             PreviousBlockId = previousBlockId;
@@ -37,6 +40,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 blockchainType: blockchainType,
                 firstBlockNumber: firstBlockNumber,
                 version: 0,
+                sequence: 0,
                 blockNumber: null,
                 blockId: null,
                 previousBlockId: null
@@ -53,6 +57,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             BlockNumber = blockNumber;
             PreviousBlockId = BlockId;
             BlockId = blockId;
+            ++Sequence;
         }
 
         public void ReduceTo(long blockNumber, BlockId blockId)
@@ -65,6 +70,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             BlockNumber = blockNumber;
             PreviousBlockId = BlockId;
             BlockId = blockId;
+            ++Sequence;
         }
 
         public bool CanExtendTo(long blockNumber)
@@ -95,6 +101,11 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public bool IsOnBlock(long blockNumber)
         {
             return BlockNumber == blockNumber;
+        }
+
+        public ChainHeadCorrelationId GetCorrelationId()
+        {
+            return new ChainHeadCorrelationId(BlockchainType, Sequence);
         }
 
         public override string ToString()

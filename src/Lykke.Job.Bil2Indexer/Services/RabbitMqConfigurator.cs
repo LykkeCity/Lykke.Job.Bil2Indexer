@@ -40,8 +40,7 @@ namespace Lykke.Job.Bil2Indexer.Services
 
             var eventsSubscriptions = new MessageSubscriptionsRegistry()
                 .Handle<BlockAssembledEvent>(o => { o.WithHandler<BlockAssembledEventsHandler>(); })
-                .Handle<BlockExecutedEvent>(o => o.WithHandler<BlockExecutionEventsHandler>())
-                .Handle<BlockPartiallyExecutedEvent>(o => o.WithHandler<BlockExecutionEventsHandler>())
+                .Handle<BlockExecutedEvent>(o => o.WithHandler<BlockExecutedEventsHandler>())
                 .Handle<CrawlerMovedEvent>(o => o.WithHandler<CrawlerMovedEventsHandler>())
                 .Handle<ChainHeadExtendedEvent>(o => o.WithHandler<ChainHeadExtendedEventsHandler>())
                 .Handle<ChainHeadReducedEvent>(o => o.WithHandler<ChainHeadReducedEventsHandler>())

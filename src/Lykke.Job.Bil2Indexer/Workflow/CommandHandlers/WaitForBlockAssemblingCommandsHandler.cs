@@ -33,11 +33,18 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(command.BlockchainType, messageCorrelationId.Configuration);
+            var crawlerCorrelationId = crawler.GetCorrelationId();
 
-            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
-                // Disordered message, we should ignore it.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
+            }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
             }
 
             var block = await _blockHeadersRepository.GetAsync(command.BlockchainType, command.BlockId);

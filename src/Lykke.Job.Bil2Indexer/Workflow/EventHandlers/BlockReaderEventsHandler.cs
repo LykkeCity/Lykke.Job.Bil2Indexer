@@ -55,11 +55,18 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, evt.BlockNumber);
+            var crawlerCorrelationId = crawler.GetCorrelationId();
 
-            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
-                // Disordered message, we should ignore it.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
+            }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
             }
 
             var blockHeader = await _blockHeadersRepository.GetOrDefaultAsync(blockchainType, evt.BlockId)
@@ -93,11 +100,18 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, evt.BlockNumber);
+            var crawlerCorrelationId = crawler.GetCorrelationId();
 
-            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
-                // Disordered message, we should ignore it.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
+            }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
             }
 
             // TODO: To avoid Hangfire job usage, we can add message time to the message and retry the message until timeout is not elapsed.
@@ -119,11 +133,18 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
+            var crawlerCorrelationId = crawler.GetCorrelationId();
 
-            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
-                // Disordered message, we should ignore it.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
+            }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
             }
 
             var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
@@ -184,11 +205,18 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
+            var crawlerCorrelationId = crawler.GetCorrelationId();
 
-            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
-                // Disordered message, we should ignore it.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
+            }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
             }
 
             var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
@@ -248,11 +276,18 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
+            var crawlerCorrelationId = crawler.GetCorrelationId();
 
-            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
-                // Disordered message, we should ignore it.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
+            }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
             }
             
             var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);

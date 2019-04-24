@@ -21,6 +21,7 @@ create table chain_heads
     blockchain_type    text   not null,
     first_block_number bigint not null,
     block_number       bigint,
+    sequence           bigint not null,
     block_id           text,
     prev_block_id      text,
     constraint chain_heads_pk

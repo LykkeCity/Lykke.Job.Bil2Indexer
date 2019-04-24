@@ -29,45 +29,70 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
         public async Task<MessageHandlingResult> HandleAsync(ChainHeadExtendedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
+            var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
+            var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
+            var chainHeadCorrelationId = chainHead.GetCorrelationId();
+
+            if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId))
+            {
+                // The message is legacy, it already was processed for sure, we can ignore it.
+                return MessageHandlingResult.Success();
+            }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(chainHeadCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
+            }
+
             var settings = _settingsProvider.Get(evt.BlockchainType);
+            var nextBlockNumber = evt.BlockNumber + 1;
+            var nextBlock = await _blockHeadersRepository.GetOrDefaultAsync(evt.BlockchainType, nextBlockNumber);
+
+            if (nextBlock == null)
+            {
+                // If the next block header is not even received yet, the chain head will be extended once block
+                // is assembled. This will be triggered by BlockAssembledEvent.
+                return MessageHandlingResult.Success();
+            }
 
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
-                var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
-                var nextBlockNumber = evt.BlockNumber + 1;
-
-                if (messageCorrelationId.Configuration.CanProcess(nextBlockNumber))
+                if (nextBlock.IsAssembled)
                 {
-                    // If the next block is within the crawler assembling range, then the chain head will
-                    // be extended after ending of the assembling.
-                    return MessageHandlingResult.Success();
+                    // If the next block is assembled already, we should extend the chain head bypassing BlockAssembledEvent.
+                    replyPublisher.Publish(new ExtendChainHeadCommand
+                    {
+                        BlockchainType = evt.BlockchainType,
+                        ToBlockNumber = nextBlock.Number,
+                        ToBlockId = nextBlock.Id
+                    });
                 }
-
-                var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
-
-                if (!chainHead.CanExtendTo(nextBlockNumber))
-                {
-                    return MessageHandlingResult.Success();
-                }
-
-                var nextBlock = await _blockHeadersRepository.GetOrDefaultAsync(evt.BlockchainType, nextBlockNumber);
-
-                if (nextBlock == null || !nextBlock.IsAssembled)
-                {
-                    // If the next block block is not assembled yet no bypassing of the BlockAssembledEvent is
-                    // required.
-                    return MessageHandlingResult.Success();
-                }
-
-                replyPublisher.Publish(new ExtendChainHeadCommand
-                {
-                    BlockchainType = evt.BlockchainType,
-                    ToBlockNumber = nextBlock.Number,
-                    ToBlockId = nextBlock.Id,
-                    ChainHeadVersion = chainHead.Version
-                });
             }
-            else if(settings.Capabilities.TransferModel != BlockchainTransferModel.Coins)
+            else if(settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
+            {
+                if (nextBlock.IsPartiallyExecuted)
+                {
+                    // If the next block is partially executed, we should execute it again
+                    // since all data for the execution should be in-place now. We need to do it bypassing BlockAssembledEvent.
+                    replyPublisher.Publish(new ExecuteTransferCoinsBlockCommand
+                    {
+                        BlockchainType = evt.BlockchainType,
+                        BlockId = nextBlock.Id
+                    });
+                } 
+                else if (nextBlock.IsExecuted)
+                {
+                    // If the next block is executed already, we can just extend the chain head to it.
+                    replyPublisher.Publish(new ExtendChainHeadCommand
+                    {
+                        BlockchainType = evt.BlockchainType,
+                        ToBlockNumber = nextBlock.Number,
+                        ToBlockId = nextBlock.Id
+                    });
+                }
+            }
+            else
             {
                 throw new ArgumentOutOfRangeException(nameof(settings.Capabilities.TransferModel), settings.Capabilities.TransferModel, "Unknown transfer model");
             }

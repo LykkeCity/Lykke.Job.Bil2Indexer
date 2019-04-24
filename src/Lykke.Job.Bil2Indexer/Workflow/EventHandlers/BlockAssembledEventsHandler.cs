@@ -35,18 +35,26 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         public async Task<MessageHandlingResult> HandleAsync(BlockAssembledEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
-
             var newBlock = await _blockHeadersRepository.GetAsync(evt.BlockchainType, evt.BlockId);
+            
             var (previousBlock, crawler) = await TaskExecution.WhenAll
             (
                 _blockHeadersRepository.GetOrDefaultAsync(evt.BlockchainType, newBlock.Number - 1),
                 _crawlersManager.GetCrawlerAsync(evt.BlockchainType, newBlock.Number)
             );
+            
+            var crawlerCorrelationId = crawler.GetCorrelationId();
 
-            if (!crawler.GetCorrelationId().Equals(messageCorrelationId))
+            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
-                // Disordered message, we should ignore it.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return MessageHandlingResult.Success();
+            }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                return MessageHandlingResult.TransientFailure();
             }
 
             long nextBlockNumber;
@@ -105,29 +113,35 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             // TODO: Should be published only on forward movement?
 
             var settings = _settingsProvider.Get(evt.BlockchainType);
+            var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
+            var chainHeadCorrelationId = chainHead.GetCorrelationId();
 
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
             {
-                replyPublisher.Publish(new ExecuteTransferCoinsBlockCommand
-                {
-                    BlockchainType = evt.BlockchainType,
-                    BlockId = newBlock.Id,
-                    BlockVersion = newBlock.Version
-                });
+                replyPublisher.Publish
+                (
+                    new ExecuteTransferCoinsBlockCommand
+                    {
+                        BlockchainType = evt.BlockchainType,
+                        BlockId = newBlock.Id
+                    },
+                    chainHeadCorrelationId.ToString()
+                );
             }
             else if(settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
-                var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
-
                 if (chainHead.CanExtendTo(newBlock.Number))
                 {
-                    replyPublisher.Publish(new ExtendChainHeadCommand
-                    {
-                        BlockchainType = evt.BlockchainType,
-                        ToBlockNumber = newBlock.Number,
-                        ToBlockId = newBlock.Id,
-                        ChainHeadVersion = chainHead.Version
-                    });
+                    replyPublisher.Publish
+                    (
+                        new ExtendChainHeadCommand
+                        {
+                            BlockchainType = evt.BlockchainType,
+                            ToBlockNumber = newBlock.Number,
+                            ToBlockId = newBlock.Id,
+                        },
+                        chainHeadCorrelationId.ToString()
+                    );
                 }
             }
             else
