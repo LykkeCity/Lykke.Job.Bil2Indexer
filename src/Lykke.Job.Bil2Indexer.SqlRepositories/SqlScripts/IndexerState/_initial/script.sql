@@ -9,7 +9,7 @@ create table block_headers
     previous_block_id text,
     state             integer,
     id                text    not null,
-    constraint block_headers_pk
+    constraint block_headers_natural_key_pk
         primary key (blockchain_type, id)
 );
 
@@ -24,7 +24,7 @@ create table chain_heads
     sequence           bigint not null,
     block_id           text,
     prev_block_id      text,
-    constraint chain_heads_pk
+    constraint chain_heads_natural_key_pk
         primary key (blockchain_type)
 );
 

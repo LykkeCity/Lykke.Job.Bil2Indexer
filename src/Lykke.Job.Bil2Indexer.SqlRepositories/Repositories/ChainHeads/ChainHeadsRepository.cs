@@ -72,7 +72,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
                     {
                         await db.SaveChangesAsync();
                     }
-                    catch (PostgresException e) when (e.IsUniqueConstraintViolationException())
+                    catch (DbUpdateException e) when (e.IsNaturalKeyViolationException())
                     {
                         throw new OptimisticConcurrencyException(e);
                     }

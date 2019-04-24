@@ -10,11 +10,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers
         private const string NaturalKeyNamingPolicy = "natural_key";
         public static bool IsNaturalKeyViolationException(this DbUpdateException e)
         {
-            return e.InnerException is PostgresException pgEx && pgEx.IsUniqueConstraintViolationException();
+            return e.InnerException is PostgresException pgEx && pgEx.IsNaturalKeyViolationException();
         }
 
 
-        public static bool IsUniqueConstraintViolationException(this PostgresException e)
+        public static bool IsNaturalKeyViolationException(this PostgresException e)
         {
             const string constraintViolationErrorCode = "23505";
             if (string.Equals(e.SqlState, constraintViolationErrorCode, StringComparison.InvariantCultureIgnoreCase)

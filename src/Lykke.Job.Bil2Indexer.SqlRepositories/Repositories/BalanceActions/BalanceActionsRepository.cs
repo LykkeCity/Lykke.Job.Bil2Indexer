@@ -49,7 +49,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 {
                     _copyMapper.SaveAll(conn, dbEntities);
                 }
-                catch (PostgresException e) when(e.IsUniqueConstraintViolationException())
+                catch (PostgresException e) when(e.IsNaturalKeyViolationException())
                 {
                     var notExisted = await ExcludeExistedInDbAsync(dbEntities);
 
