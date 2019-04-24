@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Dapper;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -79,7 +79,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 var txIds = dbEntities.Select(p => p.TransactionId).ToList();
 
                 var query = db.BalanceActions
-                        .Where(p => p.BlockchainType == blockchainType)
+                        .Where(BalanceActionsPredicates.Build(blockchainType, txIds))
                         .Where(p => txIds.Contains(p.TransactionId))
                     .Select(p => new { p.BlockchainType, p.TransactionId, p.Address,  p.AssetId, p.AssetAddress });
 
@@ -99,62 +99,67 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 await db.BalanceActions
-                    .Where(p => p.BlockchainType == blockchainType && p.BlockId == blockId)
+                    .Where(BalanceActionsPredicates.Build(blockchainType, blockId))
                     .DeleteAsync();
             }
         }
 
         public async Task<Money> GetBalanceAsync(string blockchainType, Address address, Asset asset, long atBlockNumber)
         {
-            //TODO rewrite via dapper and plain sql
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            var getAssetInfo = _assetInfosProvider.GetAsync(blockchainType, asset);
+
+            const string query =
+                  @"select 
+                        sum(value) :: text as sum
+                    from balance_actions
+                    where  blockchain_type = @blockchainType 
+                            and address = @address 
+                            and block_number <= @blockNumber 
+                            and asset_id = @assetId 
+                            and asset_address = @assetAddress";
+
+            using (var conn = new NpgsqlConnection(_posgresConnstring))
             {
-                var addresString = address.ToString();
-                var assetIdString = asset.Id.ToString();
-                var assetAddressString = asset.Address?.ToString();
+                var getSum = conn.QuerySingleAsync<string>(query, new { blockchainType ,
+                    address = address.ToString(),
+                    blockNumber = atBlockNumber,
+                    assetId = asset.Id.ToString(),
+                    assetAddress = asset.Address.ToString()
+                });
 
-                var queryRes = (await db.BalanceActions.Where(p =>
-                        p.BlockchainType == blockchainType 
-                        && p.BlockNumber <= atBlockNumber 
-                        && p.Address == addresString
-                        && p.AssetId == assetIdString
-                        && p.AssetAddress == assetAddressString)
-                    .ToListAsync())
-                    .GroupBy(p=>p.AssetId)
-                    .Select(p => new
-                    {
-                        Sum = p.Sum(x => x.Value).ToString(CultureInfo.InvariantCulture),
-                        Scale = p.First().ValueScale
-                    }).FirstOrDefault();
+                await Task.WhenAll(getAssetInfo, getSum);
 
-                return queryRes != null ? MoneyHelper.BuildMoney(queryRes.Sum, queryRes.Scale) : Money.Parse("0");
+                return getSum.Result == null ? Money.Parse("0") :  MoneyHelper.BuildMoney(getSum.Result, getAssetInfo.Result.Scale);
             }
         }
 
         public async Task<IReadOnlyDictionary<Asset, Money>> GetBalancesAsync(string blockchainType, Address address, long atBlockNumber)
         {
-            //TODO rewrite via dapper and plain sql
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            const string query =
+                  @"select 
+                        sum(value) :: text as sum, 
+                        asset_id as assetId, 
+                        asset_address as assetAddress
+                    from balance_actions
+                    where  blockchain_type = @blockchainType 
+                            and address = @address 
+                            and block_number <= @blockNumber 
+                    group by asset_id, asset_address";
+
+            using (var conn = new NpgsqlConnection(_posgresConnstring))
             {
-                var addresString = address.ToString();
+                var assetBalances = (await conn.QueryAsync<(string sum, string assetId, string assetAddress)>(query, new
+                {
+                    blockchainType,
+                    address = address.ToString(),
+                    blockNumber = atBlockNumber
+                })).ToDictionary(p => new Asset(new AssetId(p.assetId), p.assetAddress != null ? new AssetAddress(p.assetAddress): null), 
+                    p => p.sum);
 
-                var queryRes = (await db.BalanceActions.Where(p =>
-                        p.BlockchainType == blockchainType
-                        && p.Address == addresString
-                        && p.BlockNumber <= atBlockNumber)
-                        .ToListAsync())
-                    .GroupBy(p => p.AssetId)
-                    .Select(p => new
-                    {
-                        Sum = p.Sum(x => x.Value).ToString(CultureInfo.InvariantCulture),
-                        Scale = p.First().ValueScale,
-                        p.First().AssetId,
-                        p.First().AssetAddress
-                    });
-
-                return queryRes.ToDictionary(
-                    p => new Asset(new AssetId(p.AssetId), new AssetAddress(p.AssetAddress)),
-                    p => MoneyHelper.BuildMoney(p.Sum, p.Scale));
+                var assetScales = (await _assetInfosProvider.GetSomeOfAsync(blockchainType, assetBalances.Select(p => p.Key)))
+                    .ToDictionary(p => p.Asset, p => p.Scale);
+                
+                return assetBalances.ToDictionary(p => p.Key, p => MoneyHelper.BuildMoney(p.Value, assetScales[p.Key]));
             }
         }
 
@@ -162,17 +167,13 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             string blockchainType, 
             ISet<TransactionId> transactionIds)
         {
-            //TODO rewrite via dapper and plain sql
-            var ids = transactionIds.Select(p => p.ToString()).ToList();
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
-                var queryRes = await db.BalanceActions.Where(p =>
-                        p.BlockchainType == blockchainType
-                        && ids.Any(x => x == p.TransactionId))
+                var queryRes = await db.BalanceActions.Where(BalanceActionsPredicates.Build(blockchainType, transactionIds))
                     .Select(p => new
                     {
                         p.TransactionId,
-                        Value = p.Value.ToString(CultureInfo.InvariantCulture),
+                        p.ValueString,
                         p.ValueScale,
                         p.AssetId,
                         p.AssetAddress,
@@ -195,7 +196,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                                     : null
                             )
                         ),
-                        x => MoneyHelper.BuildMoney(x.Value, x.ValueScale)
+                        x => MoneyHelper.BuildMoney(x.ValueString, x.ValueScale)
                     );
                 });
             }

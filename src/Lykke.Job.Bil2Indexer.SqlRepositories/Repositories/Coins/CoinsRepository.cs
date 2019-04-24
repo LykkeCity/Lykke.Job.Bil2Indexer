@@ -92,12 +92,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
                 if (foundCount != ids.Count)
                 {
-                    var notFound = (await db.Coins.Where(BuildNotPredicate(blockchainType, ids))
+                    var found = (await db.Coins.Where(BuildPredicate(blockchainType, ids))
                             .Select(p => new { p.TransactionId, p.CoinNumber }).ToListAsync())
                         .Select(p => new CoinId(p.TransactionId, p.CoinNumber))
                         .ToDictionary(p => p);
 
-                    var notFoundIds = ids.Where(p => notFound.ContainsKey(p)).ToList();
+                    var notFoundIds = ids.Where(p => !found.ContainsKey(p)).ToList();
 
                     throw new ArgumentException($"Not found entities to set spend. Passed: {ids.Count}, updated: {foundCount}, not found {notFoundIds.ToJson()}");
                 }
@@ -113,12 +113,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
                 if (foundCount != ids.Count)
                 {
-                    var notFound = (await db.Coins.Where(BuildNotPredicate(blockchainType, ids))
+                    var found = (await db.Coins.Where(BuildPredicate(blockchainType, ids))
                             .Select(p => new {p.TransactionId, p.CoinNumber}).ToListAsync())
                         .Select(p => new CoinId(p.TransactionId, p.CoinNumber))
                         .ToDictionary(p => p);
 
-                    var notFoundIds = ids.Where(p => notFound.ContainsKey(p)).ToList();
+                    var notFoundIds = ids.Where(p => !found.ContainsKey(p)).ToList();
 
                     throw new ArgumentException($"Not found entities to revert spend. Passed: {ids.Count}, updated: {foundCount}, not found {notFoundIds.ToJson()}");
                 }
@@ -139,18 +139,15 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds)
         {
-            var ids = receivedInTransactionIds.Select(p => p.ToString()).ToList();
-
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 await db.Coins
-                        .Where(p => p.BlockchainType == blockchainType)
-                        .Where(p => ids.Contains(p.TransactionId))
+                        .Where(BuildPredicate(blockchainType, receivedInTransactionIds))
                     .UpdateAsync(p => new CoinEntity {IsDeleted = true});
             }
         }
 
-        private Expression<Func<CoinEntity, bool>> BuildPredicate(string blockchainType, IReadOnlyCollection<CoinId> ids)
+        private Expression<Func<CoinEntity, bool>> BuildPredicate(string blockchainType, IEnumerable<CoinId> ids)
         {
             var coinIds = ids.Select(p => p.BuildCoinId()).ToList();
 
@@ -158,13 +155,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                              && coinIds.Contains(dbCoin.CoinId);
         }
 
-        private Expression<Func<CoinEntity, bool>> BuildNotPredicate(string blockchainType, IReadOnlyCollection<CoinId> ids)
+        private Expression<Func<CoinEntity, bool>> BuildPredicate(string blockchainType, IEnumerable<TransactionId> txIds)
         {
-            var coinIds = ids.Select(p => p.BuildCoinId()).ToList();
+            var stringTxIds = txIds.Select(p => p.ToString()).ToList();
 
             return dbCoin => dbCoin.BlockchainType == blockchainType
-                             && !ids.Any(coinRef => coinRef.TransactionId == dbCoin.TransactionId
-                                                    && !coinIds.Contains(dbCoin.CoinId));
+                             && stringTxIds.Contains(dbCoin.TransactionId);
         }
     }
 }

@@ -97,6 +97,12 @@ create unique index balance_actions_natural_key_index_1
 create unique index balance_actions_natural_key_index_2
     on balance_actions (blockchain_type, transaction_id, address, asset_id, asset_address)
     where asset_address is not null;
+    
+create index balance_actions_blockchain_type_address_transactions
+    on balance_actions (blockchain_type, address, transaction_id);
+
+create index balance_actions_blockchain_type_block_id
+    on balance_actions (blockchain_type, block_id);
 
 create index query_covered_by_address
     on balance_actions (blockchain_type, address, block_number desc, asset_id, asset_address, value);

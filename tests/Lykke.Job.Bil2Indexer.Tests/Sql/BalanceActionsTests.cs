@@ -9,7 +9,6 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions;
 using Lykke.Job.Bil2Indexer.Tests.Sql.Mocks;
-using Lykke.Logs;
 using Lykke.Numerics;
 using Moq;
 using NUnit.Framework;
@@ -22,8 +21,6 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanSaveAndRead()
         {
-
-
             var address = BuildRandmomAddress();
             var asset = BuildRandmomAsset();
             var scale = new Random().Next(0, 15);
@@ -95,13 +92,43 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             await repo.AddIfNotExistsAsync(bType, actions);
         }
 
+        [Test]
+        public async Task CanHandleEmpty()
+        {
+            var address = BuildRandmomAddress();
+            var asset = BuildRandmomAsset();
+            var scale = new Random().Next(0, 15);
+            var bType = Guid.NewGuid().ToString();
+
+
+            var sum = Money.Parse("0");
+
+
+            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
+                BuildProviderMock(asset, bType, scale).Object);
+
+            var retrievedSum = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);
+
+            Assert.AreEqual(sum, retrievedSum);
+
+            var notIxistedTxids = Enumerable.Range(0, 99).Select(p => new TransactionId(Guid.NewGuid().ToString())).ToHashSet();
+            var byTx = await repo.GetSomeOfBalancesAsync(bType, notIxistedTxids);
+
+            Assert.AreEqual( byTx.Count, 0 );
+
+            var allAssets = await repo.GetBalancesAsync(bType, address, long.MaxValue);
+
+            Assert.AreEqual(allAssets.Count, 0);
+        }
+
         private BalanceAction BuildRandomBalanceAction(Asset asset, Address address, int scale, string transactionId = null)
         {
             var rdm = new Random();
-            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(rdm.Next()), scale),
+            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(double.MaxValue - rdm.Next()), scale),
                 rdm.Next(1, 123333), new BlockId(Guid.NewGuid().ToString()),
                 new TransactionId(transactionId ?? Guid.NewGuid().ToString()));
         }
+
         private Asset BuildRandmomAsset()
         {
             return new Asset(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());

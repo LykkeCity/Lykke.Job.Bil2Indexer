@@ -30,9 +30,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
         [Column("transaction_id")]
         public string TransactionId { get; set; }
 
-        [Column("value")]
-        public decimal Value { get; set; }
-
         [Column("value_scale")]
         public int ValueScale { get; set; }
 
