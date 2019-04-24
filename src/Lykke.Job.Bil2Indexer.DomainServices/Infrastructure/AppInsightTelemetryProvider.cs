@@ -63,7 +63,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
 
         public string FormatOperationName<TDecorated>(TDecorated repositoryName, [CallerMemberName]string methodName = null)
         {
-            return $"Repository: {repositoryName.ToString()}:{methodName}";
+            return $"{typeof(TDecorated).Name}:{methodName}";
         }
     }
 }

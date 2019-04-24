@@ -13,63 +13,63 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
     public class CoinsRepositoryAppInsightDecorator : ICoinsRepository
     {
         private readonly IAppInsightTelemetryProvider _appInsightTelemetryProvider;
-        private readonly ICoinsRepository _coinsRepository;
+        private readonly ICoinsRepository _impl;
 
         public CoinsRepositoryAppInsightDecorator(ICoinsRepository coinsRepository,
             IAppInsightTelemetryProvider appInsightTelemetryProvider)
         {
-            _coinsRepository = coinsRepository;
+            _impl = coinsRepository;
             _appInsightTelemetryProvider = appInsightTelemetryProvider;
         }
 
         public async Task AddIfNotExistsAsync(IReadOnlyCollection<Coin> coins)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(_coinsRepository);
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{Guid.NewGuid()}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _coinsRepository.AddIfNotExistsAsync(coins));
+                async () => await _impl.AddIfNotExistsAsync(coins));
         }
 
         public async Task SpendAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(_coinsRepository);
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _coinsRepository.SpendAsync(blockchainType, ids));
+                async () => await _impl.SpendAsync(blockchainType, ids));
         }
 
         public async Task RevertSpendingAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(_coinsRepository);
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _coinsRepository.RevertSpendingAsync(blockchainType, ids));
+                async () => await _impl.RevertSpendingAsync(blockchainType, ids));
         }
 
         public async Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(_coinsRepository);
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _coinsRepository.GetSomeOfAsync(blockchainType, ids));
+                async () => await _impl.GetSomeOfAsync(blockchainType, ids));
         }
 
         public async Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(_coinsRepository);
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _coinsRepository.RemoveIfExistAsync(blockchainType, receivedInTransactionIds));
+                async () => await _impl.RemoveIfExistAsync(blockchainType, receivedInTransactionIds));
         }
     }
 }

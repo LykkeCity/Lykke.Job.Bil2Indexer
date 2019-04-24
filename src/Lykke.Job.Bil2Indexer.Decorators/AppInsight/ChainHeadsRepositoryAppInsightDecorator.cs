@@ -9,44 +9,44 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
     [UsedImplicitly]
     public class ChainHeadsRepositoryAppInsightDecorator : IChainHeadsRepository
     {
-        private readonly IChainHeadsRepository _chainHeadsRepository;
+        private readonly IChainHeadsRepository _impl;
         private readonly IAppInsightTelemetryProvider _appInsightTelemetryProvider;
 
         public ChainHeadsRepositoryAppInsightDecorator(IChainHeadsRepository chainHeadsRepository,
             IAppInsightTelemetryProvider appInsightTelemetryProvider)
         {
-            _chainHeadsRepository = chainHeadsRepository;
+            _impl = chainHeadsRepository;
             _appInsightTelemetryProvider = appInsightTelemetryProvider;
         }
 
         public async Task<ChainHead> GetOrDefaultAsync(string blockchainType)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(_chainHeadsRepository);
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _chainHeadsRepository.GetOrDefaultAsync(blockchainType));
+                async () => await _impl.GetOrDefaultAsync(blockchainType));
         }
 
         public async Task<ChainHead> GetAsync(string blockchainType)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(_chainHeadsRepository);
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}";
 
             return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _chainHeadsRepository.GetAsync(blockchainType));
+                async () => await _impl.GetAsync(blockchainType));
         }
 
         public async Task SaveAsync(ChainHead head)
         {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(_chainHeadsRepository);
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{head.BlockId}";
 
             await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _chainHeadsRepository.SaveAsync(head));
+                async () => await _impl.SaveAsync(head));
         }
     }
 }
