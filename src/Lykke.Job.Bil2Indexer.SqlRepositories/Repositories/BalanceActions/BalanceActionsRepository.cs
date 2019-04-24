@@ -80,7 +80,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
                 var query = db.BalanceActions
                         .Where(BalanceActionsPredicates.Build(blockchainType, txIds))
-                        .Where(p => txIds.Contains(p.TransactionId))
                     .Select(p => new { p.BlockchainType, p.TransactionId, p.Address,  p.AssetId, p.AssetAddress });
 
                 var existedNaturalIds = (await query
