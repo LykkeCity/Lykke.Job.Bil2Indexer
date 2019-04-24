@@ -17,7 +17,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions.Mapp
                 BlockId = source.BlockId,
                 BlockNumber = source.BlockNumber,
                 ValueScale = source.Amount.Scale,
-                Value = -1, // set from value string via db trigger
                 ValueString = MoneyHelper.BuildPgString(source.Amount),
                 Address = source.AccountId.Address,
                 ValueMoney = source.Amount
