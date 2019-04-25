@@ -243,13 +243,14 @@ namespace Lykke.Job.Bil2Indexer.Domain
             IReadOnlyCollection<Coin> coinsToSpend)
         {
             var actions = coinsToSpend
-                .Where(c => c.Address != null)
+                .Where(x => x.Address != null)
+                .GroupBy(x => new {x.Address, x.Asset})
                 .Select
                 (
-                    x => new BalanceAction
+                    g => new BalanceAction
                     (
-                        new AccountId(x.Address, x.Asset),
-                        -(Money) x.Value,
+                        new AccountId(g.Key.Address, g.Key.Asset),
+                        -(Money) g.Sum(x => x.Value),
                         Number,
                         Id,
                         transaction.TransactionId

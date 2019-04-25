@@ -14,6 +14,7 @@ using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
+using Lykke.Numerics.Linq;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 {
@@ -151,12 +152,13 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
             var actions = evt.BalanceChanges
                 .Where(x => x.Address != null)
+                .GroupBy(x => new {x.Address, x.Asset})
                 .Select
                 (
-                    x => new BalanceAction
+                    g => new BalanceAction
                     (
-                        new AccountId(x.Address, x.Asset),
-                        x.Value,
+                        new AccountId(g.Key.Address, g.Key.Asset),
+                        g.Sum(x => x.Value),
                         crawler.ExpectedBlockNumber,
                         evt.BlockId,
                         evt.TransactionId
@@ -241,13 +243,14 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             var saveCoinsTask = _coinsRepository.AddIfNotExistsAsync(coins);
 
             var actions = evt.ReceivedCoins
-                .Where(c => c.Address != null)
+                .Where(x => x.Address != null)
+                .GroupBy(x => new {x.Address, x.Asset})
                 .Select
                 (
-                    x => new BalanceAction
+                    g => new BalanceAction
                     (
-                        new AccountId(x.Address, x.Asset),
-                        x.Value,
+                        new AccountId(g.Key.Address, g.Key.Asset),
+                        g.Sum(x => x.Value),
                         crawler.ExpectedBlockNumber,
                         evt.BlockId,
                         evt.TransactionId
