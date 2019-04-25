@@ -1,0 +1,77 @@
+Bil2IndexerJob:
+  Db:
+    LogsConnString:
+      settings-key: Bil2IndexerJob-LogsConnString
+      types:
+        - AzureTableStorage
+    PgBlockchainDataConnString:
+      settings-key: Bil2IndexerJob-PgBlockchainDataConnString
+      types:
+        - AzureTableStorage
+    PgStateDataConnString:
+      settings-key: Bil2IndexerJob-PgStateDataConnString
+      types:
+        - AzureTableStorage
+    PgTransactionsDataConnString:
+      settings-key: Bil2IndexerJob-PgTransactionsDataConnString
+      types:
+        - AzureTableStorage
+  RabbitMq:
+    ConnString:
+      settings-key: Bil2IndexerJob-RabbitMqConnString
+      types:
+        - RabbitMq
+    Vhost:
+      settings-key: Bil2IndexerJob-RabbitMqVhost
+    MessageConsumersCount:
+      settings-key: Bil2IndexerJob-MessageConsumersCount
+      types:
+        - Optional
+    MessageProcessorsCount:
+      settings-key: Bil2IndexerJob-MessageProcessorsCount
+      types:
+        - Optional
+    DefaultFirstLevelRetryTimeout:
+      settings-key: Bil2IndexerJob-DefaultFirstLevelRetryTimeout
+      types:
+        - Optional
+    MaxFirstLevelRetryMessageAge:
+      settings-key: Bil2IndexerJob-MaxFirstLevelRetryMessageAge
+      types:
+        - Optional
+    MaxFirstLevelRetryCount:
+      settings-key: Bil2IndexerJob-MaxFirstLevelRetryCount
+      types:
+        - Optional
+    FirstLevelRetryQueueCapacity:
+      settings-key: Bil2IndexerJob-FirstLevelRetryQueueCapacity
+      types:
+        - Optional
+    ProcessingQueueCapacity:
+      settings-key: Bil2IndexerJob-ProcessingQueueCapacity
+      types:
+        - Optional
+
+  AssetsCaching:
+    LruCacheCapacity:
+      settings-key: Bil2IndexerJob-AssetsCachingLruCacheCapacity
+  BlocksAssembling:
+    RetryTimeout:
+      settings-key: Bil2IndexerJob-BlocksAssemblingRetryTimeout
+BlockchainIntegrations:
+  settings-key: BlockchainIntegrations
+  types:
+    - JsonArray
+
+SlackNotifications:
+    AzureQueue:
+        ConnectionString:
+            settings-key: SlackNotificationsConnString
+            types:
+                - AzureTableStorage
+        QueueName:
+            settings-key: SlackQueueName
+MonitoringServiceClient:
+    MonitoringServiceUrl:
+        settings-key: MonitoringServiceUrl
+
