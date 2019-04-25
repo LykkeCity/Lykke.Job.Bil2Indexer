@@ -3,7 +3,7 @@ create table block_headers
 (
     blockchain_type   text    not null,
     number            bigint  not null,
-    mined_at          date    not null,
+    mined_at          timestamp with time zone     not null,
     size              integer not null,
     transaction_count integer not null,
     previous_block_id text,

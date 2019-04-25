@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using Common;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes;
@@ -76,10 +77,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
         private void AssertEquals(FeeEnvelope a, FeeEnvelope b)
         {
-            Assert.AreEqual(a.BlockId, b.BlockId);
-            Assert.AreEqual(a.BlockchainType, b.BlockchainType);
-            Assert.AreEqual(a.TransactionId, b.TransactionId);
-            Assert.AreEqual(a.Fee, b.Fee);
+            Assert.AreEqual(a.ToJson(), b.ToJson());
         }
     }
 }

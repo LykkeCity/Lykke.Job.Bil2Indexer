@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using Common;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins;
@@ -144,15 +145,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
         private void AssertEquals(Coin a, Coin b)
         {
-            Assert.AreEqual(a.Address, b.Address);
-            Assert.AreEqual(a.Id, b.Id);
-            Assert.AreEqual(a.AddressNonce, b.AddressNonce);
-            Assert.AreEqual(a.AddressTag, b.AddressTag);
-            Assert.AreEqual(a.AddressTagType, b.AddressTagType);
-            Assert.AreEqual(a.Asset, b.Asset);
-            Assert.AreEqual(a.IsSpent, b.IsSpent);
-            Assert.AreEqual(a.BlockchainType, b.BlockchainType);
-            Assert.AreEqual(a.Value, b.Value);
+            Assert.AreEqual(a.ToJson(), b.ToJson());
         }
 
         private Coin GenerateRandom(string blockchainType)

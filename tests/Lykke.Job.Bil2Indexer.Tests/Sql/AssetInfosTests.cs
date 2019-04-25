@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Common;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos;
@@ -56,9 +57,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
         private void AssertEquals(AssetInfo a, AssetInfo b)
         {
-            Assert.AreEqual(a.BlockchainType, b.BlockchainType);
-            Assert.AreEqual(a.Asset.Id, b.Asset.Id);
-            Assert.AreEqual(a.Scale, b.Scale);
+            Assert.AreEqual(a.ToJson(), b.ToJson());
         }
 
     }
