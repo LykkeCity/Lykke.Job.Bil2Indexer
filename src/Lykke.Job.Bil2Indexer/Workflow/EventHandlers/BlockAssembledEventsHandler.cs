@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Common.Log;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
@@ -19,13 +21,16 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly IntegrationSettingsProvider _settingsProvider;
         private readonly IChainHeadsRepository _chainHeadsRepository;
+        private readonly ILog _log;
 
         public BlockAssembledEventsHandler(
+            ILogFactory logFactory,
             ICrawlersManager crawlersManager,
             IBlockHeadersRepository blockHeadersRepository,
             IntegrationSettingsProvider settingsProvider,
             IChainHeadsRepository chainHeadsRepository)
         {
+            _log = logFactory.CreateLog(this);
             _crawlersManager = crawlersManager;
             _blockHeadersRepository = blockHeadersRepository;
             _settingsProvider = settingsProvider;
@@ -48,6 +53,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
                 // The message is legacy, it already was processed for sure, we can ignore it.
+                _log.LogLegacyMessage(evt, headers);
+
                 return MessageHandlingResult.Success();
             }
 
@@ -113,9 +120,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             // TODO: Should be published only on forward movement?
 
             var settings = _settingsProvider.Get(evt.BlockchainType);
-            var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
-            var chainHeadCorrelationId = chainHead.GetCorrelationId();
-
+            
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
             {
                 replyPublisher.Publish
@@ -124,12 +129,13 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     {
                         BlockchainType = evt.BlockchainType,
                         BlockId = newBlock.Id
-                    },
-                    chainHeadCorrelationId.ToString()
+                    }
                 );
             }
             else if(settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
+                var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
+                
                 if (chainHead.CanExtendTo(newBlock.Number))
                 {
                     replyPublisher.Publish
@@ -140,7 +146,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                             ToBlockNumber = newBlock.Number,
                             ToBlockId = newBlock.Id,
                         },
-                        chainHeadCorrelationId.ToString()
+                        chainHead.GetCorrelationId().ToString()
                     );
                 }
             }

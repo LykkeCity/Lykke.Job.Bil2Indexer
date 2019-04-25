@@ -60,6 +60,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 !messageCorrelationId.IsPreviousOf(chainHeadCorrelationId))
             {
                 // The message is legacy, it already was processed for sure, we can ignore it.
+                _log.LogLegacyMessage(command, headers);
+
                 return MessageHandlingResult.Success();
             }
 

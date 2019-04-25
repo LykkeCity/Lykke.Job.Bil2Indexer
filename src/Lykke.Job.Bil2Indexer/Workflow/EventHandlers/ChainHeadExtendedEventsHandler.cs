@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Common.Log;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Infrastructure;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
@@ -16,12 +19,15 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         private readonly IChainHeadsRepository _chainHeadsRepository;
         private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly IntegrationSettingsProvider _settingsProvider;
+        private readonly ILog _log;
 
         public ChainHeadExtendedEventsHandler(
+            ILogFactory logFactory,
             IChainHeadsRepository chainHeadsRepository,
             IBlockHeadersRepository blockHeadersRepository,
             IntegrationSettingsProvider settingsProvider)
         {
+            _log = logFactory.CreateLog(this);
             _chainHeadsRepository = chainHeadsRepository;
             _blockHeadersRepository = blockHeadersRepository;
             _settingsProvider = settingsProvider;
@@ -36,6 +42,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId))
             {
                 // The message is legacy, it already was processed for sure, we can ignore it.
+                _log.LogLegacyMessage(evt, headers);
+
                 return MessageHandlingResult.Success();
             }
 

@@ -4,6 +4,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
 {
     public sealed class ChainHeadCorrelationId : IEquatable<ChainHeadCorrelationId>
     {
+        public const string Type = "ch#";
+
         public string BlockchainType { get; }
         public long Sequence { get; }
 
@@ -20,8 +22,15 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 throw new ArgumentNullException(nameof(correlationIdString));
             }
 
+            var type = CorrelationIdType.Parse(correlationIdString);
+
+            if (type != Type)
+            {
+                throw new InvalidOperationException($"Invalid correlation id type: {type}");
+            }
+
             var firstColonIndex = correlationIdString.IndexOf(':');
-            var blockchainType = correlationIdString.Substring(0, firstColonIndex);
+            var blockchainType = correlationIdString.Substring(3, firstColonIndex - 3);
             var sequenceString = correlationIdString.Substring(firstColonIndex + 1);
             var sequence = long.Parse(sequenceString);
 
@@ -30,7 +39,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public override string ToString()
         {
-            return $"{BlockchainType}:{Sequence}";
+            return $"{Type}{BlockchainType}:{Sequence}";
         }
 
         public bool IsPreviousOf(ChainHeadCorrelationId another)

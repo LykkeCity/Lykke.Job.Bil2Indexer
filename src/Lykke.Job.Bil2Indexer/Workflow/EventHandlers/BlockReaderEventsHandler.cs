@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Log;
 using Hangfire;
 using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
 using Lykke.Bil2.SharedDomain;
+using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
+using Lykke.Job.Bil2Indexer.Infrastructure;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
@@ -29,8 +32,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         private readonly ICoinsRepository _coinsRepository;
         private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
         private readonly IAssetInfosManager _assetInfosManager;
+        private readonly ILog _log;
 
         public BlockReaderEventsHandler(
+            ILogFactory logFactory,
             IMessageSendersFactory messageSendersFactory,
             IBlockHeadersRepository blockHeadersRepository,
             IntegrationSettingsProvider integrationSettingsProvider,
@@ -41,6 +46,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             IFeeEnvelopesRepository feeEnvelopesRepository,
             IAssetInfosManager assetInfosManager)
         {
+            _log = logFactory.CreateLog(this);
             _messageSendersFactory = messageSendersFactory;
             _blockHeadersRepository = blockHeadersRepository;
             _integrationSettingsProvider = integrationSettingsProvider;
@@ -61,6 +67,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
                 // The message is legacy, it already was processed for sure, we can ignore it.
+                _log.LogLegacyMessage(evt, headers);
+
                 return MessageHandlingResult.Success();
             }
 

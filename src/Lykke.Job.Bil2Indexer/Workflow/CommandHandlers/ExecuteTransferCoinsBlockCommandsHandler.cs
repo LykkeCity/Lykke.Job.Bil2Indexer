@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Common.Log;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
+using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Infrastructure;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Job.Bil2Indexer.Workflow.Events;
 
@@ -17,8 +20,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private readonly ICoinsRepository _coinsRepository;
         private readonly IBalanceActionsRepository _balanceActionsRepository;
         private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
+        private readonly ILog _log;
 
         public ExecuteTransferCoinsBlockCommandsHandler(
+            ILogFactory logFactory,
             IChainHeadsRepository chainHeadsRepository,
             IBlockHeadersRepository blockHeadersRepository,
             ITransactionsRepository transactionsRepository,
@@ -26,6 +31,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             IBalanceActionsRepository balanceActionsRepository,
             IFeeEnvelopesRepository feeEnvelopesRepository)
         {
+            _log = logFactory.CreateLog(this);
             _chainHeadsRepository = chainHeadsRepository;
             _blockHeadersRepository = blockHeadersRepository;
             _transactionsRepository = transactionsRepository;
@@ -36,23 +42,38 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
         public async Task<MessageHandlingResult> HandleAsync(ExecuteTransferCoinsBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
-            var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
-            var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
-            var chainHeadCorrelationId = chainHead.GetCorrelationId();
-
-            if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId))
+            // This message can be processed in both ChainHead and Crawler flows, but
+            // only within ChainHead flow it executes consistently with the ChainHead.
+            if (CorrelationIdType.Parse(headers.CorrelationId) == ChainHeadCorrelationId.Type)
             {
-                // The message is legacy, it already was processed for sure, we can ignore it.
+                var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
+                var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
+                var chainHeadCorrelationId = chainHead.GetCorrelationId();
+
+                if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId))
+                {
+                    // The message is legacy, it already was processed for sure, we can ignore it.
+                    _log.LogLegacyMessage(command, headers);
+
+                    return MessageHandlingResult.Success();
+                }
+
+                if (messageCorrelationId.IsPrematureRelativeTo(chainHeadCorrelationId))
+                {
+                    // The message is premature, it can't be processed yet, we should retry it later.
+                    return MessageHandlingResult.TransientFailure();
+                }
+            }
+
+            var block = await _blockHeadersRepository.GetOrDefaultAsync(command.BlockchainType, command.BlockId);
+
+            if (block == null)
+            {
+                // The block can be missed only if the message is legacy. We can ignore it.
+                _log.LogLegacyMessage(command, headers);
+
                 return MessageHandlingResult.Success();
             }
-
-            if (messageCorrelationId.IsPrematureRelativeTo(chainHeadCorrelationId))
-            {
-                // The message is premature, it can't be processed yet, we should retry it later.
-                return MessageHandlingResult.TransientFailure();
-            }
-
-            var block = await _blockHeadersRepository.GetAsync(command.BlockchainType, command.BlockId);
 
             if (block.CanBeExecuted)
             {

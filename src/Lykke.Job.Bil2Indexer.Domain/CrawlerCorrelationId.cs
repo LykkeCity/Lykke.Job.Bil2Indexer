@@ -4,6 +4,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
 {
     public sealed class CrawlerCorrelationId : IEquatable<CrawlerCorrelationId>
     {
+        public const string Type = "cr#";
+
         public string BlockchainType { get; }
         public CrawlerConfiguration Configuration { get; }
         public long Sequence { get; }
@@ -22,9 +24,16 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 throw new ArgumentNullException(nameof(correlationIdString));
             }
 
+            var type = CorrelationIdType.Parse(correlationIdString);
+
+            if (type != Type)
+            {
+                throw new InvalidOperationException($"Invalid correlation id type: {type}");
+            }
+
             var firstColonIndex = correlationIdString.IndexOf(':');
             var lastColonIndex = correlationIdString.LastIndexOf(':');
-            var blockchainType = correlationIdString.Substring(0, firstColonIndex);
+            var blockchainType = correlationIdString.Substring(3, firstColonIndex - 3);
             var configurationString = correlationIdString.Substring(firstColonIndex + 1, lastColonIndex - firstColonIndex - 1);
             var sequenceString = correlationIdString.Substring(lastColonIndex + 1);
             var sequence = long.Parse(sequenceString);
@@ -36,7 +45,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public override string ToString()
         {
-            return $"{BlockchainType}:{Configuration}:{Sequence}";
+            return $"{Type}{BlockchainType}:{Configuration}:{Sequence}";
         }
 
         public bool IsPreviousOf(CrawlerCorrelationId another)
