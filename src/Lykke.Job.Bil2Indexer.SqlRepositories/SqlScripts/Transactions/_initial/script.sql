@@ -3,9 +3,9 @@
 create table transactions
 (
     id                 uuid default uuid_generate_v1() not null,
-    blockchain_type    text                            not null,
-    block_id           text                            not null,
-    transaction_id     text                            not null,
+    blockchain_type    varchar(128)                            not null,
+    block_id           varchar(256)                            not null,
+    transaction_id     varchar(256)                            not null,
     transaction_number integer                         not null,
     type               integer                         not null,
     payload            jsonb                           not null,

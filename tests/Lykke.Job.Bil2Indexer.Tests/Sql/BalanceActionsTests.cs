@@ -131,7 +131,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
         private Asset BuildRandmomAsset()
         {
-            return new Asset(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
+            return new Asset(Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString());
         }
 
         private Address BuildRandmomAddress()

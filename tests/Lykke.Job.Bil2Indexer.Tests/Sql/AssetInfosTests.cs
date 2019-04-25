@@ -51,7 +51,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
         private AssetInfo BuildRandomAssetInfo()
         {
-            return new AssetInfo(Guid.NewGuid().ToString(), new Asset(Guid.NewGuid().ToString()), new Random().Next() );
+            return new AssetInfo(Guid.NewGuid().ToString("N"), new Asset(Guid.NewGuid().ToString("N")), new Random().Next() );
         }
 
 

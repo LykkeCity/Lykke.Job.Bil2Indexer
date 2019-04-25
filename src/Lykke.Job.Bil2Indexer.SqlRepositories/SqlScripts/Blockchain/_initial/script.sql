@@ -11,19 +11,19 @@ end;
 create table coins
 (
     id               uuid default uuid_generate_v1() not null,
-    blockchain_type  text                            not null,
-    transaction_id   text                            not null,
+    blockchain_type  varchar(128)                            not null,
+    transaction_id   varchar(256)                            not null,
     coin_number      integer                         not null,
-    asset_id         text                            not null,
-    coin_id          text                            not null,
-    asset_address    text,
+    asset_id         varchar(32)                            not null,
+    coin_id          varchar(261)                            not null,
+    asset_address    varchar(256),
     value            numeric                         not null,
     value_string     text                            not null,
     value_scale      integer                         not null,
-    address          text,
-    address_tag      text,
+    address          varchar(256),
+    address_tag      varchar(1024),
     is_deleted       boolean                         not null,
-    address_tag_type integer,
+    address_tag_type smallint,
     address_nonce    numeric,
     is_spent         boolean                         not null,
     constraint coins_pk
@@ -43,11 +43,11 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
 create table fees
 (
     id              uuid default uuid_generate_v1() not null,
-    blockchain_type text                            not null,
-    block_id        text                            not null,
-    transaction_id  text                            not null,
-    asset_id        text                            not null,
-    asset_address   text,
+    blockchain_type varchar(128)                            not null,
+    block_id        varchar(256)                            not null,
+    transaction_id  varchar(256)                            not null,
+    asset_id        varchar(32)                            not null,
+    asset_address   varchar(256),
     value           numeric                         not null,
     value_string    text                            not null,
     value_scale     integer                         not null,
@@ -78,16 +78,16 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
 create table balance_actions
 (
     id              uuid default uuid_generate_v1(),
-    blockchain_type text    not null,
-    block_id        text    not null,
+    blockchain_type varchar(128)    not null,
+    block_id        varchar(256)    not null,
     block_number    integer not null,
-    asset_id        text    not null,
-    asset_address   text,
-    transaction_id  text    not null,
+    asset_id        varchar(32)    not null,
+    asset_address   varchar(256),
+    transaction_id  varchar(256)    not null,
     value           numeric not null,
     value_string    text    not null,
     value_scale     integer not null,
-    address         text    not null
+    address         varchar(256)    not null
 );
 
 create unique index balance_actions_natural_key_index_1
@@ -115,10 +115,10 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
 
 create table assets
 (
-    id              text                            not null,
-    asset_id        text                            not null,
-    asset_address   text,
-	blockchain_type text                            not null,
+    id              varchar(32)                            not null,
+    asset_id        varchar(32)                            not null,
+    asset_address   varchar(256),
+	blockchain_type varchar(128)                            not null,
 	scale int not null,
 	constraint assets_natural_key_pk
 		primary key (blockchain_type, id)

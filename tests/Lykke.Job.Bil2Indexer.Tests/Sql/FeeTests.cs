@@ -23,7 +23,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var btype = Guid.NewGuid().ToString();
             var scale = new Random().Next(1, 15);
             var blockId = Guid.NewGuid().ToString();
-            var asset = new Asset(Guid.NewGuid().ToString());
+            var asset = new Asset(Guid.NewGuid().ToString("N"));
 
             var fees = new List<FeeEnvelope>();
             var max = 33;
