@@ -32,7 +32,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
         {
             return new Coin(blockchainType: source.BlockchainType,
                 id: new CoinId(source.TransactionId, source.CoinNumber),
-                asset: new Asset(new AssetId(source.AssetId), new AssetAddress(source.AssetAddress)),
+                asset: new Asset(new AssetId(source.AssetId), source.AssetAddress != null ? new AssetAddress(source.AssetAddress) : null),
                 address: source.Address,
                 value: MoneyHelper.BuildUMoney(source.ValueString, source.ValueScale),
                 addressNonce: source.AddressNonce,

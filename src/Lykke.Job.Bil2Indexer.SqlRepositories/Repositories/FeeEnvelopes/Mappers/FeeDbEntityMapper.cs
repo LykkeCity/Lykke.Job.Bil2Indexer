@@ -12,7 +12,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes.Mapper
             return new FeeEnvelope(source.BlockchainType,
                 source.BlockId,
                 source.TransactionId,
-                new Fee(new Asset(source.AssetId, source.AssetAddress),
+                new Fee(new Asset(source.AssetId, source.AssetAddress != null ? new AssetAddress(source.AssetAddress) : null),
                     MoneyHelper.BuildUMoney(source.ValueString,
                         source.ValueScale)));
         }
