@@ -11,8 +11,5 @@ namespace Lykke.Job.Bil2Indexer.Settings
     {
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
         public Bil2IndexerJobSettings Bil2IndexerJob { get; set; }
-
-        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
-        public IReadOnlyList<BlockchainIntegrationSettings> BlockchainIntegrations { get; set; }
     }
 }

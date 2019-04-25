@@ -85,6 +85,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool
             //TODO: Inint StartupInMemory.ServiceProvider with repo services.
             var blockchainIntegrationSettings = appSettings
                 .CurrentValue
+                .Bil2IndexerJob
                 .BlockchainIntegrations
                 .FirstOrDefault(x => x.Type == blockchainType);
 

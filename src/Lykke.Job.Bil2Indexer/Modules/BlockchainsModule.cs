@@ -56,7 +56,7 @@ namespace Lykke.Job.Bil2Indexer.Modules
 
                 options.BlockEventsHandlerFactory = c => c.GetRequiredService<IBlockEventsHandler>();
 
-                foreach (var integration in _settings.BlockchainIntegrations)
+                foreach (var integration in _settings.Bil2IndexerJob.BlockchainIntegrations)
                 {
                     options.AddIntegration(integration.Type);
                 }
@@ -68,7 +68,7 @@ namespace Lykke.Job.Bil2Indexer.Modules
                 {
                     // TODO: Validate, that ranges are not crossed and have no gaps
 
-                    var crawlers = _settings.BlockchainIntegrations
+                    var crawlers = _settings.Bil2IndexerJob.BlockchainIntegrations
                         .ToDictionary(
                             i => i.Type,
                             i => (IReadOnlyCollection<CrawlerConfiguration>) i.Indexer.ChainCrawlers
@@ -85,14 +85,14 @@ namespace Lykke.Job.Bil2Indexer.Modules
 
             builder.Register(c =>
                 {
-                    var firstBlockNumbers = _settings.BlockchainIntegrations.ToDictionary(i => i.Type, i => i.Capabilities.FirstBlockNumber);
+                    var firstBlockNumbers = _settings.Bil2IndexerJob.BlockchainIntegrations.ToDictionary(i => i.Type, i => i.Capabilities.FirstBlockNumber);
 
                     return new ChainHeadsManager(c.Resolve<IChainHeadsRepository>(), firstBlockNumbers);
                 })
                 .As<IChainHeadsManager>()
                 .SingleInstance();
 
-            builder.Register(c => new IntegrationSettingsProvider(_settings.BlockchainIntegrations))
+            builder.Register(c => new IntegrationSettingsProvider(_settings.Bil2IndexerJob.BlockchainIntegrations))
                 .AsSelf()
                 .SingleInstance();
 

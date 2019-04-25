@@ -1,4 +1,6 @@
-﻿using JetBrains.Annotations;
+﻿using System.Collections.Generic;
+using JetBrains.Annotations;
+using Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations;
 
 namespace Lykke.Job.Bil2Indexer.Settings.JobSettings
 {
@@ -16,5 +18,8 @@ namespace Lykke.Job.Bil2Indexer.Settings.JobSettings
 
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
         public BlocksAssemblingSettings BlocksAssembling { get; set; }
+
+        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+        public IReadOnlyList<BlockchainIntegrationSettings> BlockchainIntegrations { get; set; }
     }
 }
