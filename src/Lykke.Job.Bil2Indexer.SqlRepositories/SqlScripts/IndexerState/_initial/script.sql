@@ -1,5 +1,5 @@
 ﻿BEGIN;
-create table block_headers
+create unlogged table block_headers
 (
     blockchain_type   varchar(128)    not null,
     number            bigint  not null,
@@ -16,7 +16,7 @@ create table block_headers
 create unique index block_headers_blockchain_type_number_uindex
     on block_headers (blockchain_type, number);
 
-create table chain_heads
+create unlogged table chain_heads
 (
     blockchain_type    varchar(128)   not null,
     first_block_number bigint not null,
@@ -28,7 +28,7 @@ create table chain_heads
         primary key (blockchain_type)
 );
 
-create table crawlers
+create unlogged table crawlers
 (
     blockchain_type       varchar(128)   not null,
     start_block           bigint not null,
