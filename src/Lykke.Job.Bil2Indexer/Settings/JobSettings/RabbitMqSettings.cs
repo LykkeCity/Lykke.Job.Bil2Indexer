@@ -65,5 +65,12 @@ namespace Lykke.Job.Bil2Indexer.Settings.JobSettings
         [Optional]
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
         public int ProcessingQueueCapacity { get; set; } = 5000;
+
+        /// <summary>
+        /// Max message which can wait for the free processor right after the read by a consumer.
+        /// </summary>
+        [Optional]
+        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+        public bool TraceMessages { get; set; }
     }
 }

@@ -7,6 +7,7 @@ using Lykke.Bil2.Client.BlocksReader;
 using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Bil2.RabbitMq.Subscription.MessageFilters;
 using Lykke.Common;
+using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
@@ -15,6 +16,7 @@ using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Settings;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Lykke.Job.Bil2Indexer.Modules
 {
@@ -52,7 +54,11 @@ namespace Lykke.Job.Bil2Indexer.Modules
                 options.FirstLevelRetryQueueCapacity = settings.FirstLevelRetryQueueCapacity;
                 options.ProcessingQueueCapacity = settings.ProcessingQueueCapacity;
                 options.AddMessageFilter(s => new AppInsightTelemetryMessageFilter());
-                //options.AddFiler(s => new TraceMessageFilter(s.GetRequiredService<ILogFactory>(), LogLevel.Information));
+
+                if (_settings.Bil2IndexerJob.RabbitMq.TraceMessages)
+                {
+                    options.AddMessageFilter(s => new TraceMessageFilter(s.GetRequiredService<ILogFactory>(), LogLevel.Information));
+                }
 
                 options.BlockEventsHandlerFactory = c => c.GetRequiredService<IBlockEventsHandler>();
 

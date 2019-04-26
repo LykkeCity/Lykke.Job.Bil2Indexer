@@ -2,6 +2,7 @@
 using Lykke.Bil2.RabbitMq;
 using Lykke.Bil2.RabbitMq.Subscription;
 using Lykke.Bil2.RabbitMq.Subscription.MessageFilters;
+using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Settings.JobSettings;
@@ -9,6 +10,7 @@ using Lykke.Job.Bil2Indexer.Workflow.CommandHandlers;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Job.Bil2Indexer.Workflow.EventHandlers;
 using Lykke.Job.Bil2Indexer.Workflow.Events;
+using Microsoft.Extensions.Logging;
 
 namespace Lykke.Job.Bil2Indexer.Services
 {
@@ -17,13 +19,16 @@ namespace Lykke.Job.Bil2Indexer.Services
     {
         public const string CommandsExchangeName = "bil-v2.indexer.commands";
 
+        private readonly ILogFactory _logFactory;
         private readonly IRabbitMqEndpoint _endpoint;
         private readonly RabbitMqSettings _settings;
 
         public RabbitMqConfigurator(
+            ILogFactory logFactory,
             IRabbitMqEndpoint endpoint,
             RabbitMqSettings settings)
         {
+            _logFactory = logFactory;
             _endpoint = endpoint;
             _settings = settings;
         }
@@ -45,6 +50,11 @@ namespace Lykke.Job.Bil2Indexer.Services
                 .Handle<ChainHeadExtendedEvent>(o => o.WithHandler<ChainHeadExtendedEventsHandler>())
                 .Handle<ChainHeadReducedEvent>(o => o.WithHandler<ChainHeadReducedEventsHandler>())
                 .AddFilter(new AppInsightTelemetryMessageFilter());
+
+            if (_settings.TraceMessages)
+            {
+                eventsSubscriptions.AddFilter(new TraceMessageFilter(_logFactory, LogLevel.Information));
+            }
 
             _endpoint.Subscribe(
                 eventsSubscriptions,
@@ -72,7 +82,12 @@ namespace Lykke.Job.Bil2Indexer.Services
                 .Handle<ExtendChainHeadCommand>(o => { o.WithHandler<ExtendChainHeadCommandsHandler>(); })
                 .Handle<ReduceChainHeadCommand>(o => { o.WithHandler<ReduceChainHeadCommandsHandler>(); })
                 .AddFilter(new AppInsightTelemetryMessageFilter());
-            
+
+            if (_settings.TraceMessages)
+            {
+                commandsSubscriptions.AddFilter(new TraceMessageFilter(_logFactory, LogLevel.Information));
+            }
+
             _endpoint.Subscribe(
                 commandsSubscriptions,
                 CommandsExchangeName,

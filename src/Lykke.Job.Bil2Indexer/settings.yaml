@@ -51,6 +51,10 @@ Bil2IndexerJob:
       settings-key: Bil2IndexerJob-ProcessingQueueCapacity
       types:
         - Optional
+    TraceMessages:
+      settings-key: Bil2IndexerJob-TraceMessages
+      types:
+        - Optional
 
   AssetsCaching:
     LruCacheCapacity:
