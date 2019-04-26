@@ -1,0 +1,3 @@
+﻿ALTER TABLE block_headers SET LOGGED;
+ALTER TABLE chain_heads SET LOGGED;
+ALTER TABLE crawlers SET LOGGED;

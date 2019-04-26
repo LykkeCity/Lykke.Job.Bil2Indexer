@@ -65,12 +65,7 @@ where asset_address is not null;
 
 create index fees_blockchain_type_block_id_index
 	on fees (blockchain_type, block_id);
-
-
-create index fees_blockchain_type_transaction_id_index
-	on fees (blockchain_type, transaction_id);
-
-
+    
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on fees for each row
      execute procedure set_numeric_value_from_string ();
@@ -98,9 +93,6 @@ create unique index balance_actions_natural_key_index_2
     on balance_actions (blockchain_type, transaction_id, address, asset_id, asset_address)
     where asset_address is not null;
     
-create index balance_actions_blockchain_type_address_transactions
-    on balance_actions (blockchain_type, address, transaction_id);
-
 create index balance_actions_blockchain_type_block_id
     on balance_actions (blockchain_type, block_id);
 
