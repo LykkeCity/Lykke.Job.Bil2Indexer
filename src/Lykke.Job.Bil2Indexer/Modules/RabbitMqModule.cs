@@ -1,4 +1,6 @@
-﻿using Autofac;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Autofac;
 using JetBrains.Annotations;
 using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Job.Bil2Indexer.Services;
@@ -41,7 +43,13 @@ namespace Lykke.Job.Bil2Indexer.Modules
             builder.RegisterType<WaitForBlockAssemblingCommandsHandler>()
                 .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.BlocksAssembling.RetryTimeout))
                 .AsSelf();
-            builder.RegisterType<ExtendChainHeadCommandsHandler>().AsSelf();
+
+            IReadOnlyDictionary<string, long> blockNumbersToStartTransactionEventsPublication = _settings.Bil2IndexerJob.BlockchainIntegrations
+                .ToDictionary(x => x.Type, x => x.Indexer.BlockNumberToStartTransactionEventsPublication);
+
+            builder.RegisterType<ExtendChainHeadCommandsHandler>()
+                .WithParameter(TypedParameter.From(blockNumbersToStartTransactionEventsPublication))
+                .AsSelf();
             builder.RegisterType<ReduceChainHeadCommandsHandler>().AsSelf();
         }
     }

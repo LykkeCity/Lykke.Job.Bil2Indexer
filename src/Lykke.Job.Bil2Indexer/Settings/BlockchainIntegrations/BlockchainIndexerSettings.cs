@@ -12,5 +12,8 @@ namespace Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations
 
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
         public TimeSpan NotFoundBlockRetryDelay { get; set; }
+
+        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+        public long BlockNumberToStartTransactionEventsPublication { get; set; }
     }
 }

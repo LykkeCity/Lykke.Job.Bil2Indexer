@@ -28,6 +28,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
         private readonly IBalanceActionsRepository _balanceActionsRepository;
         private readonly ICoinsRepository _coinsRepository;
+        private readonly IReadOnlyDictionary<string, long> _blockNumbersToStartTransactionEventsPublication;
         private readonly ILog _log;
 
         public ExtendChainHeadCommandsHandler(
@@ -36,13 +37,15 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             ITransactionsRepository transactionsRepository,
             IFeeEnvelopesRepository feeEnvelopesRepository,
             IBalanceActionsRepository balanceActionsRepository,
-            ICoinsRepository coinsRepository)
+            ICoinsRepository coinsRepository,
+            IReadOnlyDictionary<string, long> blockNumbersToStartTransactionEventsPublication)
         {
             _chainHeadsRepository = chainHeadsRepository;
             _transactionsRepository = transactionsRepository;
             _feeEnvelopesRepository = feeEnvelopesRepository;
             _balanceActionsRepository = balanceActionsRepository;
             _coinsRepository = coinsRepository;
+            _blockNumbersToStartTransactionEventsPublication = blockNumbersToStartTransactionEventsPublication;
             _log = logFactory.CreateLog(this);
         }
 
@@ -88,13 +91,16 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
                 var eventsPublisher = replyPublisher.ChangeCorrelationId(chainHeadCorrelationId.ToString());
 
-                await PublishTransactionsAsync
-                (
-                    command.BlockchainType,
-                    command.ToBlockId,
-                    command.ToBlockNumber,
-                    eventsPublisher
-                );
+                if (command.ToBlockNumber >= _blockNumbersToStartTransactionEventsPublication[command.BlockchainType])
+                {
+                    await PublishTransactionsAsync
+                    (
+                        command.BlockchainType,
+                        command.ToBlockId,
+                        command.ToBlockNumber,
+                        eventsPublisher
+                    );
+                }
 
                 eventsPublisher.Publish(new ChainHeadExtendedEvent
                 {
