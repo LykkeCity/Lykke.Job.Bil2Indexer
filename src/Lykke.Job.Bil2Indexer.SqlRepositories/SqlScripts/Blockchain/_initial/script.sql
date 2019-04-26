@@ -15,7 +15,7 @@ create table coins
     transaction_id   varchar(256)                            not null,
     coin_number      integer                         not null,
     asset_id         varchar(32)                            not null,
-    coin_id          varchar(261)                            not null,
+    coin_id          varchar(264)                            not null,
     asset_address    varchar(256),
     value            numeric                         not null,
     value_string     text                            not null,
@@ -115,7 +115,7 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
 
 create table assets
 (
-    id              varchar(32)                            not null,
+    id              varchar(296)                            not null,
     asset_id        varchar(32)                            not null,
     asset_address   varchar(256),
 	blockchain_type varchar(128)                            not null,
