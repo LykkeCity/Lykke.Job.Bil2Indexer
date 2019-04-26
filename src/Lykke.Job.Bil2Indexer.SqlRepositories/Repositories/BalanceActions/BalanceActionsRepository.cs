@@ -76,14 +76,32 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var blockchainType = dbEntities.First().BlockchainType;
-                var txIds = dbEntities.Select(p => p.TransactionId).ToList();
 
-                var query = db.BalanceActions
-                        .Where(BalanceActionsPredicates.Build(blockchainType, txIds))
-                    .Select(p => new { p.BlockchainType, p.TransactionId, p.Address,  p.AssetId, p.AssetAddress });
+                //force to use partial natural index
+                
+                var txIdsWithAssetAddress = dbEntities
+                    .Where(p => p.AssetAddress != null)
+                    .Select(p => p.TransactionId)
+                    .ToList();
 
-                var existedNaturalIds = (await query
-                        .ToListAsync())
+                var txIdsWithoutAssetAddress = dbEntities
+                    .Where(p => p.AssetAddress == null)
+                    .Select(p => p.TransactionId)
+                    .ToList();
+
+                var getNaturalIds1 = db.BalanceActions
+                    .Where(BalanceActionsPredicates.Build(blockchainType, txIdsWithAssetAddress, isAssetAddressNull: false))
+                    .Select(p => new { p.BlockchainType, p.TransactionId, p.Address, p.AssetId, p.AssetAddress })
+                    .ToListAsync();
+
+                var getNaturalIds2 = db.BalanceActions
+                    .Where(BalanceActionsPredicates.Build(blockchainType, txIdsWithoutAssetAddress, isAssetAddressNull: true))
+                    .Select(p => new { p.BlockchainType, p.TransactionId, p.Address, p.AssetId, p.AssetAddress })
+                    .ToListAsync();
+
+                await Task.WhenAll(getNaturalIds1, getNaturalIds2);
+
+                var existedNaturalIds = getNaturalIds1.Result.Union(getNaturalIds2.Result)
                     .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.Address, p.AssetId, p.AssetAddress));
 
                 var dbEntitiesDic = dbEntities.ToDictionary(p =>
@@ -107,15 +125,17 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
         {
             var getAssetInfo = _assetInfosProvider.GetAsync(blockchainType, asset);
 
-            const string query =
-                  @"select 
+            var isNullAssetAddress = asset.Address == null;
+
+            var query =
+                  $@"select 
                         sum(value) :: text as sum
                     from balance_actions
                     where  blockchain_type = @blockchainType 
                             and address = @address 
                             and block_number <= @blockNumber 
                             and asset_id = @assetId 
-                            and asset_address = @assetAddress";
+                            and asset_address {(isNullAssetAddress ? "is null" : "= @assetAddress")}";
 
             using (var conn = new NpgsqlConnection(_posgresConnstring))
             {
@@ -123,7 +143,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                     address = address.ToString(),
                     blockNumber = atBlockNumber,
                     assetId = asset.Id.ToString(),
-                    assetAddress = asset.Address.ToString()
+                    assetAddress = asset.Address?.ToString()
                 });
 
                 await Task.WhenAll(getAssetInfo, getSum);

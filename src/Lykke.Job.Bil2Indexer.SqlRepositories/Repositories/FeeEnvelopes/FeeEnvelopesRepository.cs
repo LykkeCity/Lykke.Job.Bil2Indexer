@@ -69,16 +69,31 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var blockchainType = dbEntities.First().BlockchainType;
-                var txIds = dbEntities.Select(p => p.TransactionId.ToString()).ToList();
 
-                var query = db.FeeEnvelopes
-                        .Where(p => p.BlockchainType == blockchainType)
-                        .Where(p => txIds.Contains(p.TransactionId))
-                    .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress });
+                var txIdsWithAssetAddress = dbEntities
+                    .Where(p => p.AssetAddress != null)
+                    .Select(p => p.TransactionId)
+                    .ToList();
 
-                var existedNaturalIds = (await query
-                        .ToListAsync())
-                    .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress));
+                var txIdsWithoutAssetAddress = dbEntities
+                    .Where(p => p.AssetAddress == null)
+                    .Select(p => p.TransactionId)
+                    .ToList();
+
+                var getNaturalIds1 = db.FeeEnvelopes
+                    .Where(FeeEnvelopePredicates.Build(blockchainType, txIdsWithAssetAddress, isAssetAddressNull: false))
+                    .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress })
+                    .ToListAsync();
+
+                var getNaturalIds2 = db.FeeEnvelopes
+                    .Where(FeeEnvelopePredicates.Build(blockchainType, txIdsWithoutAssetAddress, isAssetAddressNull: true))
+                    .Select(p => new { p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress })
+                    .ToListAsync();
+
+                await Task.WhenAll(getNaturalIds1, getNaturalIds2);
+
+                var existedNaturalIds = getNaturalIds1.Result.Union(getNaturalIds2.Result)
+                    .ToDictionary(p => BuildId(p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress)); 
 
                 var dbEntitiesDic = dbEntities.ToDictionary(p =>
                     BuildId(p.BlockchainType, p.TransactionId, p.AssetId, p.AssetAddress));
@@ -92,7 +107,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var entity = await db.FeeEnvelopes
-                    .Where(BuildPredicate(blockchainType, transactionId, asset))
+                    .Where(FeeEnvelopePredicates.Build(blockchainType, transactionId, asset))
                     .SingleOrDefaultAsync();
 
                 return entity?.ToDomain();
@@ -104,7 +119,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 var entity = await db.FeeEnvelopes
-                    .Where(BuildPredicate(blockchainType, transactionId, asset))
+                    .Where(FeeEnvelopePredicates.Build(blockchainType, transactionId, asset))
                     .SingleOrDefaultAsync();
 
                 if (entity == null)
@@ -119,12 +134,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         public Task<IReadOnlyCollection<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, TransactionId transactionId)
         {
-            return GetAllAsync(BuildPredicate(blockchainType, transactionId));
+            return GetAllAsync(FeeEnvelopePredicates.Build(blockchainType, transactionId));
         }
 
         public Task<PaginatedItems<FeeEnvelope>> GetBlockFeesAsync(string blockchainType, BlockId blockId, long limit, string continuation)
         {
-            return GetPagedAsync(BuildPredicate(blockchainType, blockId), 
+            return GetPagedAsync(FeeEnvelopePredicates.Build(blockchainType, blockId), 
                     limit,
                     continuation);
         }
@@ -134,7 +149,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
                 await db.FeeEnvelopes
-                    .Where(BuildPredicate(blockchainType, blockId))
+                    .Where(FeeEnvelopePredicates.Build(blockchainType, blockId))
                     .DeleteAsync();
             }
         }
@@ -173,46 +188,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             }
         }
 
-        private Expression<Func<FeeEnvelopeEntity, bool>> BuildPredicate(string blockchainType, BlockId blockId)
-        {
-            var stringBlockId = blockId.ToString();
 
-            return p => p.BlockchainType == blockchainType && p.BlockId == stringBlockId;
-        }
-
-        private Expression<Func<FeeEnvelopeEntity, bool>> BuildPredicate(string blockchainType, TransactionId transactionId)
-        {
-            var stringTransactionId = transactionId.ToString();
-
-            return p => p.BlockchainType == blockchainType
-                        && p.TransactionId == stringTransactionId;
-
-        }
-
-        private Expression<Func<FeeEnvelopeEntity, bool>> BuildPredicate(string blockchainType, TransactionId transactionId, Asset asset)
-        {
-            var stringTransactionId = transactionId.ToString();
-
-            var stringAssetId = asset.Id.ToString();
-            var stringAssetAddress = asset.Address?.ToString();
-
-            //force to use filtered index
-            if (stringAssetAddress != null)
-            {
-                return p => p.AssetAddress != null 
-                            && p.BlockchainType == blockchainType
-                            && p.TransactionId == stringTransactionId 
-                            && p.AssetId == stringAssetId 
-                            && p.AssetAddress == stringAssetAddress;
-            }
-            else
-            {
-                return p => p.AssetAddress == null
-                            && p.BlockchainType == blockchainType
-                            && p.TransactionId == stringTransactionId
-                            && p.AssetId == stringAssetId;
-            }
-        }
 
     }
 }

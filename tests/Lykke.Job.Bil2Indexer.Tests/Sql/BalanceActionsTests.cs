@@ -22,7 +22,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         public async Task CanSaveAndRead()
         {
             var address = BuildRandmomAddress();
-            var asset = BuildRandmomAsset();
+            var asset = BuildRandmomAsset(address: Guid.NewGuid().ToString());
             var scale = new Random().Next(0, 15);
             var bType = Guid.NewGuid().ToString();
             
@@ -42,6 +42,57 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
                 BuildProviderMock(asset,bType, scale).Object);
+
+            await repo.AddIfNotExistsAsync(bType, actions);
+            await repo.AddIfNotExistsAsync(bType, actions);
+
+            var retrievedSum = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);
+
+            Assert.AreEqual(sum, retrievedSum);
+
+            var byTx = await repo.GetSomeOfBalancesAsync(bType, actions.Select(p => p.TransactionId).ToHashSet());
+
+            Assert.AreEqual(actions.Count, byTx.Count);
+
+            foreach (var balanceAction in actions)
+            {
+                var retrieved = byTx[balanceAction.TransactionId];
+
+                Assert.AreEqual(balanceAction.AccountId, retrieved.Keys.Single());
+                Assert.AreEqual(balanceAction.Amount, retrieved.Values.Single());
+            }
+
+            var allAssets = await repo.GetBalancesAsync(bType, address, long.MaxValue);
+
+            Assert.AreEqual(1, allAssets.Count);
+
+            Assert.AreEqual(asset, allAssets.Keys.Single());
+        }
+
+        [Test]
+        public async Task CanSaveAndReadAssetWithNullAddress()
+        {
+            var address = BuildRandmomAddress();
+            var asset = BuildRandmomAsset();
+            var scale = new Random().Next(0, 15);
+            var bType = Guid.NewGuid().ToString();
+
+            var actions = new List<BalanceAction>();
+            var max = 99;
+            var ctr = 0;
+
+            var sum = Money.Parse("0");
+            do
+            {
+                var act = BuildRandomBalanceAction(asset, address, scale);
+                actions.Add(act);
+
+                sum = Money.Add(sum, act.Amount);
+                ctr++;
+            } while (ctr <= max);
+
+            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
+                BuildProviderMock(asset, bType, scale).Object);
 
             await repo.AddIfNotExistsAsync(bType, actions);
             await repo.AddIfNotExistsAsync(bType, actions);
@@ -129,9 +180,9 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 new TransactionId(transactionId ?? Guid.NewGuid().ToString()));
         }
 
-        private Asset BuildRandmomAsset()
+        private Asset BuildRandmomAsset(string address = null)
         {
-            return new Asset(Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString());
+            return new Asset(Guid.NewGuid().ToString("N"), address);
         }
 
         private Address BuildRandmomAddress()
