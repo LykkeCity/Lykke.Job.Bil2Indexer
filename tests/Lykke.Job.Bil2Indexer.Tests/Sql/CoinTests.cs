@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -23,24 +24,34 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var bType = Guid.NewGuid().ToString();
 
-            var coins = new[]
+            var coins = new List<Coin>();
+            var max = 33;
+            var count = 0;
+
+            do
             {
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-            };
+                coins.Add(GenerateRandom(bType));
+                count++;
+
+            } while (count <= max);
 
             await repo.AddIfNotExistsAsync(coins);
             await repo.AddIfNotExistsAsync(coins);
+
+            do
+            {
+                coins.Add(GenerateRandom(bType));
+                count++;
+
+            } while (count <= max);
+
             await repo.AddIfNotExistsAsync(coins);
 
 
             var retrieved = await repo.GetSomeOfAsync(bType, coins.Select(p => p.Id).ToList());
 
 
-            Assert.AreEqual(coins.Length, retrieved.Count);
+            Assert.AreEqual(coins.Count, retrieved.Count);
 
             foreach (var coin in retrieved)
             {
