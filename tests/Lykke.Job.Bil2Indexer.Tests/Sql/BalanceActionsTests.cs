@@ -44,6 +44,16 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 BuildProviderMock(asset,bType, scale).Object);
 
             await repo.AddIfNotExistsAsync(bType, actions);
+
+            do
+            {
+                var act = BuildRandomBalanceAction(asset, address, scale);
+                actions.Add(act);
+
+                sum = Money.Add(sum, act.Amount);
+                ctr++;
+            } while (ctr <= max * 2);
+
             await repo.AddIfNotExistsAsync(bType, actions);
 
             var retrievedSum = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);
@@ -95,6 +105,15 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 BuildProviderMock(asset, bType, scale).Object);
 
             await repo.AddIfNotExistsAsync(bType, actions);
+            do
+            {
+                var act = BuildRandomBalanceAction(asset, address, scale);
+                actions.Add(act);
+
+                sum = Money.Add(sum, act.Amount);
+                ctr++;
+            } while (ctr <= max * 2);
+
             await repo.AddIfNotExistsAsync(bType, actions);
 
             var retrievedSum = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);
@@ -175,7 +194,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         private BalanceAction BuildRandomBalanceAction(Asset asset, Address address, int scale, string transactionId = null)
         {
             var rdm = new Random();
-            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger(double.MaxValue - rdm.Next()), scale),
+            return new BalanceAction(new AccountId(address, asset), new Money(new BigInteger( double.MaxValue - rdm.Next()), scale),
                 rdm.Next(1, 123333), new BlockId(Guid.NewGuid().ToString()),
                 new TransactionId(transactionId ?? Guid.NewGuid().ToString()));
         }
