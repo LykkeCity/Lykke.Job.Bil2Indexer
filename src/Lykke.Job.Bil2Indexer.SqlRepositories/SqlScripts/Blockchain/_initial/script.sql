@@ -8,14 +8,14 @@ begin
 end;
  ' language plpgsql;
 
-create table coins
+create unlogged table coins
 (
     id               uuid default uuid_generate_v1() not null,
     blockchain_type  varchar(128)                            not null,
     transaction_id   varchar(256)                            not null,
     coin_number      integer                         not null,
     asset_id         varchar(32)                            not null,
-    coin_id          varchar(261)                            not null,
+    coin_id          varchar(264)                            not null,
     asset_address    varchar(256),
     value            numeric                         not null,
     value_string     text                            not null,
@@ -40,7 +40,7 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
      on coins for each row
      execute procedure set_numeric_value_from_string ();
 
-create table fees
+create unlogged table fees
 (
     id              uuid default uuid_generate_v1() not null,
     blockchain_type varchar(128)                            not null,
@@ -65,17 +65,12 @@ where asset_address is not null;
 
 create index fees_blockchain_type_block_id_index
 	on fees (blockchain_type, block_id);
-
-
-create index fees_blockchain_type_transaction_id_index
-	on fees (blockchain_type, transaction_id);
-
-
+    
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on fees for each row
      execute procedure set_numeric_value_from_string ();
 
-create table balance_actions
+create unlogged table balance_actions
 (
     id              uuid default uuid_generate_v1(),
     blockchain_type varchar(128)    not null,
@@ -98,9 +93,6 @@ create unique index balance_actions_natural_key_index_2
     on balance_actions (blockchain_type, transaction_id, address, asset_id, asset_address)
     where asset_address is not null;
     
-create index balance_actions_blockchain_type_address_transactions
-    on balance_actions (blockchain_type, address, transaction_id);
-
 create index balance_actions_blockchain_type_block_id
     on balance_actions (blockchain_type, block_id);
 
@@ -113,9 +105,9 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
 
 
 
-create table assets
+create unlogged table assets
 (
-    id              varchar(32)                            not null,
+    id              varchar(296)                            not null,
     asset_id        varchar(32)                            not null,
     asset_address   varchar(256),
 	blockchain_type varchar(128)                            not null,
