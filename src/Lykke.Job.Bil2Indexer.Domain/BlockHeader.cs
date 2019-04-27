@@ -138,6 +138,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                         degreeOfParallelism: 8,
                         body: async transaction =>
                         {
+                            // TODO: Get Batch for all transactions in the page
                             var coinsToSpendByTransaction = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
                             var isExecuted = await ExecuteTransactionAsync
                             (
@@ -242,15 +243,31 @@ namespace Lykke.Job.Bil2Indexer.Domain
             TransferCoinsTransactionExecutedEvent transaction,
             IReadOnlyCollection<Coin> coinsToSpend)
         {
+            var receivedCoins = transaction.ReceivedCoins
+                .Where(x => x.Address != null)
+                .Select(x => new
+                {
+                    Address = x.Address,
+                    Asset = x.Asset,
+                    Value = (Money) x.Value
+                });
+
             var actions = coinsToSpend
                 .Where(x => x.Address != null)
+                .Select(x => new
+                {
+                    Address = x.Address,
+                    Asset = x.Asset,
+                    Value = -(Money) x.Value
+                })
+                .Concat(receivedCoins)
                 .GroupBy(x => new {x.Address, x.Asset})
                 .Select
                 (
                     g => new BalanceAction
                     (
                         new AccountId(g.Key.Address, g.Key.Asset),
-                        -(Money) g.Sum(x => x.Value),
+                        g.Sum(x => x.Value),
                         Number,
                         Id,
                         transaction.TransactionId

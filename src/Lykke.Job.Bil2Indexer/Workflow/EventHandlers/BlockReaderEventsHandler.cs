@@ -250,22 +250,6 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
             var saveCoinsTask = _coinsRepository.AddIfNotExistsAsync(coins);
 
-            var actions = evt.ReceivedCoins
-                .Where(x => x.Address != null)
-                .GroupBy(x => new {x.Address, x.Asset})
-                .Select
-                (
-                    g => new BalanceAction
-                    (
-                        new AccountId(g.Key.Address, g.Key.Asset),
-                        g.Sum(x => x.Value),
-                        crawler.ExpectedBlockNumber,
-                        evt.BlockId,
-                        evt.TransactionId
-                    )
-                )
-                .ToArray();
-
             var assetInfos = evt.ReceivedCoins
                 .Select(x => new AssetInfo(blockchainType, x.Asset, x.Value.Scale))
                 .ToHashSet();
@@ -276,8 +260,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             (
                 saveTransactionTask,
                 saveCoinsTask,
-                saveAssetInfosTask,
-                _balanceActionsRepository.AddIfNotExistsAsync(blockchainType, actions)
+                saveAssetInfosTask
             );
 
             return MessageHandlingResult.Success();

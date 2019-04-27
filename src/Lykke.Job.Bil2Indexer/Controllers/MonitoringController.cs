@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Job.Bil2Indexer.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/monitoring")]
     public class MonitoringController : ControllerBase
     {
         private readonly IntegrationSettingsProvider _settingsProvider;
