@@ -32,5 +32,24 @@ namespace Lykke.Job.Bil2Indexer.Controllers
 
             return Ok();
         }
+
+        [HttpPost("extend-chain-head")]
+        public IActionResult ExtendChainHead(ExtendChainHeadRequest request)
+        {
+            var commandsSender = _messageSendersFactory.CreateCommandsSender();
+
+            commandsSender.Publish
+            (
+                new ExtendChainHeadCommand
+                {
+                    BlockchainType = request.BlockchainType,
+                    ToBlockNumber = request.ToBlockNumber,
+                    ToBlockId = request.ToBlockId
+                },
+                request.CorrelationId
+            );
+
+            return Ok();
+        }
     }
 }
