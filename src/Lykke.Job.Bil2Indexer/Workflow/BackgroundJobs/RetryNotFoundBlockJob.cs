@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Lykke.Bil2.Client.BlocksReader.Services;
 using Lykke.Bil2.Contract.BlocksReader.Commands;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -28,11 +29,16 @@ namespace Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, blockNumber);
             var crawlerCorrelationId = crawler.GetCorrelationId();
 
-            if (crawlerCorrelationId.IsPreviousOf(messageCorrelationId) ||
-                crawlerCorrelationId.Equals(messageCorrelationId))
+            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
             {
-                // Disordered job run, we should ignore it.
+                // The message is legacy, it already was processed for sure, we can ignore it.
                 return;
+            }
+
+            if (messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
+            {
+                // The message is premature, it can't be processed yet, we should retry it later.
+                throw new InvalidOperationException($"The job is premature. {blockchainType}, {blockNumber}, {messageCorrelationId}");
             }
 
             var blocksReaderApi = _blocksReaderApiFactory.Create(blockchainType);
