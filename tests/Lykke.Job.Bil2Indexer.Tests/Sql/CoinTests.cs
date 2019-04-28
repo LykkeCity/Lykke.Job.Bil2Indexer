@@ -106,6 +106,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
 
             Assert.AreEqual(retrieved2.Count(p => idsToDelete.Contains(p.Id)), 0);
+
+
         }
 
 
@@ -152,6 +154,12 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             Assert.True(retrieved2.Where(p=>idsToSpend.Contains(p.Id)).All(p => p.IsSpent));
             Assert.True(retrieved2.Where(p => !idsToSpend.Contains(p.Id)).All(p => !p.IsSpent));
+
+
+            await repo.RemoveIfExistAsync(bType, coins.Select(p => new TransactionId(p.Id.TransactionId)).ToHashSet());
+
+            Assert.ThrowsAsync<ArgumentException>(() =>
+                repo.SpendAsync(bType, coins.Skip(4).Take(3).Select(p => p.Id).ToList()));
         }
 
         private void AssertEquals(Coin a, Coin b)
