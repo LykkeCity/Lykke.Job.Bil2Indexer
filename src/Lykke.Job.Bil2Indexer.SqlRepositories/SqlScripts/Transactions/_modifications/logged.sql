@@ -1,0 +1,1 @@
+﻿ALTER TABLE transactions SET LOGGED;

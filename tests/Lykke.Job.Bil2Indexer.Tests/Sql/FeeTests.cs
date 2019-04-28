@@ -26,7 +26,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var asset = new Asset(Guid.NewGuid().ToString("N"));
 
             var fees = new List<FeeEnvelope>();
-            var max = 33;
+            var max = 99;
             var count = 0;
 
             do
@@ -39,6 +39,14 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var repo = new FeeEnvelopesRepository(ContextFactory.GetPosgresTestsConnString());
 
             await repo.AddIfNotExistsAsync(fees);
+
+            do
+            {
+                fees.Add(BuildRandmon(btype, scale, blockId, asset));
+                count++;
+
+            } while (count <= max*2);
+
             await repo.AddIfNotExistsAsync(fees);
             await repo.AddIfNotExistsAsync(fees);
 

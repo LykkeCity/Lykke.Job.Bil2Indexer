@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -19,28 +20,38 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanSaveAndRead()
         {
-            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
 
             var bType = Guid.NewGuid().ToString();
 
-            var coins = new[]
+            var coins = new List<Coin>();
+            var max = 33;
+            var count = 0;
+
+            do
             {
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-            };
+                coins.Add(GenerateRandom(bType));
+                count++;
+
+            } while (count <= max);
 
             await repo.AddIfNotExistsAsync(coins);
             await repo.AddIfNotExistsAsync(coins);
+
+            do
+            {
+                coins.Add(GenerateRandom(bType));
+                count++;
+
+            } while (count <= max);
+
             await repo.AddIfNotExistsAsync(coins);
 
 
             var retrieved = await repo.GetSomeOfAsync(bType, coins.Select(p => p.Id).ToList());
 
 
-            Assert.AreEqual(coins.Length, retrieved.Count);
+            Assert.AreEqual(coins.Count, retrieved.Count);
 
             foreach (var coin in retrieved)
             {
@@ -53,7 +64,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanDelete()
         {
-            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
 
             var bType = Guid.NewGuid().ToString();
 
@@ -95,6 +106,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
 
             Assert.AreEqual(retrieved2.Count(p => idsToDelete.Contains(p.Id)), 0);
+
+
         }
 
 
@@ -102,7 +115,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanSpend()
         {
-            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
 
             var bType = Guid.NewGuid().ToString();
 
@@ -141,6 +154,12 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             Assert.True(retrieved2.Where(p=>idsToSpend.Contains(p.Id)).All(p => p.IsSpent));
             Assert.True(retrieved2.Where(p => !idsToSpend.Contains(p.Id)).All(p => !p.IsSpent));
+
+
+            await repo.RemoveIfExistAsync(bType, coins.Select(p => new TransactionId(p.Id.TransactionId)).ToHashSet());
+
+            Assert.ThrowsAsync<ArgumentException>(() =>
+                repo.SpendAsync(bType, coins.Skip(4).Take(3).Select(p => p.Id).ToList()));
         }
 
         private void AssertEquals(Coin a, Coin b)
