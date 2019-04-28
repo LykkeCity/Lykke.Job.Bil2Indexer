@@ -1,4 +1,7 @@
-﻿using Lykke.Job.Bil2Indexer.Models.Management;
+﻿using System.Threading.Tasks;
+using Lykke.Bil2.Client.BlocksReader.Services;
+using Lykke.Bil2.Contract.BlocksReader.Commands;
+using Lykke.Job.Bil2Indexer.Models.Management;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Microsoft.AspNetCore.Mvc;
@@ -9,10 +12,14 @@ namespace Lykke.Job.Bil2Indexer.Controllers
     public class ManagementController : ControllerBase
     {
         private readonly IMessageSendersFactory _messageSendersFactory;
+        private readonly IBlocksReaderApiFactory _blocksReaderApiFactory;
 
-        public ManagementController(IMessageSendersFactory messageSendersFactory)
+        public ManagementController(
+            IMessageSendersFactory messageSendersFactory,
+            IBlocksReaderApiFactory blocksReaderApiFactory)
         {
             _messageSendersFactory = messageSendersFactory;
+            _blocksReaderApiFactory = blocksReaderApiFactory;
         }
 
         [HttpPost("execute-transfer-coins-block")]
@@ -48,6 +55,16 @@ namespace Lykke.Job.Bil2Indexer.Controllers
                 },
                 request.CorrelationId
             );
+
+            return Ok();
+        }
+
+        [HttpPost("read-block")]
+        public async Task<IActionResult> HandleNotFoundBlock(ReadBlockRequest request)
+        {
+            var blocksReaderApi = _blocksReaderApiFactory.Create(request.BlockchainType);
+
+            await blocksReaderApi.SendAsync(new ReadBlockCommand(request.BlockNumber), request.CorrelationId);
 
             return Ok();
         }
