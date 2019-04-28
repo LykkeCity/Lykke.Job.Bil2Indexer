@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Common;
+using Common.Log;
 using Lykke.Bil2.SharedDomain;
+using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
@@ -22,11 +23,14 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
         private readonly string _posgresConnstring;
         private readonly PostgreSQLCopyHelper<CoinEntity> _copyMapper;
 
-        public CoinsRepository(string posgresConnString)
+        private readonly ILog _log;
+
+        public CoinsRepository(string posgresConnString, ILogFactory logFactory)
         {
             _posgresConnstring = posgresConnString;
             
             _copyMapper = CoinCopyMapper.BuildCopyMapper();
+            _log = logFactory.CreateLog(this);
         }
 
         public async Task AddIfNotExistsAsync(IReadOnlyCollection<Coin> coins)
@@ -100,19 +104,13 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
         {
             using (var db = new BlockchainDataContext(_posgresConnstring))
             {
-                var foundCount = await db.Coins.Where(CoinPredicates.Build(blockchainType, ids, includeDeleted: false))
+                var foundCount = await db.Coins
+                    .Where(CoinPredicates.Build(blockchainType, ids, includeDeleted: true))
                     .UpdateAsync(p => new CoinEntity {IsSpent = false});
 
                 if (foundCount != ids.Count)
                 {
-                    var found = (await db.Coins.Where(CoinPredicates.Build(blockchainType, ids, includeDeleted: false))
-                            .Select(p => new {p.TransactionId, p.CoinNumber}).ToListAsync())
-                        .Select(p => new CoinId(p.TransactionId, p.CoinNumber))
-                        .ToDictionary(p => p);
-
-                    var notFoundIds = ids.Where(p => !found.ContainsKey(p)).ToList();
-
-                    throw new ArgumentException($"Not found entities to revert spend. Passed: {ids.Count}, updated: {foundCount}, not found {notFoundIds.ToJson()}");
+                    _log.Info("Not all coins are reverted", context: new {foundCount, ids});
                 }
             }
         }
