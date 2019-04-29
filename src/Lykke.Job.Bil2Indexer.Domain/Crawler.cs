@@ -107,11 +107,6 @@ namespace Lykke.Job.Bil2Indexer.Domain
             ExpectedBlockNumber = nextBlockNumber;
         }
 
-        public void RetryCurrentBlock()
-        {
-            ++Sequence;
-        }
-
         public CrawlerCorrelationId GetCorrelationId()
         {
             return new CrawlerCorrelationId(BlockchainType, Configuration, Sequence);

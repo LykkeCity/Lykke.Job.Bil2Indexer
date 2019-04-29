@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
-using Hangfire;
 using Lykke.Bil2.Client.BlocksReader.Services;
+using Lykke.Bil2.Contract.BlocksReader.Commands;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.RabbitMq.Publication;
 using Lykke.Bil2.RabbitMq.Subscription;
@@ -15,7 +15,6 @@ using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.Infrastructure;
 using Lykke.Job.Bil2Indexer.Services;
-using Lykke.Job.Bil2Indexer.Workflow.BackgroundJobs;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Numerics.Linq;
 
@@ -32,6 +31,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         private readonly ICoinsRepository _coinsRepository;
         private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
         private readonly IAssetInfosManager _assetInfosManager;
+        private readonly IBlocksReaderApiFactory _blocksReaderApiFactory;
         private readonly ILog _log;
 
         public BlockReaderEventsHandler(
@@ -44,7 +44,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             IBalanceActionsRepository balanceActionsRepository,
             ICoinsRepository coinsRepository,
             IFeeEnvelopesRepository feeEnvelopesRepository,
-            IAssetInfosManager assetInfosManager)
+            IAssetInfosManager assetInfosManager,
+            IBlocksReaderApiFactory blocksReaderApiFactory)
         {
             _log = logFactory.CreateLog(this);
             _messageSendersFactory = messageSendersFactory;
@@ -56,6 +57,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             _coinsRepository = coinsRepository;
             _feeEnvelopesRepository = feeEnvelopesRepository;
             _assetInfosManager = assetInfosManager;
+            _blocksReaderApiFactory = blocksReaderApiFactory;
         }
 
         public async Task<MessageHandlingResult> HandleAsync(string blockchainType, BlockHeaderReadEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -123,17 +125,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return MessageHandlingResult.TransientFailure();
             }
 
-            // TODO: To avoid Hangfire job usage, we can add message time to the message and retry the message until timeout is not elapsed.
-            // TODO: if delay is less than some configured threshold, use Task.Delay instead of scheduler,
-            // because of too high latency of the scheduler.
+            await Task.Delay(_integrationSettingsProvider.Get(blockchainType).Indexer.NotFoundBlockRetryDelay);
+         
+            var blocksReaderApi = _blocksReaderApiFactory.Create(blockchainType);
 
-            var delay = _integrationSettingsProvider.Get(blockchainType).Indexer.NotFoundBlockRetryDelay;
-
-            BackgroundJob.Schedule<RetryNotFoundBlockJob>
-            (
-                job => job.RetryAsync(blockchainType, evt.BlockNumber, messageCorrelationId),
-                delay
-            );
+            await blocksReaderApi.SendAsync(new ReadBlockCommand(evt.BlockNumber), crawler.GetCorrelationId().ToString());
 
             return MessageHandlingResult.Success();
         }
