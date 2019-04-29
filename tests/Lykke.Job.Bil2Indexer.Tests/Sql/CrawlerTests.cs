@@ -23,7 +23,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var retrieved1 = await repo.GetOrDefaultAsync(source1.BlockchainType, source1.Configuration);
             AssertCrawlerEquality(source1, retrieved1);
 
-            retrieved1.RetryCurrentBlock();
+            retrieved1.MoveTo(retrieved1.ExpectedBlockNumber);
             Assert.AreNotEqual(retrieved1.Sequence, source1.Sequence);
 
             await repo.SaveAsync(retrieved1);
@@ -74,7 +74,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             Assert.ThrowsAsync<OptimisticConcurrencyException>(async () => { await repo.SaveAsync(source1); });
 
-            retrieved1.RetryCurrentBlock();
+            retrieved1.MoveTo(retrieved1.ExpectedBlockNumber);
             await repo.SaveAsync(retrieved1);
 
             var retrieved2 = await repo.GetOrDefaultAsync(source1.BlockchainType, new CrawlerConfiguration(source1.Configuration.StartBlock, source1.Configuration.StopAssemblingBlock));
@@ -87,7 +87,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var retrieved3 = await repo.GetOrDefaultAsync(source1.BlockchainType, new CrawlerConfiguration(source1.Configuration.StartBlock, source1.Configuration.StopAssemblingBlock));
             Assert.AreNotEqual(retrieved2.Version, retrieved3.Version);
 
-            retrieved3.RetryCurrentBlock();
+            retrieved3.MoveTo(retrieved3.ExpectedBlockNumber);
             await repo.SaveAsync(retrieved3);
 
             Assert.ThrowsAsync<OptimisticConcurrencyException>(async () => { await repo.SaveAsync(retrieved2); });
