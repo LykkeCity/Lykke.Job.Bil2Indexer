@@ -22,26 +22,31 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 {
     public class BalanceActionsRepository: IBalanceActionsRepository
     {
-        private readonly string _posgresConnstring;
+        private readonly string _postgresConnString;
         private readonly PostgreSQLCopyHelper<BalanceActionEntity> _copyMapper;
 
         private readonly IAssetInfosProvider _assetInfosProvider;
 
-        public BalanceActionsRepository(string posgresConnstring, 
+        public BalanceActionsRepository(string postgresConnString, 
             IAssetInfosProvider assetInfosProvider)
         {
-            _posgresConnstring = posgresConnstring;
+            _postgresConnString = postgresConnString;
             _assetInfosProvider = assetInfosProvider;
             
             _copyMapper = BalanceActionCopyMapper.BuildCopyMapper();
         }
 
         public async Task AddIfNotExistsAsync(string blockchainType,
-            IReadOnlyCollection<BalanceAction> actions)
+            IEnumerable<BalanceAction> actions)
         {
             var dbEntities = actions.Select(domain => domain.ToDbEntity(blockchainType)).ToList();
 
-            using (var conn = new NpgsqlConnection(_posgresConnstring))
+            if (!dbEntities.Any())
+            {
+                return;
+            }
+
+            using (var conn = new NpgsqlConnection(_postgresConnString))
             {
                 conn.Open();
 
@@ -73,7 +78,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 return $"{bType}_{transactionId}_{address}_{assetId}_{assetAddress}";
             }
 
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var blockchainType = dbEntities.First().BlockchainType;
 
@@ -81,13 +86,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 
                 var txIdsWithAssetAddress = dbEntities
                     .Where(p => p.AssetAddress != null)
-                    .Select(p => p.TransactionId)
-                    .ToList();
+                    .Select(p => p.TransactionId);
 
                 var txIdsWithoutAssetAddress = dbEntities
                     .Where(p => p.AssetAddress == null)
-                    .Select(p => p.TransactionId)
-                    .ToList();
+                    .Select(p => p.TransactionId);
 
                 var getNaturalIds1 = db.BalanceActions
                     .Where(BalanceActionsPredicates.Build(blockchainType, txIdsWithAssetAddress, isAssetAddressNull: false))
@@ -113,7 +116,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
         public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 await db.BalanceActions
                     .Where(BalanceActionsPredicates.Build(blockchainType, blockId))
@@ -137,7 +140,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                             and asset_id = @assetId 
                             and asset_address {(isNullAssetAddress ? "is null" : "= @assetAddress")}";
 
-            using (var conn = new NpgsqlConnection(_posgresConnstring))
+            using (var conn = new NpgsqlConnection(_postgresConnString))
             {
                 var getSum = conn.QuerySingleAsync<string>(query, new { blockchainType ,
                     address = address.ToString(),
@@ -165,7 +168,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                             and block_number <= @blockNumber 
                     group by asset_id, asset_address";
 
-            using (var conn = new NpgsqlConnection(_posgresConnstring))
+            using (var conn = new NpgsqlConnection(_postgresConnString))
             {
                 var assetBalances = (await conn.QueryAsync<(string sum, string assetId, string assetAddress)>(query, new
                 {
@@ -186,7 +189,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             string blockchainType, 
             ISet<TransactionId> transactionIds)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            if (!transactionIds.Any())
+            {
+                return new Dictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>();
+            }
+
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var queryRes = await db.BalanceActions.Where(BalanceActionsPredicates.Build(blockchainType, transactionIds))
                     .Select(p => new

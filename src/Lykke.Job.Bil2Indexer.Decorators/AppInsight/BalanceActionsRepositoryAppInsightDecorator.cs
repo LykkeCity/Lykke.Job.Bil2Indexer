@@ -24,7 +24,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
             _appInsightTelemetryProvider = appInsightTelemetryProvider;
         }
 
-        public async Task AddIfNotExistsAsync(string blockchainType, IReadOnlyCollection<BalanceAction> actions)
+        public async Task AddIfNotExistsAsync(string blockchainType, IEnumerable<BalanceAction> actions)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";

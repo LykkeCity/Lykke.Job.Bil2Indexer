@@ -115,7 +115,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 throw new InvalidOperationException($"Block can be executed only in states: {BlockState.Assembled} or {BlockState.PartiallyExecuted}, actual: {State}");
             }
 
-            PaginatedItems<TransactionEnvelope> transactions = null;
+            PaginatedItems<Transaction> transactions = null;
             var spendCoinsTask = default(Task);
             
             do
@@ -186,7 +186,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 throw new InvalidOperationException($"Block can be reverted only in states: {BlockState.Executed} or {BlockState.PartiallyExecuted}, actual: {State}");
             }
 
-            PaginatedItems<TransactionEnvelope> transactions = null;
+            PaginatedItems<Transaction> transactions = null;
 
             do
             {
@@ -220,7 +220,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             IReadOnlyCollection<Coin> coinsToSpend,
             IBalanceActionsRepository balanceActionsRepository,
             IFeeEnvelopesRepository feeEnvelopesRepository,
-            TransferCoinsTransactionExecutedEvent transaction)
+            TransferCoinsExecutedTransaction transaction)
         {
             var missedCoins = transaction.SpentCoins.Except(coinsToSpend.Select(x => x.Id));
 
@@ -240,7 +240,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         private async Task SaveBalanceActionsAsync(
             IBalanceActionsRepository balanceActionsRepository,
-            TransferCoinsTransactionExecutedEvent transaction,
+            TransferCoinsExecutedTransaction transaction,
             IReadOnlyCollection<Coin> coinsToSpend)
         {
             var receivedCoins = transaction.ReceivedCoins
@@ -272,14 +272,14 @@ namespace Lykke.Job.Bil2Indexer.Domain
                         Id,
                         transaction.TransactionId
                     )
-                ).ToList();
+                );
 
             await balanceActionsRepository.AddIfNotExistsAsync(BlockchainType, actions);
         }
 
         private async Task SaveFeesAsync(
             IFeeEnvelopesRepository feeEnvelopesRepository,
-            TransferCoinsTransactionExecutedEvent transaction, 
+            TransferCoinsExecutedTransaction transaction, 
             IReadOnlyCollection<Coin> coinsToSpend)
         {
             var assetReceivedAmount = transaction.ReceivedCoins
@@ -313,7 +313,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                             amount
                         )
                     );
-                }).ToList();
+                });
 
             await feeEnvelopesRepository.AddIfNotExistsAsync(fees);
         }

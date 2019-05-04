@@ -14,11 +14,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 {
     public class BlockHeadersRepository:IBlockHeadersRepository
     {
-        private readonly string _posgresConnString;
+        private readonly string _postgresConnString;
 
-        public BlockHeadersRepository(string posgresConnString)
+        public BlockHeadersRepository(string postgresConnString)
         {
-            _posgresConnString = posgresConnString;
+            _postgresConnString = postgresConnString;
         }
 
         public async Task SaveAsync(BlockHeader block)
@@ -26,7 +26,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             var dbEntity = Map(block);
             var isExisted = block.Version != 0;
 
-            using (var db = new StateDataContext(_posgresConnString))
+            using (var db = new StateDataContext(_postgresConnString))
             {
                 if (isExisted)
                 {
@@ -59,7 +59,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, long blockNumber)
         {
-            using (var db = new StateDataContext(_posgresConnString))
+            using (var db = new StateDataContext(_postgresConnString))
             {
                 var existed = await db.BlockHeaders
                     .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockNumber));
@@ -70,7 +70,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new StateDataContext(_posgresConnString))
+            using (var db = new StateDataContext(_postgresConnString))
             {
                 var existed = await db.BlockHeaders
                     .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockId));
@@ -81,7 +81,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new StateDataContext(_posgresConnString))
+            using (var db = new StateDataContext(_postgresConnString))
             {
                 var existed = await db.BlockHeaders
                     .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockId));
@@ -97,7 +97,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task TryRemoveAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new StateDataContext(_posgresConnString))
+            using (var db = new StateDataContext(_postgresConnString))
             {
                 var existed = await db.BlockHeaders
                     .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockId));

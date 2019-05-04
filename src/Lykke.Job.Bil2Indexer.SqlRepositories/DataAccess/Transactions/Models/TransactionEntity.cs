@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models
 {
@@ -25,7 +24,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models
         public int TransactionNumber { get; set; }
 
         [Column("type")]
-        public TransactionType Type { get; set; }
+        public int Type { get; set; }
 
         [Column("payload", TypeName = "jsonb")]
         public string Payload { get; set; }

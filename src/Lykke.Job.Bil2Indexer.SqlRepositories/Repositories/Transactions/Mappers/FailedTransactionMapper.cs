@@ -8,15 +8,15 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
 {
-    internal static class TransactionFailedEventMapper
+    internal static class FailedTransactionMapper
     {
-        public static TransactionEntity MapToDbEntity(this TransactionFailedEvent source, string blockchainType)
+        public static TransactionEntity MapToDbEntity(this FailedTransaction source, string blockchainType, string blockId)
         {
             return new TransactionEntity
             {
-                BlockId = source.BlockId,
-                BlockchainType =  blockchainType,
-                Payload = new TransactionFailedEventPayload
+                BlockId = blockId,
+                BlockchainType = blockchainType,
+                Payload = new FailedTransactionPayload
                 {
                     Fees = source.Fees,
                     ErrorCode = source.ErrorCode.ToDbEntity(),
@@ -25,25 +25,27 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
                 }.ToJson(),
                 TransactionId = source.TransactionId,
                 TransactionNumber = source.TransactionNumber,
-                Type = TransactionType.TransactionFailed
+                Type = (int) TransactionType.Failed
             };
         }
 
-        public static TransactionFailedEvent MapToFailed(this TransactionEntity source)
+        public static FailedTransaction MapToFailed(this TransactionEntity source)
         {
-            if (source.Type != TransactionType.TransactionFailed)
+            if ((TransactionType) source.Type != TransactionType.Failed)
             {
-                throw new ArgumentException($"Unable to cast {source.TransactionId} of {source.Type} to {nameof(TransactionFailedEvent)}");
+                throw new ArgumentException($"Unable to map {source.TransactionId} of {source.Type} to {nameof(FailedTransaction)}");
             }
 
-            var payload = source.Payload.DeserializeJson<TransactionFailedEventPayload>();
+            var payload = source.Payload.DeserializeJson<FailedTransactionPayload>();
 
-            return new TransactionFailedEvent(blockId: source.BlockId,
+            return new FailedTransaction
+            (
                 transactionId: source.TransactionId,
                 transactionNumber: source.TransactionNumber,
                 errorCode: payload.ErrorCode.ToDomain(),
                 errorMessage: payload.ErrorMessage,
-                fees: payload.Fees?.ToList());
+                fees: payload.Fees?.ToList()
+            );
         }
     }
 }

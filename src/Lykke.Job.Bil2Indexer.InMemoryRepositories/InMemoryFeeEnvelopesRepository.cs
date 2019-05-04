@@ -20,7 +20,7 @@ namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
             _blocksFees = new ConcurrentDictionary<(string, string), ConcurrentDictionary<Asset, FeeEnvelope>>();
         }
 
-        public Task AddIfNotExistsAsync(IReadOnlyCollection<FeeEnvelope> fees)
+        public Task AddIfNotExistsAsync(IEnumerable<FeeEnvelope> fees)
         {
             foreach (var fee in fees)
             {

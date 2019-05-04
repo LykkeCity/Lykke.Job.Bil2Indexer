@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props.Payloads
 {
-    public class TransactionFailedEventPayload
+    public class FailedTransactionPayload
     {
         [CanBeNull]
         [JsonProperty("fees")]

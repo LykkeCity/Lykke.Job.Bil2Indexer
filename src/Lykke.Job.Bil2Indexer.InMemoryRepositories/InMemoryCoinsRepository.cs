@@ -17,7 +17,7 @@ namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
             _coins = new ConcurrentDictionary<(string, CoinId), Coin>();
         }
 
-        public Task AddIfNotExistsAsync(IReadOnlyCollection<Coin> coins)
+        public Task AddIfNotExistsAsync(IEnumerable<Coin> coins)
         {
             foreach (var coin in coins)
             {

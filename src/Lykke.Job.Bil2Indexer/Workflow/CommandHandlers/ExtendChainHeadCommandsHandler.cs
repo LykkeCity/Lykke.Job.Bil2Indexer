@@ -120,37 +120,37 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             long blockNumber,
             IMessagePublisher publisher)
         {
-            PaginatedItems<TransactionEnvelope> envelopes = null;
+            PaginatedItems<Transaction> transactions = null;
 
             do
             {
-                envelopes = await _transactionsRepository.GetAllOfBlockAsync
+                transactions = await _transactionsRepository.GetAllOfBlockAsync
                 (
                     blockchainType,
                     blockId,
                     500,
-                    envelopes?.Continuation
+                    transactions?.Continuation
                 );
 
-                var transferAmountTransactions = new ConcurrentBag<TransferAmountTransactionExecutedEvent>();
-                var transferCoinsTransactions = new ConcurrentBag<TransferCoinsTransactionExecutedEvent>();
-                var failedTransactions = new ConcurrentBag<Bil2.Contract.BlocksReader.Events.TransactionFailedEvent>();
+                var transferAmountTransactions = new ConcurrentBag<TransferAmountExecutedTransaction>();
+                var transferCoinsTransactions = new ConcurrentBag<TransferCoinsExecutedTransaction>();
+                var failedTransactions = new ConcurrentBag<FailedTransaction>();
 
-                await envelopes.Items.ForEachAsync(
+                await transactions.Items.ForEachAsync(
                     8,
-                    envelope =>
+                    transaction =>
                     {
-                        if (envelope.IsTransferAmount)
+                        if (transaction.IsTransferAmount)
                         {
-                            transferAmountTransactions.Add(envelope.AsTransferAmount());
+                            transferAmountTransactions.Add(transaction.AsTransferAmount());
                         } 
-                        else if (envelope.IsTransferCoins)
+                        else if (transaction.IsTransferCoins)
                         {
-                            transferCoinsTransactions.Add(envelope.AsTransferCoins());
+                            transferCoinsTransactions.Add(transaction.AsTransferCoins());
                         }
-                        else if (envelope.IsFailed)
+                        else if (transaction.IsFailed)
                         {
-                            failedTransactions.Add(envelope.AsFailed());
+                            failedTransactions.Add(transaction.AsFailed());
                         }
                         else
                         {
@@ -167,14 +167,14 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     PublishFailedTransactionsAsync(blockchainType, blockId, blockNumber, failedTransactions, publisher)
                 );
 
-            } while (envelopes.Continuation != null);
+            } while (transactions.Continuation != null);
         }
 
         private async Task PublishTransferAmountTransactionsAsync(
             string blockchainType,
             string blockId,
             long blockNumber,
-            IReadOnlyCollection<TransferAmountTransactionExecutedEvent> transactions,
+            IReadOnlyCollection<TransferAmountExecutedTransaction> transactions,
             IMessagePublisher publisher)
         {
             var transactionsAccountBalances = await _balanceActionsRepository.GetSomeOfBalancesAsync
@@ -204,7 +204,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             long blockNumber,
             IMessagePublisher publisher, 
             IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>> transactionsAccountBalances,
-            TransferAmountTransactionExecutedEvent transaction)
+            TransferAmountExecutedTransaction transaction)
         {
             if (!transactionsAccountBalances.TryGetValue(transaction.TransactionId, out var transactionAccountBalances))
             {
@@ -271,7 +271,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private async Task PublishTransferCoinsTransactionsAsync(string blockchainType,
             string blockId,
             long blockNumber,
-            IReadOnlyCollection<TransferCoinsTransactionExecutedEvent> transactions,
+            IReadOnlyCollection<TransferCoinsExecutedTransaction> transactions,
             IMessagePublisher publisher)
         {
             var (transactionsAccountBalances, coinsSpentByTransactions) = await TaskExecution.WhenAll
@@ -318,7 +318,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             long blockNumber,
             IMessagePublisher publisher, 
             IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>> transactionsAccountBalances,
-            TransferCoinsTransactionExecutedEvent transaction, 
+            TransferCoinsExecutedTransaction transaction, 
             Dictionary<TransactionId, IEnumerable<Coin>> transactionsSpentCoins)
         {
             if (!transactionsAccountBalances.TryGetValue(transaction.TransactionId,
@@ -425,7 +425,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private Task PublishFailedTransactionsAsync(string blockchainType,
             string blockId,
             long blockNumber,
-            IEnumerable<Bil2.Contract.BlocksReader.Events.TransactionFailedEvent> transactions,
+            IEnumerable<FailedTransaction> transactions,
             IMessagePublisher publisher)
         {
             return transactions.ForEachAsync
@@ -434,7 +434,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 async transaction =>
                 {
                     var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
-                    var evt = new Contract.Events.TransactionFailedEvent
+                    var evt = new TransactionFailedEvent
                     (
                         blockchainType,
                         blockId,

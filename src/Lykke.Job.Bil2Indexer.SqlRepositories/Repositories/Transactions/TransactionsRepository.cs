@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -11,46 +11,51 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Z.EntityFramework.Plus;
+using PostgreSQLCopyHelper;
+
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 {
     public class TransactionsRepository : ITransactionsRepository
     {
         private readonly string _postgresConnString;
+        private readonly PostgreSQLCopyHelper<TransactionEntity> _copyMapper;
 
         public TransactionsRepository(string postgresConnString)
         {
             _postgresConnString = postgresConnString;
+
+            _copyMapper = TransactionCopyMapper.BuildCopyMapper();
         }
 
-        public Task AddIfNotExistsAsync(string blockchainType, TransferAmountTransactionExecutedEvent transaction)
+        public async Task AddIfNotExistsAsync(IEnumerable<Transaction> transactions)
         {
-            return AddIfNotExistsAsync(transaction.MapToDbEntity(blockchainType));
-        }
+            var entities = transactions
+                .Select(t => t.MapToDbEntity())
+                .ToArray();
 
-        public Task AddIfNotExistsAsync(string blockchainType, TransferCoinsTransactionExecutedEvent transaction)
-        {
-            return AddIfNotExistsAsync(transaction.MapToDbEntity(blockchainType));
-        }
-
-        public Task AddIfNotExistsAsync(string blockchainType, TransactionFailedEvent transaction)
-        {
-            return AddIfNotExistsAsync(transaction.MapToDbEntity(blockchainType));
-        }
-
-        private async Task AddIfNotExistsAsync(TransactionEntity transaction)
-        {
-            using (var db = new TransactionsDataContext(_postgresConnString))
+            if (!entities.Any())
             {
-                await db.Transactions.AddAsync(transaction);
+                return;
+            }
+
+            using (var conn = new NpgsqlConnection(_postgresConnString))
+            {
+                conn.Open();
 
                 try
                 {
-                    await db.SaveChangesAsync();
+                    _copyMapper.SaveAll(conn, entities);
                 }
-                catch (DbUpdateException e) when(e.IsNaturalKeyViolationException())
+                catch (PostgresException e) when (e.IsNaturalKeyViolationException())
                 {
-                    //assume entity already exist in db
+                    var notExisted = await ExcludeExistedInDbAsync(entities);
+
+                    if (notExisted.Any())
+                    {
+                        _copyMapper.SaveAll(conn, notExisted);
+                    }
                 }
             }
         }
@@ -65,7 +70,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             }
         }
 
-        public async Task<PaginatedItems<TransactionEnvelope>> GetAllOfBlockAsync(string blockchainType, BlockId blockId, int limit, string continuation)
+        public async Task<PaginatedItems<Transaction>> GetAllOfBlockAsync(string blockchainType, BlockId blockId, int limit, string continuation)
         {
             var skip = 0;
 
@@ -88,11 +93,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                     .Select(x => x.MapToTransactionEnvelope())
                     .ToArray();
 
-                return new PaginatedItems<TransactionEnvelope>(nextContinuation, envelopes);
+                return new PaginatedItems<Transaction>(nextContinuation, envelopes);
             }
         }
 
-        public async Task<TransactionEnvelope> GetAsync(string blockchainType, TransactionId transactionId)
+        public async Task<Transaction> GetAsync(string blockchainType, TransactionId transactionId)
         {
             var envelope = await GetOrDefaultAsync(blockchainType, transactionId);
 
@@ -104,7 +109,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             return envelope;
         }
 
-        public async Task<TransactionEnvelope> GetOrDefaultAsync(string blockchainType, TransactionId transactionId)
+        public async Task<Transaction> GetOrDefaultAsync(string blockchainType, TransactionId transactionId)
         {
             using (var db = new TransactionsDataContext(_postgresConnString))
             {
@@ -122,6 +127,27 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 await db.Transactions
                     .Where(BuildPredicate(blockchainType, blockId))
                     .DeleteAsync();
+            }
+        }
+
+        private async Task<IReadOnlyCollection<TransactionEntity>> ExcludeExistedInDbAsync(IReadOnlyCollection<TransactionEntity> dbEntities)
+        {
+            if (dbEntities.GroupBy(p => p.BlockchainType).Count() > 1)
+            {
+                throw new ArgumentException("Unable to save batch with multiple blockchain type");
+            }
+
+            var blockchainType = dbEntities.First().BlockchainType;
+            var ids = dbEntities.Select(t => t.TransactionId);
+
+            using (var db = new TransactionsDataContext(_postgresConnString))
+            {
+                var existedIds = (await db.Transactions.FilterByIds(blockchainType, ids)
+                        .Select(t => t.TransactionId)
+                        .ToListAsync())
+                    .ToHashSet();
+
+                return dbEntities.Where(entity => !existedIds.Contains(entity.TransactionId)).ToArray();
             }
         }
 
