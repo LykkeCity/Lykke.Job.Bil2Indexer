@@ -2,8 +2,8 @@
 {
     internal enum TransactionType
     {
-        TransferAmountTransactionExecuted = 0,
-        TransferCoinsTransactionExecuted = 1,
-        TransactionFailed = 2
+        TransferAmount = 0,
+        TransferCoins = 1,
+        Failed = 2
     }
 }

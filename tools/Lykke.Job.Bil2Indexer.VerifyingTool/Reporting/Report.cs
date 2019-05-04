@@ -1,5 +1,4 @@
 ﻿using Lykke.Bil2.Contract.BlocksReader.Events;
-using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations;
@@ -73,81 +72,52 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
 
                 if (indexedBlock != null)
                 {
+                    string continuation = null;
+                    var transactions = new List<Transaction>(indexedBlock.TransactionsCount);
+
+                    do
+                    {
+                        var paginationResponse = await
+                            _transactionsRepository.GetAllOfBlockAsync(
+                                _blockchainType,
+                                indexedBlock.Id,
+                                _limit,
+                                continuation);
+
+                        continuation = paginationResponse.Continuation;
+
+                        transactions.AddRange(paginationResponse.Items);
+                    } while (!string.IsNullOrEmpty(continuation));
+
                     if (_transferModel == BlockchainTransferModel.Coins)
                     {
-                        string continuation = null;
-                        var transfers = new List<TransferCoinsTransactionExecutedEvent>(indexedBlock.TransactionsCount);
-                        var failedTransfers = new List<TransactionFailedEvent>(indexedBlock.TransactionsCount);
-
-                        do
-                        {
-                            var paginationResponse = await
-                                _transactionsRepository.GetAllOfBlockAsync(
-                                    _blockchainType,
-                                    indexedBlock.Id,
-                                    _limit,
-                                    continuation);
-
-                            continuation = paginationResponse.Continuation;
-
-                            transfers.AddRange(paginationResponse.Items.Where(x => x.IsTransferCoins).Select(x => x.AsTransferCoins()));
-                            failedTransfers.AddRange(paginationResponse.Items.Where(x => x.IsFailed).Select(x => x.AsFailed()));
-                        } while (!string.IsNullOrEmpty(continuation));
-
-                        var orderedTransactions = transfers.OrderBy(x => x.TransactionNumber).ToArray();
-                        var (realCoinTransfers, realFailedEvents) =
-                            await _adapter.GetCoinTransactionsForBlockAsync(currentBlockNumber);
-                        var orderedRealCoinTransfers = realCoinTransfers.OrderBy(x => x.TransactionNumber).ToArray();
-                        var orderedRealFailedEvents = realFailedEvents.OrderBy(x => x.TransactionNumber).ToArray();
+                        var orderedTransactions = transactions
+                            .OrderBy(x => x.AsTransferCoinsOrDefault()?.TransactionNumber ?? x.AsFailed().TransactionNumber)
+                            .ToArray();
+                        var realTransactions = await _adapter.GetBlockTransactionsAsync(currentBlockNumber);
+                        var orderedRealTransactions = realTransactions
+                            .OrderBy(x => x.AsTransferCoinsOrDefault()?.TransactionNumber ?? x.AsFailed().TransactionNumber)
+                            .ToArray();
 
                         AssertEqual(
                             orderedTransactions.Length,
-                            orderedRealCoinTransfers.Count(),
-                            nameof(realCoinTransfers));
-                        AssertEqual(failedTransfers.Count,
-                            orderedRealFailedEvents.Count(),
-                            nameof(realFailedEvents));
+                            orderedRealTransactions.Length,
+                            nameof(orderedRealTransactions));
 
                         _reportingContext.StartListScope("coinTransfers");
 
-                        for (int j = 0; j < orderedRealCoinTransfers.Length; j++)
+                        for (var j = 0; j < orderedRealTransactions.Length; j++)
                         {
                             _reportingContext.StartScope();
 
-                            var orderedTransactionIndexed = orderedTransactions[j];
-                            var orderedTransactionReal = orderedRealCoinTransfers[j];
+                            var indexedTransaction = orderedTransactions[j];
+                            var realTransaction = orderedRealTransactions[j];
+                            var indexedTransferCoinsTransaction = indexedTransaction.AsTransferCoinsOrDefault();
+                            var realTransferCoinsTransaction = realTransaction.AsTransferCoinsOrDefault();
 
-                            AssertCoinTransfers(orderedTransactionIndexed, orderedTransactionReal);
-
-                            var spentCoinsReal = orderedTransactionReal.SpentCoins.ToArray();
-                            var spentCoinsIndexed = orderedTransactionIndexed.SpentCoins.ToArray();
-
-                            AssertEqual(
-                                spentCoinsReal.Length,
-                                spentCoinsReal.Length,
-                                "SpentCoinsReal.Length");
-
-                            AssertSpentCoins(spentCoinsReal, spentCoinsIndexed);
-
-                            var receivedCoinsReal = orderedTransactionReal.ReceivedCoins.ToArray();
-                            var receivedCoinsIndexed = orderedTransactionIndexed.ReceivedCoins.ToArray();
-
-                            AssertEqual(
-                                receivedCoinsReal.Length,
-                                receivedCoinsReal.Length,
-                                "ReceivedCoinsReal.Length");
-
-                            AssertReceivedCoins(receivedCoinsReal, receivedCoinsIndexed);
-
-                            var feesReal = orderedTransactionReal.Fees?.ToArray();
-                            var feesIndexed = orderedTransactionIndexed.Fees?.ToArray();
-
-                            AssertEqual(
-                                feesReal?.Length ?? 0,
-                                feesIndexed?.Length ?? 0,
-                                "Fees.Length");
-
-                            AssertFees(feesReal, feesIndexed);
+                            AssertCommon(indexedTransaction, realTransaction);
+                            AssertCoinTransfers(indexedTransferCoinsTransaction, realTransferCoinsTransaction);                           
+                            AssertFees(indexedTransaction, realTransaction);
 
                             _reportingContext.EndScope();
                         }
@@ -156,69 +126,33 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
                     }
                     else if (_transferModel == BlockchainTransferModel.Amount)
                     {
-                        string continuation = null;
-                        var transfers = new List<TransferAmountTransactionExecutedEvent>(indexedBlock.TransactionsCount);
-                        var failedTransfers = new List<TransactionFailedEvent>(indexedBlock.TransactionsCount);
-
-                        do
-                        {
-                            var paginationResponse = await
-                                _transactionsRepository.GetAllOfBlockAsync(
-                                    _blockchainType,
-                                    indexedBlock.Id,
-                                    _limit,
-                                    continuation);
-
-                            continuation = paginationResponse.Continuation;
-
-                            transfers.AddRange(paginationResponse.Items.Where(x => x.IsTransferAmount).Select(x => x.AsTransferAmount()));
-                            failedTransfers.AddRange(paginationResponse.Items.Where(x => x.IsFailed).Select(x => x.AsFailed()));
-                        } while (!string.IsNullOrEmpty(continuation));
-
-                        var orderedTransactions = transfers.OrderBy(x => x.TransactionNumber).ToArray();
-                        var (realAmountTransfers, realFailedEvents) =
-                            await _adapter.GetAmountTransactionsForBlockAsync(currentBlockNumber);
-                        var orderedRealAmountTransfers = realAmountTransfers.OrderBy(x => x.TransactionNumber).ToArray();
-                        var orderedRealFailedEvents = realFailedEvents.OrderBy(x => x.TransactionNumber).ToArray();
+                        var orderedTransactions = transactions
+                            .OrderBy(x => x.AsTransferAmountOrDefault()?.TransactionNumber ?? x.AsFailed().TransactionNumber)
+                            .ToArray();
+                        var realTransactions = await _adapter.GetBlockTransactionsAsync(currentBlockNumber);
+                        var orderedRealTransactions = realTransactions
+                            .OrderBy(x => x.AsTransferAmountOrDefault()?.TransactionNumber ?? x.AsFailed().TransactionNumber)
+                            .ToArray();
 
                         AssertEqual(
                             orderedTransactions.Length,
-                            orderedRealAmountTransfers.Count(),
-                            nameof(realAmountTransfers));
-                        AssertEqual(failedTransfers.Count,
-                            orderedRealFailedEvents.Count(),
-                            nameof(realFailedEvents));
+                            orderedRealTransactions.Length,
+                            nameof(orderedRealTransactions));
 
                         _reportingContext.StartListScope("amountTransfers");
 
-                        for (int j = 0; j < orderedRealAmountTransfers.Length; j++)
+                        for (var j = 0; j < orderedRealTransactions.Length; j++)
                         {
                             _reportingContext.StartScope();
 
-                            var orderedTransactionIndexed = orderedTransactions[j];
-                            var orderedTransactionReal = orderedRealAmountTransfers[j];
+                            var indexedTransaction = orderedTransactions[j];
+                            var realTransaction = orderedRealTransactions[j];
+                            var indexedTransferAmountTransaction = indexedTransaction.AsTransferAmountOrDefault();
+                            var realTransferAmountTransaction = realTransaction.AsTransferAmountOrDefault();
 
-                            AssertAmountTransfers(orderedTransactionIndexed, orderedTransactionReal);
-
-                            var balanceChangesReal = orderedTransactionReal.BalanceChanges.ToArray();
-                            var balanceChangesIndexed = orderedTransactionIndexed.BalanceChanges.ToArray();
-
-                            AssertEqual(
-                                balanceChangesReal.Length,
-                                balanceChangesIndexed.Length,
-                                "BalanceChanges.Length");
-
-                            AssertBalanceChanges(balanceChangesReal, balanceChangesIndexed);
-
-                            var feesReal = orderedTransactionReal.Fees?.ToArray();
-                            var feesIndexed = orderedTransactionIndexed.Fees?.ToArray();
-
-                            AssertEqual(
-                                feesReal?.Length ?? 0,
-                                feesIndexed?.Length ?? 0,
-                                "Fees.Length");
-
-                            AssertFees(feesReal, feesIndexed);
+                            AssertCommon(indexedTransaction, realTransaction);
+                            AssertAmountTransfers(indexedTransferAmountTransaction, realTransferAmountTransaction);
+                            AssertFees(indexedTransaction, realTransaction);
 
                             _reportingContext.EndScope();
                         }
@@ -239,49 +173,66 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
             }
         }
 
-        private void AssertFees(Fee[] feesReal, Fee[] feesIndexed)
+        private void AssertFees(Transaction indexedTransaction, Transaction realTransaction)
         {
             _reportingContext.StartListScope("fees");
 
-            for (int feesIndex = 0; feesIndex < feesReal?.Length; feesIndex++)
+            var indexedFees = indexedTransaction.AsTransferCoinsOrDefault().Fees ??
+                              indexedTransaction.AsTransferAmountOrDefault().Fees ??
+                              indexedTransaction.AsFailed().Fees;
+            var realFees = realTransaction.AsTransferCoinsOrDefault().Fees ??
+                          realTransaction.AsTransferAmountOrDefault().Fees ??
+                          realTransaction.AsFailed().Fees;
+
+            AssertEqual(indexedFees != null, realFees != null, "Fees.Existence");
+            
+            if (indexedFees != null && realFees != null)
             {
-                _reportingContext.StartScope();
+                AssertEqual(indexedFees.Count, realFees.Count, "Fees.Count");
 
-                var feeIndexed = feesIndexed[feesIndex];
-                var feeReal = feesReal[feesIndex];
+                var indexedFeesArray = indexedFees.ToArray();
+                var realFeesArray = realFees.ToArray();
 
-                AssertEqual(feeIndexed.Amount, feeReal.Amount, nameof(feeReal.Amount));
-                AssertEqual(feeIndexed.Asset, feeReal.Asset, nameof(feeReal.Asset));
+                for (var j = 0; j < realFeesArray.Length; j++)
+                {
+                    _reportingContext.StartScope();
 
-                _reportingContext.EndScope();
+                    var indexedFee = indexedFeesArray[j];
+                    var realFee = realFeesArray[j];
+
+                    AssertEqual(indexedFee.Amount, realFee.Amount, nameof(realFee.Amount));
+                    AssertEqual(indexedFee.Asset, realFee.Asset, nameof(realFee.Asset));
+
+                    _reportingContext.EndScope();
+                }
             }
 
             _reportingContext.EndScope();
         }
 
-        private void AssertReceivedCoins(ReceivedCoin[] receivedCoinsReal, ReceivedCoin[] receivedCoinsIndexed)
+        private void AssertReceivedCoins(TransferCoinsExecutedTransaction indexedTransaction, TransferCoinsExecutedTransaction realTransaction)
         {
             _reportingContext.StartListScope("receivedCoins");
 
-            for (int receivedCoinIndex = 0; receivedCoinIndex < receivedCoinsReal.Length; receivedCoinIndex++)
+            AssertEqual(indexedTransaction.ReceivedCoins.Count, realTransaction.ReceivedCoins.Count, "ReceivedCoins.Count");
+
+            var indexedCoins = indexedTransaction.ReceivedCoins.ToArray();
+            var realCoins = realTransaction.ReceivedCoins.ToArray();
+
+            for (var j = 0; j < realCoins.Length; j++)
             {
                 _reportingContext.StartScope();
 
-                var receivedCoinIndexed = receivedCoinsIndexed[receivedCoinIndex];
-                var receivedCoinReal = receivedCoinsReal[receivedCoinIndex];
+                var indexedCoin = indexedCoins[j];
+                var realCoin = realCoins[j];
 
-                AssertEqual(receivedCoinIndexed.CoinNumber, receivedCoinReal.CoinNumber,
-                    nameof(receivedCoinReal.CoinNumber));
-                AssertEqual(receivedCoinIndexed.Address, receivedCoinReal.Address,
-                    nameof(receivedCoinReal.Address));
-                AssertEqual(receivedCoinIndexed.AddressNonce ?? 0, receivedCoinReal.AddressNonce ?? 0,
-                    nameof(receivedCoinReal.AddressNonce));
-                AssertEqual(receivedCoinIndexed.Address, receivedCoinReal.Address,
-                    nameof(receivedCoinReal.Address));
-                AssertEqual((int?)receivedCoinIndexed.AddressTagType ?? 0,
-                    (int?)receivedCoinReal.AddressTagType ?? 0, nameof(receivedCoinReal.AddressTagType));
-                AssertEqual(receivedCoinIndexed.Value, receivedCoinReal.Value, nameof(receivedCoinReal.Value));
-                AssertEqual(receivedCoinIndexed.Asset, receivedCoinReal.Asset, nameof(receivedCoinReal.Asset));
+                AssertEqual(indexedCoin.CoinNumber, realCoin.CoinNumber, nameof(realCoin.CoinNumber));
+                AssertEqual(indexedCoin.Address, realCoin.Address, nameof(realCoin.Address));
+                AssertEqual(indexedCoin.AddressNonce, realCoin.AddressNonce, nameof(realCoin.AddressNonce));
+                AssertEqual(indexedCoin.AddressTag, realCoin.AddressTag, nameof(realCoin.AddressTag));
+                AssertEqual(indexedCoin.AddressTagType, realCoin.AddressTagType, nameof(realCoin.AddressTagType));
+                AssertEqual(indexedCoin.Value, realCoin.Value, nameof(realCoin.Value));
+                AssertEqual(indexedCoin.Asset, realCoin.Asset, nameof(realCoin.Asset));
 
                 _reportingContext.EndScope();
             }
@@ -289,36 +240,27 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
             _reportingContext.EndScope();
         }
 
-        private void AssertBalanceChanges(BalanceChange[] balanceChangeReal, BalanceChange[] balanceChangeIndexed)
+        private void AssertBalanceChanges(TransferAmountExecutedTransaction indexedTransaction, TransferAmountExecutedTransaction realTransaction)
         {
             _reportingContext.StartListScope("balanceChange");
 
-            for (int balanceChangeIndex = 0; balanceChangeIndex < balanceChangeReal.Length; balanceChangeIndex++)
+            AssertEqual(indexedTransaction.BalanceChanges.Count, realTransaction.BalanceChanges.Count, "BalanceChanges.Count");
+
+            var indexedBalanceChanges = indexedTransaction.BalanceChanges.ToArray();
+            var realBalanceChanges = realTransaction.BalanceChanges.ToArray();
+
+            for (var j = 0; j < realBalanceChanges.Length; j++)
             {
                 _reportingContext.StartScope();
 
-                var spentCoinIndexed = balanceChangeIndexed[balanceChangeIndex];
-                var spentCoinReal = balanceChangeReal[balanceChangeIndex];
+                var indexedBalanceChange = indexedBalanceChanges[j];
+                var realBalanceChange = realBalanceChanges[j];
 
-                AssertEqual(spentCoinIndexed.Value,
-                    spentCoinReal.Value,
-                    nameof(spentCoinReal.Value));
-
-                AssertEqual(spentCoinIndexed.Address,
-                    spentCoinReal.Address,
-                    nameof(spentCoinReal.Address));
-
-                AssertEqual(spentCoinIndexed.Tag,
-                    spentCoinReal.Tag,
-                    nameof(spentCoinReal.Tag));
-
-                AssertEqual((int)(spentCoinIndexed.TagType ?? AddressTagType.Number),
-                    (int)(spentCoinReal.TagType ?? AddressTagType.Number),
-                    nameof(spentCoinReal.TagType));
-
-                AssertEqual(spentCoinIndexed.Asset,
-                    spentCoinReal.Asset,
-                    nameof(spentCoinReal.Asset));
+                AssertEqual(indexedBalanceChange.Value, realBalanceChange.Value, nameof(realBalanceChange.Value));
+                AssertEqual(indexedBalanceChange.Address, realBalanceChange.Address, nameof(realBalanceChange.Address));
+                AssertEqual(indexedBalanceChange.Tag, realBalanceChange.Tag, nameof(realBalanceChange.Tag));
+                AssertEqual(indexedBalanceChange.TagType, realBalanceChange.TagType, nameof(realBalanceChange.TagType));
+                AssertEqual(indexedBalanceChange.Asset, realBalanceChange.Asset, nameof(realBalanceChange.Asset));
 
                 _reportingContext.EndScope();
             }
@@ -326,23 +268,24 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
             _reportingContext.EndScope();
         }
 
-        private void AssertSpentCoins(CoinId[] spentCoinsReal, CoinId[] spentCoinsIndexed)
+        private void AssertSpentCoins(TransferCoinsExecutedTransaction indexedTransaction, TransferCoinsExecutedTransaction realTransaction)
         {
             _reportingContext.StartListScope("spentCoin");
 
-            for (int spentCoinIndex = 0; spentCoinIndex < spentCoinsReal.Length; spentCoinIndex++)
+            AssertEqual(indexedTransaction.SpentCoins.Count, realTransaction.SpentCoins.Count, "SpentCoins.Count");
+
+            var indexedCoins = indexedTransaction.SpentCoins.ToArray();
+            var realCoins = realTransaction.SpentCoins.ToArray();
+
+            for (var j = 0; j < realCoins.Length; j++)
             {
                 _reportingContext.StartScope();
 
-                var spentCoinIndexed = spentCoinsIndexed[spentCoinIndex];
-                var spentCoinReal = spentCoinsReal[spentCoinIndex];
+                var indexedCoin = indexedCoins[j];
+                var realCoin = realCoins[j];
 
-                AssertEqual(spentCoinIndexed.CoinNumber,
-                    spentCoinReal.CoinNumber,
-                    nameof(spentCoinReal.CoinNumber));
-                AssertEqual(spentCoinIndexed.TransactionId,
-                    spentCoinReal.TransactionId,
-                    nameof(spentCoinReal.TransactionId));
+                AssertEqual(indexedCoin.CoinNumber, realCoin.CoinNumber, nameof(realCoin.CoinNumber));
+                AssertEqual(indexedCoin.TransactionId, realCoin.TransactionId, nameof(realCoin.TransactionId));
 
                 _reportingContext.EndScope();
             }
@@ -350,32 +293,39 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
             _reportingContext.EndScope();
         }
 
-        private void AssertAmountTransfers(TransferAmountTransactionExecutedEvent orderedTransactionIndexed,
-            TransferAmountTransactionExecutedEvent orderedTransactionReal)
+        private void AssertCommon(Transaction indexedTransaction, Transaction realTransaction)
         {
-            AssertEqual(orderedTransactionIndexed.TransactionNumber, orderedTransactionReal.TransactionNumber,
-                nameof(orderedTransactionReal.TransactionNumber));
-            AssertEqual(orderedTransactionIndexed.TransactionId, orderedTransactionReal.TransactionId,
-                nameof(orderedTransactionReal.TransactionId));
-            AssertEqual(orderedTransactionIndexed.BlockId, orderedTransactionReal.BlockId,
-                nameof(orderedTransactionReal.BlockId));
-            AssertEqual(orderedTransactionIndexed.IsIrreversible ?? false,
-                orderedTransactionReal.IsIrreversible ?? false,
-                nameof(orderedTransactionReal.IsIrreversible));
+            AssertEqual(indexedTransaction.BlockId, realTransaction.BlockId, nameof(realTransaction.BlockId));
+            AssertEqual(indexedTransaction.Type, realTransaction.Type, nameof(realTransaction.Type));
         }
 
-        private void AssertCoinTransfers(TransferCoinsTransactionExecutedEvent orderedTransactionIndexed,
-            TransferCoinsTransactionExecutedEvent orderedTransactionReal)
+        private void AssertAmountTransfers(TransferAmountExecutedTransaction indexedTransaction, TransferAmountExecutedTransaction realTransaction)
         {
-            AssertEqual(orderedTransactionIndexed.TransactionNumber, orderedTransactionReal.TransactionNumber,
-                nameof(orderedTransactionReal.TransactionNumber));
-            AssertEqual(orderedTransactionIndexed.TransactionId, orderedTransactionReal.TransactionId,
-                nameof(orderedTransactionReal.TransactionId));
-            AssertEqual(orderedTransactionIndexed.BlockId, orderedTransactionReal.BlockId,
-                nameof(orderedTransactionReal.BlockId));
-            AssertEqual(orderedTransactionIndexed.IsIrreversible ?? false,
-                orderedTransactionReal.IsIrreversible ?? false,
-                nameof(orderedTransactionReal.IsIrreversible));
+            if (indexedTransaction == null || realTransaction == null)
+            {
+                return;
+            }
+
+            AssertEqual(indexedTransaction.TransactionNumber, realTransaction.TransactionNumber, nameof(realTransaction.TransactionNumber));
+            AssertEqual(indexedTransaction.TransactionId, realTransaction.TransactionId, nameof(realTransaction.TransactionId));
+            AssertEqual(indexedTransaction.IsIrreversible, realTransaction.IsIrreversible, nameof(realTransaction.IsIrreversible));
+
+            AssertBalanceChanges(indexedTransaction, realTransaction);
+        }
+
+        private void AssertCoinTransfers(TransferCoinsExecutedTransaction indexedTransaction, TransferCoinsExecutedTransaction realTransaction)
+        {
+            if (indexedTransaction == null || realTransaction == null)
+            {
+                return;
+            }
+
+            AssertEqual(indexedTransaction.TransactionNumber, realTransaction.TransactionNumber, nameof(realTransaction.TransactionNumber));
+            AssertEqual(indexedTransaction.TransactionId, realTransaction.TransactionId, nameof(realTransaction.TransactionId));
+            AssertEqual(indexedTransaction.IsIrreversible, realTransaction.IsIrreversible, nameof(realTransaction.IsIrreversible));
+
+            AssertReceivedCoins(indexedTransaction, realTransaction);
+            AssertSpentCoins(indexedTransaction, realTransaction);
         }
 
         private void AssertBlockHeaders(BlockHeader indexedBlock, BlockHeader realBlock)
@@ -388,8 +338,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
                 AssertEqual(indexedBlock.Id, realBlock.Id, nameof(realBlock.Id));
                 AssertEqual(indexedBlock.Number, realBlock.Number, nameof(realBlock.Number));
                 AssertEqual(indexedBlock.PreviousBlockId, realBlock.PreviousBlockId, nameof(realBlock.PreviousBlockId));
-                AssertEqual(indexedBlock.TransactionsCount, realBlock.TransactionsCount,
-                    nameof(realBlock.TransactionsCount));
+                AssertEqual(indexedBlock.TransactionsCount, realBlock.TransactionsCount, nameof(realBlock.TransactionsCount));
                 AssertEqual(indexedBlock.MinedAt, realBlock.MinedAt, nameof(realBlock.MinedAt));
                 AssertEqual(indexedBlock.Size, realBlock.Size, nameof(realBlock.Size));
             }
@@ -401,18 +350,9 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.Reporting
             _reportingContext.EndScope();
         }
 
-        private IBlockchainVerifierAdapter InitAdapter(string blockchainType, string[] args)
+        private void AssertEqual<T>(T indexedField, T realField, string fieldName = null)
         {
-            BlockchainVerifierAdapterFactory factory = new BlockchainVerifierAdapterFactory();
-            return factory.GetAdapter(blockchainType, args);
-        }
-
-        private void AssertEqual<T>(T indexedField, T realField, string fieldName = null) where T : IComparable<T>
-        {
-            if (indexedField == null && realField == null)
-                return;
-
-            if (indexedField?.CompareTo(realField) != 0)
+            if (!Equals(indexedField, realField))
             {
                 _reportingContext.SetError(fieldName, indexedField, realField);
             }

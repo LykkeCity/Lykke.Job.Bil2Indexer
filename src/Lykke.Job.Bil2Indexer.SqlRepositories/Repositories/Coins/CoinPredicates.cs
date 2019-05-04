@@ -11,7 +11,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
     {
         public static Expression<Func<CoinEntity, bool>> Build(string blockchainType, IEnumerable<CoinId> ids, bool includeDeleted)
         {
-            var coinIds = ids.Select(p => p.BuildCoinId()).ToList();
+            var coinIds = ids.Select(p => p.BuildCoinId());
 
             if (includeDeleted)
             {
@@ -26,7 +26,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public static Expression<Func<CoinEntity, bool>> Build(string blockchainType, IEnumerable<TransactionId> txIds)
         {
-            var stringTxIds = txIds.Select(p => p.ToString()).ToList();
+            var stringTxIds = txIds.Select(p => p.ToString());
 
             return dbCoin => dbCoin.BlockchainType == blockchainType
                              && stringTxIds.Contains(dbCoin.TransactionId);

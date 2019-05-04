@@ -19,7 +19,7 @@ namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
             _actions = new ConcurrentDictionary<(string, AccountId), List<BalanceAction>>();
         }
 
-        public Task AddIfNotExistsAsync(string blockchainType, IReadOnlyCollection<BalanceAction> actions)
+        public Task AddIfNotExistsAsync(string blockchainType, IEnumerable<BalanceAction> actions)
         {
             foreach (var action in actions)
             {

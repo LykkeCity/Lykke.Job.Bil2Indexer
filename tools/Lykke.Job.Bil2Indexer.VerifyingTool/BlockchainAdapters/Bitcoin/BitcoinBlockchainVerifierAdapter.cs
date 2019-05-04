@@ -11,6 +11,7 @@ using NBitcoin;
 using QBitNinja.Client;
 using QBitNinja.Client.Models;
 using BlockHeader = Lykke.Job.Bil2Indexer.Domain.BlockHeader;
+using Transaction = Lykke.Job.Bil2Indexer.Domain.Transaction;
 
 namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Bitcoin
 {
@@ -28,9 +29,9 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Bitcoin
             _ninjaClient = new QBitNinjaClient(ninjaUrl, network);
         }
 
-        public async Task<(IEnumerable<TransferCoinsTransactionExecutedEvent> coinTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)> GetCoinTransactionsForBlockAsync(BigInteger blockNumber)
+        public async Task<IReadOnlyCollection<Transaction>> GetBlockTransactionsAsync(BigInteger blockNumber)
         {
-            var listTransfered = new List<TransferCoinsTransactionExecutedEvent>();
+            var transactions = new List<Transaction>();
 
             var block = await _ninjaClient.GetBlock(BlockFeature.Parse(blockNumber.ToString()), false, true);
             var blockHash = block.Block.Header.GetHash().ToString();
@@ -39,9 +40,8 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Bitcoin
             for (int i = 0; i < block.Block.Transactions.Count; i++)
             {
                 var tx = block.Block.Transactions[i];
-
-                var transferEvent = new TransferCoinsTransactionExecutedEvent(
-                    blockHash,
+                
+                var transferCoinsTransaction = new TransferCoinsExecutedTransaction(
                     i,
                     tx.GetHash().ToString(),
                     tx.Outputs.AsIndexedOutputs()
@@ -65,15 +65,17 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Bitcoin
                     isIrreversible: false
                 );
 
-                listTransfered.Add(transferEvent);
+                var transaction = new Transaction
+                (
+                    "Bitcoin",
+                    blockHash,
+                    transferCoinsTransaction
+                );
+
+                transactions.Add(transaction);
             }
 
-            return (listTransfered, new TransactionFailedEvent[] { });
-        }
-
-        public Task<(IEnumerable<TransferAmountTransactionExecutedEvent> amountTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)> GetAmountTransactionsForBlockAsync(BigInteger blockNumber)
-        {
-            throw new NotImplementedException();
+            return transactions;
         }
 
         public async Task<BlockHeader> GetBlockAsync(BigInteger blockNumber)

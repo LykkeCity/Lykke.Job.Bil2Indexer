@@ -15,18 +15,18 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 {
     public class AssetInfosRepository: IAssetInfosRepository
     {
-        private readonly string _posgresConnString;
+        private readonly string _postgresConnString;
 
-        public AssetInfosRepository(string posgresConnString)
+        public AssetInfosRepository(string postgresConnString)
         {
-            _posgresConnString = posgresConnString;
+            _postgresConnString = postgresConnString;
         }
 
         public async Task AddIfNotExistsAsync(IEnumerable<AssetInfo> assets)
         {
-            foreach (var asset in assets)
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
-                using (var db = new BlockchainDataContext(_posgresConnString))
+                foreach (var asset in assets)
                 {
                     var dbEntity = asset.ToDbEntity();
 
@@ -47,7 +47,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
         public async Task<AssetInfo> GetOrDefaultAsync(string blockchainType, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var entity = await db.AssetInfos
                     .SingleOrDefaultAsync(BuildPredicate(blockchainType, asset));
@@ -58,7 +58,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
         public async Task<AssetInfo> GetAsync(string blockchainType, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var entity = await db.AssetInfos
                     .SingleAsync(BuildPredicate(blockchainType, asset));
@@ -71,7 +71,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
         {
             var ids = assets.Select(AssetInfoMapper.BuildId).ToList();
 
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var entities = await db.AssetInfos
                     .Where(p => p.BlockchainType == blockchainType && ids.Contains(p.Id))
@@ -83,7 +83,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
         public async Task<PaginatedItems<AssetInfo>> GetAllAsync(string blockchainType, int limit, string continuation)
         {
-            using (var db = new BlockchainDataContext(_posgresConnString))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 int skip = 0;
                 if (!string.IsNullOrEmpty(continuation))

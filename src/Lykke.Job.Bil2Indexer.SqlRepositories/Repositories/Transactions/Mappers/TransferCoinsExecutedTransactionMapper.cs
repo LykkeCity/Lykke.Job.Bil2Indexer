@@ -2,21 +2,22 @@
 using System.Linq;
 using Common;
 using Lykke.Bil2.Contract.BlocksReader.Events;
+using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props.Payloads;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
 {
-    internal static class TransferCoinsTransactionExecutedMapper
+    internal static class TransferCoinsExecutedTransactionMapper
     {
-        public static TransactionEntity MapToDbEntity(this TransferCoinsTransactionExecutedEvent source, string blockchainType)
+        public static TransactionEntity MapToDbEntity(this TransferCoinsExecutedTransaction source, string blockchainType, BlockId blockId)
         {
             return new TransactionEntity
             {
-                BlockId = source.BlockId,
+                BlockId = blockId,
                 BlockchainType = blockchainType,
-                Payload = new TransferCoinsTransactionExecutedPayload
+                Payload = new TransferCoinsExecutedTransactionPayload
                 {
                     Fees = source.Fees,
                     IsIrreversible = source.IsIrreversible,
@@ -25,26 +26,28 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
                 }.ToJson(),
                 TransactionId = source.TransactionId,
                 TransactionNumber = source.TransactionNumber,
-                Type = TransactionType.TransferCoinsTransactionExecuted
+                Type = (int) TransactionType.TransferCoins
             };
         }
 
-        public static TransferCoinsTransactionExecutedEvent MapToCoinExecuted(this TransactionEntity source)
+        public static TransferCoinsExecutedTransaction MapToTransferCoinsExecuted(this TransactionEntity source)
         {
-            if (source.Type != TransactionType.TransferCoinsTransactionExecuted)
+            if ((TransactionType) source.Type != TransactionType.TransferCoins)
             {
-                throw new ArgumentException($"Unable to cast {source.TransactionId} of {source.Type} to {nameof(TransferCoinsTransactionExecutedEvent)}");
+                throw new ArgumentException($"Unable to map {source.TransactionId} of {source.Type} to {nameof(TransferCoinsExecutedTransaction)}");
             }
 
-            var payload = source.Payload.DeserializeJson<TransferCoinsTransactionExecutedPayload>();
+            var payload = source.Payload.DeserializeJson<TransferCoinsExecutedTransactionPayload>();
 
-            return new TransferCoinsTransactionExecutedEvent(blockId: source.BlockId,
+            return new TransferCoinsExecutedTransaction
+            (
                 transactionId: source.TransactionId,
                 transactionNumber: source.TransactionNumber,
                 receivedCoins: payload.ReceivedCoins.Select(p => p.ToDomain()).ToList(),
                 spentCoins: payload.SpentCoins.ToList(),
                 fees: payload.Fees?.ToList(),
-                isIrreversible: payload.IsIrreversible);
+                isIrreversible: payload.IsIrreversible
+            );
         }
     }
 }

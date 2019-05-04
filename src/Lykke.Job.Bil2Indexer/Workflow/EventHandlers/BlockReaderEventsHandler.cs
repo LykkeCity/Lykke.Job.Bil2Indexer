@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.Client.BlocksReader.Services;
@@ -134,7 +133,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             return MessageHandlingResult.Success();
         }
 
-        public async Task<MessageHandlingResult> HandleAsync(string blockchainType, TransferAmountTransactionExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(string blockchainType, TransferAmountTransactionsBatchEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
@@ -152,48 +151,90 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return MessageHandlingResult.TransientFailure();
             }
 
-            var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
+            var transactions = evt.TransferAmountExecutedTransactions
+                .Select(x => new Transaction(blockchainType, evt.BlockId, x))
+                .Concat
+                (
+                    evt.FailedTransactions
+                        .Select(x => new Transaction(blockchainType, evt.BlockId, x))
+                );
+            var saveTransactionsTask = _transactionsRepository.AddIfNotExistsAsync(transactions);
 
-            var actions = evt.BalanceChanges
-                .Where(x => x.Address != null)
-                .GroupBy(x => new {x.Address, x.Asset})
+            var transactionsBalanceChanges = evt.TransferAmountExecutedTransactions
+                .SelectMany
+                (
+                    t => t.BalanceChanges.Select(b => new
+                    {
+                        Transaction = t,
+                        BalanceChange = b
+                    })
+                )
+                .ToArray();
+
+            var balanceActions = transactionsBalanceChanges
+                .Where(x => x.BalanceChange.Address != null)
+                .GroupBy(x => new
+                {
+                    x.Transaction.TransactionId,
+                    x.BalanceChange.Address,
+                    x.BalanceChange.Asset
+                })
                 .Select
                 (
                     g => new BalanceAction
                     (
                         new AccountId(g.Key.Address, g.Key.Asset),
-                        g.Sum(x => x.Value),
+                        g.Sum(x => x.BalanceChange.Value),
                         crawler.ExpectedBlockNumber,
                         evt.BlockId,
-                        evt.TransactionId
+                        g.Key.TransactionId
                     )
-                )
-                .ToArray();
+                );
 
-            var saveBalanceActionsTask = _balanceActionsRepository.AddIfNotExistsAsync(blockchainType, actions);
+            var saveBalanceActionsTask = _balanceActionsRepository.AddIfNotExistsAsync(blockchainType, balanceActions);
 
-            var assetInfos = evt.BalanceChanges
-                .Select(x => new AssetInfo(blockchainType, x.Asset, x.Value.Scale))
+            var assetInfos = transactionsBalanceChanges
+                .Select(x => new AssetInfo(blockchainType, x.BalanceChange.Asset, x.BalanceChange.Value.Scale))
                 .ToHashSet();
 
             var saveAssetInfosTask = _assetInfosManager.EnsureAdded(assetInfos);
 
-            var fees = evt.Fees
+            var fees = evt.TransferAmountExecutedTransactions
+                .SelectMany
+                (
+                    t => t.Fees.Select(f => new
+                    {
+                        TransactionId = t.TransactionId,
+                        Fee = f
+                    })
+                )
+                .Concat
+                (
+                    evt.FailedTransactions
+                        .Where(t => t.Fees != null)
+                        .SelectMany
+                        (
+                            t => t.Fees.Select(f => new
+                            {
+                                TransactionId = t.TransactionId,
+                                Fee = f
+                            })
+                        )
+                )
                 .Select
                 (
                     x => new FeeEnvelope
                     (
                         blockchainType,
                         evt.BlockId,
-                        evt.TransactionId,
-                        x
+                        x.TransactionId,
+                        x.Fee
                     )
-                )
-                .ToArray();
+                );
 
             await Task.WhenAll
             (
-                saveTransactionTask,
+                saveTransactionsTask,
                 saveBalanceActionsTask,
                 saveAssetInfosTask,
                 _feeEnvelopesRepository.AddIfNotExistsAsync(fees)
@@ -202,13 +243,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             return MessageHandlingResult.Success();
         }
 
-        public async Task<MessageHandlingResult> HandleAsync(string blockchainType, TransferCoinsTransactionExecutedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(string blockchainType, TransferCoinsTransactionsBatchEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
-            if (evt.Fees != null)
-            {
-                throw new NotSupportedException();
-            }
-
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
             var crawlerCorrelationId = crawler.GetCorrelationId();
@@ -225,79 +261,89 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return MessageHandlingResult.TransientFailure();
             }
 
-            var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
+            var transactions = evt.TransferCoinsExecutedTransactions
+                .Select(x => new Transaction(blockchainType, evt.BlockId, x))
+                .Concat
+                (
+                    evt.FailedTransactions
+                        .Select(x => new Transaction(blockchainType, evt.BlockId, x))
+                );
+            var saveTransactionsTask = _transactionsRepository.AddIfNotExistsAsync(transactions);
 
-            var coins = evt.ReceivedCoins
+            var transactionsReceivedCoins = evt.TransferCoinsExecutedTransactions
+                .SelectMany
+                (
+                    t => t.ReceivedCoins.Select(c => new
+                    {
+                        Transaction = t,
+                        Coin = c
+                    })
+                )
+                .ToArray();
+
+            var coins = transactionsReceivedCoins
                 .Select
                 (
                     x => Coin.CreateUnspent
                     (
                         blockchainType,
-                        new CoinId(evt.TransactionId, x.CoinNumber),
-                        x.Asset,
-                        x.Value,
-                        x.Address,
-                        x.AddressTag,
-                        x.AddressTagType,
-                        x.AddressNonce
+                        new CoinId(x.Transaction.TransactionId, x.Coin.CoinNumber),
+                        x.Coin.Asset,
+                        x.Coin.Value,
+                        x.Coin.Address,
+                        x.Coin.AddressTag,
+                        x.Coin.AddressTagType,
+                        x.Coin.AddressNonce
                     )
-                )
-                .ToArray();
+                );
 
             var saveCoinsTask = _coinsRepository.AddIfNotExistsAsync(coins);
 
-            var assetInfos = evt.ReceivedCoins
-                .Select(x => new AssetInfo(blockchainType, x.Asset, x.Value.Scale))
+            var assetInfos = transactionsReceivedCoins
+                .Select(x => new AssetInfo(blockchainType, x.Coin.Asset, x.Coin.Value.Scale))
                 .ToHashSet();
 
             var saveAssetInfosTask = _assetInfosManager.EnsureAdded(assetInfos);
 
-            await Task.WhenAll
-            (
-                saveTransactionTask,
-                saveCoinsTask,
-                saveAssetInfosTask
-            );
-
-            return MessageHandlingResult.Success();
-        }
-
-        public async Task<MessageHandlingResult> HandleAsync(string blockchainType, TransactionFailedEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
-        {
-            var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
-            var crawler = await _crawlersManager.GetCrawlerAsync(blockchainType, messageCorrelationId.Configuration);
-            var crawlerCorrelationId = crawler.GetCorrelationId();
-
-            if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
-            {
-                // The message is legacy, it already was processed for sure, we can ignore it.
-                return MessageHandlingResult.Success();
-            }
-
-            if (messageCorrelationId.IsPrematureRelativeTo(crawlerCorrelationId))
-            {
-                // The message is premature, it can't be processed yet, we should retry it later.
-                return MessageHandlingResult.TransientFailure();
-            }
-            
-            var saveTransactionTask = _transactionsRepository.AddIfNotExistsAsync(blockchainType, evt);
-
-            var fees = evt.Fees
+            var fees = evt.TransferCoinsExecutedTransactions
+                .Where(t => t.Fees != null)
+                .SelectMany
+                (
+                    t => t.Fees.Select(f => new
+                    {
+                        TransactionId = t.TransactionId,
+                        Fee = f
+                    })
+                )
+                .Concat
+                (
+                    evt.FailedTransactions
+                        .Where(t => t.Fees != null)
+                        .SelectMany
+                        (
+                            t => t.Fees.Select(f => new
+                            {
+                                TransactionId = t.TransactionId,
+                                Fee = f
+                            })
+                        )
+                )
                 .Select
                 (
                     x => new FeeEnvelope
                     (
                         blockchainType,
                         evt.BlockId,
-                        evt.TransactionId,
-                        x
+                        x.TransactionId,
+                        x.Fee
                     )
-                )
-                .ToArray();
+                );
 
             await Task.WhenAll
             (
-                saveTransactionTask,
+                saveTransactionsTask,
+                saveCoinsTask,
+                saveAssetInfosTask,
                 _feeEnvelopesRepository.AddIfNotExistsAsync(fees)
             );
 

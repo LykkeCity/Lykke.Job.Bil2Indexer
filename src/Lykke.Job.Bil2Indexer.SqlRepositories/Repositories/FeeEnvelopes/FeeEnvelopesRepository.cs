@@ -19,21 +19,26 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 {
     public class FeeEnvelopesRepository: IFeeEnvelopesRepository
     {
-        private readonly string _posgresConnstring;
+        private readonly string _postgresConnString;
         private readonly PostgreSQLCopyHelper<FeeEnvelopeEntity> _copyMapper;
 
-        public FeeEnvelopesRepository(string posgresConnstring)
+        public FeeEnvelopesRepository(string postgresConnString)
         {
-            _posgresConnstring = posgresConnstring;
+            _postgresConnString = postgresConnString;
             
             _copyMapper = FeeCopyMapper.BuildCopyMapper();
         }
 
-        public async Task AddIfNotExistsAsync(IReadOnlyCollection<FeeEnvelope> fees)
+        public async Task AddIfNotExistsAsync(IEnumerable<FeeEnvelope> fees)
         {
             var dbEntities = fees.Select(p => p.ToDbEntity()).ToList();
 
-            using (var conn = new NpgsqlConnection(_posgresConnstring))
+            if (!dbEntities.Any())
+            {
+                return;
+            }
+
+            using (var conn = new NpgsqlConnection(_postgresConnString))
             {
                 conn.Open();
 
@@ -52,8 +57,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 }
             }
         }
-
-
+        
         private async Task<IReadOnlyCollection<FeeEnvelopeEntity>> ExcludeExistedInDbAsync(IReadOnlyCollection<FeeEnvelopeEntity> dbEntities)
         {
             if (dbEntities.GroupBy(p => p.BlockchainType).Count() > 1)
@@ -66,7 +70,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 return $"{bType}_{transactionId}_{assetId}_{assetAddress}";
             }
 
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var blockchainType = dbEntities.First().BlockchainType;
 
@@ -104,7 +108,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         public async Task<FeeEnvelope> GetOrDefaultAsync(string blockchainType, TransactionId transactionId, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var entity = await db.FeeEnvelopes
                     .Where(FeeEnvelopePredicates.Build(blockchainType, transactionId, asset))
@@ -116,7 +120,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         public async Task<FeeEnvelope> GetAsync(string blockchainType, TransactionId transactionId, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var entity = await db.FeeEnvelopes
                     .Where(FeeEnvelopePredicates.Build(blockchainType, transactionId, asset))
@@ -146,7 +150,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 await db.FeeEnvelopes
                     .Where(FeeEnvelopePredicates.Build(blockchainType, blockId))
@@ -157,7 +161,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
         private async Task<PaginatedItems<FeeEnvelope>> GetPagedAsync(Expression<Func<FeeEnvelopeEntity, bool>> predicate,
             long limit, string continuation)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 int skip = 0;
                 if (!string.IsNullOrEmpty(continuation))
@@ -175,11 +179,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 return new PaginatedItems<FeeEnvelope>(nextContinuation, entities.Select(p=>p.ToDomain()).ToList());
             }
         }
-
-
+        
         private async Task<IReadOnlyCollection<FeeEnvelope>> GetAllAsync(Expression<Func<FeeEnvelopeEntity, bool>> predicate)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var entities = await db.FeeEnvelopes.Where(predicate)
                     .ToListAsync();
@@ -187,8 +190,5 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 return entities.Select(p => p.ToDomain()).ToList();
             }
         }
-
-
-
     }
 }

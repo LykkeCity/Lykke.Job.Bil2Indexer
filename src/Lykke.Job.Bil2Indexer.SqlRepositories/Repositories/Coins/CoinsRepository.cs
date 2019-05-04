@@ -18,31 +18,31 @@ using PostgreSQLCopyHelper;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 {
-    public class CoinsRepository:ICoinsRepository
+    public class CoinsRepository : ICoinsRepository
     {
-        private readonly string _posgresConnstring;
+        private readonly string _postgresConnString;
         private readonly PostgreSQLCopyHelper<CoinEntity> _copyMapper;
 
         private readonly ILog _log;
 
-        public CoinsRepository(string posgresConnString, ILogFactory logFactory)
+        public CoinsRepository(string postgresConnString, ILogFactory logFactory)
         {
-            _posgresConnstring = posgresConnString;
+            _postgresConnString = postgresConnString;
             
             _copyMapper = CoinCopyMapper.BuildCopyMapper();
             _log = logFactory.CreateLog(this);
         }
 
-        public async Task AddIfNotExistsAsync(IReadOnlyCollection<Coin> coins)
+        public async Task AddIfNotExistsAsync(IEnumerable<Coin> coins)
         {
-            if (coins.GroupBy(p => p.BlockchainType).Count() > 1)
-            {
-                throw new ArgumentException($"Unable to save coins with different {nameof(Coin.BlockchainType)} in single batch", nameof(coins));
-            }
-
             var dbEntities = coins.Select(p => p.ToDbEntity()).ToList();
 
-            using (var conn = new NpgsqlConnection(_posgresConnstring))
+            if (!dbEntities.Any())
+            {
+                return;
+            }
+
+            using (var conn = new NpgsqlConnection(_postgresConnString))
             {
                 conn.Open();
 
@@ -72,7 +72,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
             var ids = dbEntities.Select(p => new CoinId(p.TransactionId, p.CoinNumber)).ToList();
             
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var existedNaturalIds = (await db.Coins.Where(CoinPredicates.Build(dbEntities.First().BlockchainType, ids, includeDeleted: true))
                         .Select(p => new { p.TransactionId, p.CoinNumber })
@@ -88,7 +88,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task SpendAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            if (!ids.Any())
+            {
+                return;
+            }
+
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var foundCount = await db.Coins.Where(CoinPredicates.Build(blockchainType, ids, includeDeleted: false))
                     .UpdateAsync(p => new CoinEntity { IsSpent = true });
@@ -102,7 +107,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task RevertSpendingAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            if (!ids.Any())
+            {
+                return;
+            }
+
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 var foundCount = await db.Coins
                     .Where(CoinPredicates.Build(blockchainType, ids, includeDeleted: true))
@@ -117,7 +127,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            if (!ids.Any())
+            {
+                return Array.Empty<Coin>();
+            }
+
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 return (await db.Coins.Where(CoinPredicates.Build(blockchainType, ids, includeDeleted:false))
                         .ToListAsync())
@@ -128,7 +143,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds)
         {
-            using (var db = new BlockchainDataContext(_posgresConnstring))
+            if (!receivedInTransactionIds.Any())
+            {
+                return;
+            }
+
+            using (var db = new BlockchainDataContext(_postgresConnString))
             {
                 await db.Coins
                         .Where(CoinPredicates.Build(blockchainType, receivedInTransactionIds))

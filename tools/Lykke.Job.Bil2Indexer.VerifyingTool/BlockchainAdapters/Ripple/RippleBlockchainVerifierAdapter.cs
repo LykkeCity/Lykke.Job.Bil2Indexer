@@ -34,17 +34,9 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
             _rippleApi = serviceCollection.BuildServiceProvider().GetRequiredService<IRippleApi>();
         }
 
-        public async Task<(IEnumerable<TransferCoinsTransactionExecutedEvent> coinTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)>
-            GetCoinTransactionsForBlockAsync(BigInteger blockNumber)
+        public async Task<IReadOnlyCollection<Transaction>> GetBlockTransactionsAsync(BigInteger blockNumber)
         {
-            throw new NotImplementedException();
-        }
-
-        public async Task<(IEnumerable<TransferAmountTransactionExecutedEvent> amountTransfers, IEnumerable<TransactionFailedEvent> failedTransfers)>
-            GetAmountTransactionsForBlockAsync(BigInteger blockNumber)
-        {
-            List<TransferAmountTransactionExecutedEvent> transfers = new List<TransferAmountTransactionExecutedEvent>();
-            List<TransactionFailedEvent> failedTransfers = new List<TransactionFailedEvent>();
+            var transactions = new List<Transaction>();
             var block = await _rippleApi.Post(new BinaryLedgerWithTransactionsRequest((uint)blockNumber));
             var result = block.Result;
 
@@ -63,9 +55,8 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
 
                 if (tx.Metadata.TransactionResult == "tesSUCCESS")
                 {
-                    var item = new TransferAmountTransactionExecutedEvent
+                    var transferAmountTransaction = new TransferAmountExecutedTransaction
                     (
-                        result.LedgerHash,
                         txNumber,
                         tx.Hash,
                         tx.Metadata
@@ -88,13 +79,19 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
                         result.Validated ?? false
                     );
 
-                    transfers.Add(item);
+                    var domainTransaction = new Transaction
+                    (
+                        "Ripple",
+                        result.LedgerHash,
+                        transferAmountTransaction
+                    );
+
+                    transactions.Add(domainTransaction);
                 }
                 else
                 {
-                    var item = new TransactionFailedEvent
+                    var failedTransaction = new FailedTransaction
                     (
-                        result.LedgerHash,
                         txNumber,
                         tx.Hash,
                         tx.Metadata.TransactionResult == "tecUNFUNDED" ||
@@ -105,11 +102,18 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
                         txFee
                     );
 
-                    failedTransfers.Add(item);
+                    var domainTransaction = new Transaction
+                    (
+                        "Ripple",
+                        result.LedgerHash,
+                        failedTransaction
+                    );
+
+                    transactions.Add(domainTransaction);
                 }
             }
 
-            return (transfers, failedTransfers);
+            return transactions;
         }
 
         public async Task<BlockHeader> GetBlockAsync(BigInteger blockNumber)
