@@ -97,7 +97,7 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
                         tx.Metadata.TransactionResult == "tecUNFUNDED" ||
                         tx.Metadata.TransactionResult == "tecUNFUNDED_PAYMENT"
                             ? TransactionBroadcastingError.NotEnoughBalance
-                            : TransactionBroadcastingError.TransientFailure,
+                            : TransactionBroadcastingError.Unknown,
                         tx.Metadata.TransactionResult,
                         txFee
                     );

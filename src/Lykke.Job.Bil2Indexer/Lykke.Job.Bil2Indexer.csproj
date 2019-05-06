@@ -11,6 +11,9 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
+    <None Update="appsettings.ripple.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="appsettings.bitcoin.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -23,7 +26,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.9.2" />
-    <PackageReference Include="Lykke.Bil2.Client.BlocksReader" Version="1.0.0-beta.41" />
+    <PackageReference Include="Lykke.Bil2.Client.BlocksReader" Version="1.0.0-beta.42" />
     <PackageReference Include="Lykke.Common.ApiLibrary" Version="2.2.1" />
     <PackageReference Include="Lykke.Logs" Version="7.2.1" />
     <PackageReference Include="Lykke.MonitoringServiceApiCaller" Version="1.8.0" />

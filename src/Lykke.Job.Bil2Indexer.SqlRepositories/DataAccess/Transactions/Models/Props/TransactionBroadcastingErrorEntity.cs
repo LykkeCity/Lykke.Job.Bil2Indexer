@@ -4,10 +4,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.P
 {
     public enum TransactionBroadcastingErrorEntity
     {
-        [EnumMember(Value = "notEnoughBalance")] NotEnoughBalance,
-        [EnumMember(Value = "feeTooLow")] FeeTooLow,
-        [EnumMember(Value = "rebuildRequired")] RebuildRequired,
-        [EnumMember(Value = "transientFailure")] TransientFailure,
-        [EnumMember(Value = "retryLater")] RetryLater,
+        [EnumMember(Value = "notEnoughBalance")] NotEnoughBalance = 0,
+        [EnumMember(Value = "feeTooLow")] FeeTooLow = 1,
+        [EnumMember(Value = "rebuildRequired")] RebuildRequired = 2,
+        [EnumMember(Value = "transientFailure")] TransientFailure = 3,
+        [EnumMember(Value = "retryLater")] RetryLater = 4,
+        [EnumMember(Value = "unknown")] Unknown = 5
     }
 }
