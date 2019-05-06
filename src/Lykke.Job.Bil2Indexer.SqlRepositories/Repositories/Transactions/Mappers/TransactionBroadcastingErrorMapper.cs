@@ -20,6 +20,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
                     return TransactionBroadcastingErrorEntity.RetryLater;
                 case TransactionBroadcastingError.TransientFailure:
                     return TransactionBroadcastingErrorEntity.TransientFailure;
+                case TransactionBroadcastingError.Unknown:
+                    return TransactionBroadcastingErrorEntity.Unknown;
                 default:
                     throw new ArgumentException("Unknown switch", nameof(source));
             }
@@ -38,6 +40,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
                     return TransactionBroadcastingError.RetryLater;
                 case TransactionBroadcastingErrorEntity.TransientFailure:
                     return TransactionBroadcastingError.TransientFailure;
+                case TransactionBroadcastingErrorEntity.Unknown:
+                    return TransactionBroadcastingError.Unknown;
                 default:
                     throw new ArgumentException("Unknown switch", nameof(source));
             }
