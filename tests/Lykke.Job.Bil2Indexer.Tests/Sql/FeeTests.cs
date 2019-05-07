@@ -51,7 +51,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             await repo.AddIfNotExistsAsync(fees);
 
 
-            foreach (var feeEnvelope in fees)
+            foreach (var feeEnvelope in fees.OrderBy(p=> Guid.NewGuid()).Take(5))
             {
                 var retrieved = await repo.GetAsync(feeEnvelope.BlockchainType, feeEnvelope.TransactionId,
                     feeEnvelope.Fee.Asset);

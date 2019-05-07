@@ -10,7 +10,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions.Mapp
         {
             return new BalanceActionEntity
             {
-                BlockchainType = blockchainType,
                 TransactionId = source.TransactionId,
                 AssetAddress = source.AccountId.Asset.Address,
                 AssetId = source.AccountId.Asset.Id,

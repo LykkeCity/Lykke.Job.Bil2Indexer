@@ -10,7 +10,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
         {
             return new PostgreSQLCopyHelper<CoinEntity>("coins")
                 .UsePostgresQuoting()
-                .Map("blockchain_type", p => p.BlockchainType, NpgsqlDbType.Varchar)
                 .Map("transaction_id", p => p.TransactionId, NpgsqlDbType.Varchar)
                 .Map("coin_number", p => p.CoinNumber, NpgsqlDbType.Integer)
                 .Map("asset_id", p => p.AssetId, NpgsqlDbType.Varchar)

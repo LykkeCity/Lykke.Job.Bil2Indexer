@@ -9,23 +9,22 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 {
     public static class FeeEnvelopePredicates
     {
-        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(string blockchainType, BlockId blockId)
+        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(BlockId blockId)
         {
             var stringBlockId = blockId.ToString();
 
-            return p => p.BlockchainType == blockchainType && p.BlockId == stringBlockId;
+            return p => p.BlockId == stringBlockId;
         }
 
-        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(string blockchainType, TransactionId transactionId)
+        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(TransactionId transactionId)
         {
             var stringTransactionId = transactionId.ToString();
 
-            return p => p.BlockchainType == blockchainType
-                        && p.TransactionId == stringTransactionId;
+            return p => p.TransactionId == stringTransactionId;
 
         }
 
-        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(string blockchainType, TransactionId transactionId, Asset asset)
+        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(TransactionId transactionId, Asset asset)
         {
             var stringTransactionId = transactionId.ToString();
 
@@ -36,7 +35,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             if (stringAssetAddress != null)
             {
                 return p => p.AssetAddress != null
-                            && p.BlockchainType == blockchainType
                             && p.TransactionId == stringTransactionId
                             && p.AssetId == stringAssetId
                             && p.AssetAddress == stringAssetAddress;
@@ -44,30 +42,26 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             else
             {
                 return p => p.AssetAddress == null
-                            && p.BlockchainType == blockchainType
                             && p.TransactionId == stringTransactionId
                             && p.AssetId == stringAssetId;
             }
         }
 
-        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(string blockchainType, IEnumerable<string> transactionIds, bool? isAssetAddressNull = null)
+        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(IEnumerable<string> transactionIds, bool? isAssetAddressNull = null)
         {
             if (isAssetAddressNull == null)
             {
-                return dbEntity => dbEntity.BlockchainType == blockchainType
-                                   && transactionIds.Contains(dbEntity.TransactionId);
+                return dbEntity => transactionIds.Contains(dbEntity.TransactionId);
             }
 
             if (isAssetAddressNull.Value)
             {
                 return dbEntity => dbEntity.AssetAddress == null
-                                   && dbEntity.BlockchainType == blockchainType
                                    && transactionIds.Contains(dbEntity.TransactionId);
             }
             else
             {
                 return dbEntity => dbEntity.AssetAddress != null
-                                   && dbEntity.BlockchainType == blockchainType
                                    && transactionIds.Contains(dbEntity.TransactionId);
             }
         }

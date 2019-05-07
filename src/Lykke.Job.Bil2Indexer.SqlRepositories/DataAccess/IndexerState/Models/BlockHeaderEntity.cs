@@ -6,9 +6,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
     [Table("block_headers")]
     public class BlockHeaderEntity
     {
-        [Column("blockchain_type")]
-        public string BlockchainType { get; set; }
-
         [Column("number")]
         public long Number { get; set; }
 

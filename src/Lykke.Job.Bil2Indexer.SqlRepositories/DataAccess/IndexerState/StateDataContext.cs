@@ -28,7 +28,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<CrawlerEntity>()
-                .HasKey(o => new { o.BlockchainType, o.StartBlock, o.StopAssemblingBlock });
+                .HasKey(o => new {o.StartBlock, o.StopAssemblingBlock });
             
             modelBuilder.Entity<CrawlerEntity>()
                 .Property(p => p.Version)
@@ -38,7 +38,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState
                 .IsConcurrencyToken();
 
             modelBuilder.Entity<BlockHeaderEntity>()
-                .HasKey(o => new { o.BlockchainType, o.Id });
+                .HasKey(o => o.Id);
 
             modelBuilder.Entity<BlockHeaderEntity>()
                 .Property(p => p.Version)
@@ -48,7 +48,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState
                 .IsConcurrencyToken();
 
             modelBuilder.Entity<ChainHeadEntity>()
-                .HasKey(o => o.BlockchainType);
+                .HasKey(o => o.Id);
 
             modelBuilder.Entity<ChainHeadEntity>()
                 .Property(p => p.Version)

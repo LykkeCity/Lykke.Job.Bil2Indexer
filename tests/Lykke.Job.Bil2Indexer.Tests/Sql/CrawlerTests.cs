@@ -38,7 +38,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         {
             var repo = new CrawlersRepository(ContextFactory.GetPosgresTestsConnString());
 
-            var source1 = Crawler.StartNew(Guid.NewGuid().ToString(), new CrawlerConfiguration(new Random(123).Next(), null));
+            var source1 = Crawler.StartNew(Guid.NewGuid().ToString(), new CrawlerConfiguration(new Random().Next(), null));
 
             Assert.Null(source1.Configuration.StopAssemblingBlock);
             await repo.SaveAsync(source1);

@@ -5,9 +5,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
     [Table("crawlers")]
     public class CrawlerEntity
     {
-        [Column("blockchain_type")]
-        public string BlockchainType { get; set; }
-
         [Column("stop_accembling_block")]
         public long StopAssemblingBlock { get; set; }
         

@@ -6,7 +6,7 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
 {
     public interface ITransactionsRepository
     {
-        Task AddIfNotExistsAsync(IEnumerable<Transaction> transactions);
+        Task AddIfNotExistsAsync(IReadOnlyCollection<Transaction> transactions);
         Task<int> CountInBlockAsync(string blockchainType, BlockId blockId);
         Task<PaginatedItems<Transaction>> GetAllOfBlockAsync(
             string blockchainType, 

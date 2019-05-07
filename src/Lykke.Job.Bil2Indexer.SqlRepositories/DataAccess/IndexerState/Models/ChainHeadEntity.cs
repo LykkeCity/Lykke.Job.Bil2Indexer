@@ -5,8 +5,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
     [Table("chain_heads")]
     public class ChainHeadEntity
     {
-        [Column("blockchain_type")]
-        public string BlockchainType { get; set; }
+        [Column("id")]
+        public string Id { get; set; }
 
         [Column("first_block_number")]
         public long FirstBlockNumber { get; set; }

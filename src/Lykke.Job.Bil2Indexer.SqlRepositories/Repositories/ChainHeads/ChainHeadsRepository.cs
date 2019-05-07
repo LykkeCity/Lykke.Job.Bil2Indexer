@@ -6,41 +6,40 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
 {
     public class ChainHeadsRepository:IChainHeadsRepository
     {
-        private readonly string _postgresConnString;
+        private readonly IPgConnectionStringProvider _connectionStringProvider;
 
-        public ChainHeadsRepository(string postgresConnString)
+        public ChainHeadsRepository(IPgConnectionStringProvider connectionStringProvider)
         {
-            _postgresConnString = postgresConnString;
+            _connectionStringProvider = connectionStringProvider;
         }
 
         public async Task<ChainHead> GetOrDefaultAsync(string blockchainType)
         {
-            using (var db = new StateDataContext(_postgresConnString))
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
-                var existed = await db.ChainHeads.SingleOrDefaultAsync(p => p.BlockchainType == blockchainType);
+                var existed = await db.ChainHeads.SingleOrDefaultAsync(p => p.Id == blockchainType);
 
-                return existed != null ? Map(existed) : null;
+                return existed != null ? Map(existed, blockchainType) : null;
             }
         }
 
         public async Task<ChainHead> GetAsync(string blockchainType)
         {
-            using (var db = new StateDataContext(_postgresConnString))
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
-                var existed = await db.ChainHeads.SingleOrDefaultAsync(p => p.BlockchainType == blockchainType);
+                var existed = await db.ChainHeads.SingleOrDefaultAsync(p => p.Id == blockchainType);
 
                 if (existed == null)
                 {
                     throw new InvalidOperationException($"ChainHead {blockchainType} is not found");
                 }
 
-                return Map(existed);
+                return Map(existed, blockchainType);
             }
         }
 
@@ -49,7 +48,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
             var dbEntity = Map(head);
             var isExisted = head.Version != 0;
 
-            using (var db = new StateDataContext(_postgresConnString))
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(head.BlockchainType)))
             {
                 if (isExisted)
                 {
@@ -81,11 +80,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
             }
         }
 
-        private static ChainHead Map(ChainHeadEntity source)
+        private static ChainHead Map(ChainHeadEntity source, string blockchainType)
         {
             return new ChainHead
             (
-                source.BlockchainType,
+                blockchainType,
                 source.FirstBlockNumber,
                 source.Version,
                 source.Sequence,
@@ -101,7 +100,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
             {
                 Version = (uint) source.Version,
                 Sequence = source.Sequence,
-                BlockchainType = source.BlockchainType,
+                Id = source.BlockchainType,
                 FirstBlockNumber = source.FirstBlockNumber,
                 BlockId = source.BlockId,
                 PreviousBlockId = source.PreviousBlockId,

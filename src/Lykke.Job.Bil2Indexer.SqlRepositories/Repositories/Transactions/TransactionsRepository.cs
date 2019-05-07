@@ -19,17 +19,16 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 {
     public class TransactionsRepository : ITransactionsRepository
     {
-        private readonly string _postgresConnString;
+        private readonly IPgConnectionStringProvider _connectionStringProvider;
         private readonly PostgreSQLCopyHelper<TransactionEntity> _copyMapper;
 
-        public TransactionsRepository(string postgresConnString)
+        public TransactionsRepository(IPgConnectionStringProvider connectionStringProvider)
         {
-            _postgresConnString = postgresConnString;
-
+            _connectionStringProvider = connectionStringProvider;
             _copyMapper = TransactionCopyMapper.BuildCopyMapper();
         }
 
-        public async Task AddIfNotExistsAsync(IEnumerable<Transaction> transactions)
+        public async Task AddIfNotExistsAsync(IReadOnlyCollection<Transaction> transactions)
         {
             var entities = transactions
                 .Select(t => t.MapToDbEntity())
@@ -40,7 +39,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 return;
             }
 
-            using (var conn = new NpgsqlConnection(_postgresConnString))
+            using (var conn = new NpgsqlConnection(_connectionStringProvider.GetConnectionString(transactions.First().BlockchainType)))
             {
                 conn.Open();
 
@@ -50,7 +49,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 }
                 catch (PostgresException e) when (e.IsNaturalKeyViolationException())
                 {
-                    var notExisted = await ExcludeExistedInDbAsync(entities);
+                    var notExisted = await ExcludeExistedInDbAsync(transactions.First().BlockchainType, entities);
 
                     if (notExisted.Any())
                     {
@@ -62,10 +61,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
         public async Task<int> CountInBlockAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new TransactionsDataContext(_postgresConnString))
+            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 return await db.Transactions
-                    .Where(BuildPredicate(blockchainType, blockId))
+                    .Where(BuildPredicate(blockId))
                     .CountAsync();
             }
         }
@@ -79,10 +78,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 skip = int.Parse(continuation);
             }
 
-            using (var db = new TransactionsDataContext(_postgresConnString))
+            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entities = await db.Transactions
-                    .Where(BuildPredicate(blockchainType, blockId))
+                    .Where(BuildPredicate(blockId))
                     .Skip(skip)
                     .Take(limit)
                     .ToListAsync();
@@ -90,7 +89,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 var nextContinuation = entities.Count < limit ? null : (skip + entities.Count).ToString();
 
                 var envelopes = entities
-                    .Select(x => x.MapToTransactionEnvelope())
+                    .Select(x => x.MapToTransactionEnvelope(blockchainType))
                     .ToArray();
 
                 return new PaginatedItems<Transaction>(nextContinuation, envelopes);
@@ -111,38 +110,32 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
         public async Task<Transaction> GetOrDefaultAsync(string blockchainType, TransactionId transactionId)
         {
-            using (var db = new TransactionsDataContext(_postgresConnString))
+            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.Transactions
-                    .SingleOrDefaultAsync(BuildPredicate(blockchainType, transactionId));
+                    .SingleOrDefaultAsync(BuildPredicate(transactionId));
 
-                return entity?.MapToTransactionEnvelope();
+                return entity?.MapToTransactionEnvelope(blockchainType);
             }
         }
 
         public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new TransactionsDataContext(_postgresConnString))
+            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 await db.Transactions
-                    .Where(BuildPredicate(blockchainType, blockId))
+                    .Where(BuildPredicate(blockId))
                     .DeleteAsync();
             }
         }
 
-        private async Task<IReadOnlyCollection<TransactionEntity>> ExcludeExistedInDbAsync(IReadOnlyCollection<TransactionEntity> dbEntities)
+        private async Task<IReadOnlyCollection<TransactionEntity>> ExcludeExistedInDbAsync(string blockchainType, IReadOnlyCollection<TransactionEntity> dbEntities)
         {
-            if (dbEntities.GroupBy(p => p.BlockchainType).Count() > 1)
-            {
-                throw new ArgumentException("Unable to save batch with multiple blockchain type");
-            }
-
-            var blockchainType = dbEntities.First().BlockchainType;
             var ids = dbEntities.Select(t => t.TransactionId);
 
-            using (var db = new TransactionsDataContext(_postgresConnString))
+            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
-                var existedIds = (await db.Transactions.FilterByIds(blockchainType, ids)
+                var existedIds = (await db.Transactions.FilterByIds(ids)
                         .Select(t => t.TransactionId)
                         .ToListAsync())
                     .ToHashSet();
@@ -151,18 +144,18 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             }
         }
 
-        private Expression<Func<TransactionEntity, bool>> BuildPredicate(string blockchainType, BlockId blockId)
+        private Expression<Func<TransactionEntity, bool>> BuildPredicate(BlockId blockId)
         {
             var stringBlockId = blockId.ToString();
 
-            return p => p.BlockchainType == blockchainType && p.BlockId == stringBlockId;
+            return p => p.BlockId == stringBlockId;
         }
 
-        private Expression<Func<TransactionEntity, bool>> BuildPredicate(string blockchainType, TransactionId transactionId)
+        private Expression<Func<TransactionEntity, bool>> BuildPredicate(TransactionId transactionId)
         {
             var stringTransactionId = transactionId.ToString();
 
-            return p => p.BlockchainType == blockchainType && p.TransactionId == stringTransactionId;
+            return p => p.TransactionId == stringTransactionId;
         }
     }
 }

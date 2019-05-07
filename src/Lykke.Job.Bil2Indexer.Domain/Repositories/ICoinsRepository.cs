@@ -6,7 +6,7 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
 {
     public interface ICoinsRepository
     {
-        Task AddIfNotExistsAsync(IEnumerable<Coin> coins);
+        Task AddIfNotExistsAsync(IReadOnlyCollection<Coin> coins);
         Task SpendAsync(string blockchainType, IReadOnlyCollection<CoinId> ids);
         Task RevertSpendingAsync(string blockchainType, IReadOnlyCollection<CoinId> ids);
         Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<CoinId> ids);

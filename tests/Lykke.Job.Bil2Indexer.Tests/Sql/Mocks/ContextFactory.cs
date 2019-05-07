@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -38,9 +40,15 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql.Mocks
             }
         }
         
-        public static string GetPosgresTestsConnString()
+        public static IPgConnectionStringProvider GetPosgresTestsConnString()
         {
-            return Environment.GetEnvironmentVariable("PosgresConnString");
+            var connString = Environment.GetEnvironmentVariable("PosgresConnString");
+
+            var result = new Mock<IPgConnectionStringProvider>();
+
+            result.Setup(p => p.GetConnectionString(It.IsAny<string>())).Returns(connString);
+
+            return result.Object;
         }
     }
 }

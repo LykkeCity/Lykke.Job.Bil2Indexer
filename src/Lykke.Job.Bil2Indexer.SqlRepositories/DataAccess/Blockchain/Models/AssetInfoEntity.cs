@@ -8,9 +8,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
         [Column("id")]
         public string Id { get; set; }
 
-        [Column("blockchain_type")]
-        public string BlockchainType { get; set; }
-
         [Column("asset_id")]
         public string AssetId { get; set; }
 

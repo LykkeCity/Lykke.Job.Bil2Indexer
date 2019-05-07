@@ -22,7 +22,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
             _appInsightTelemetryProvider = appInsightTelemetryProvider;
         }
 
-        public async Task AddIfNotExistsAsync(IEnumerable<AssetInfo> assetInfos)
+        public async Task AddIfNotExistsAsync(IReadOnlyCollection<AssetInfo> assetInfos)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = Guid.NewGuid().ToString();

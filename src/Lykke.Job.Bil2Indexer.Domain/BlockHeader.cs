@@ -315,7 +315,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     );
                 });
 
-            await feeEnvelopesRepository.AddIfNotExistsAsync(fees);
+            await feeEnvelopesRepository.AddIfNotExistsAsync(fees.ToList());
         }
 
         public override string ToString()

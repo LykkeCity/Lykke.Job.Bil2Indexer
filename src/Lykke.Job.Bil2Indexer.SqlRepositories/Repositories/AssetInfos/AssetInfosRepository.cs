@@ -15,18 +15,25 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 {
     public class AssetInfosRepository: IAssetInfosRepository
     {
-        private readonly string _postgresConnString;
+        private readonly IPgConnectionStringProvider _connectionStringProvider;
 
-        public AssetInfosRepository(string postgresConnString)
+        public AssetInfosRepository(IPgConnectionStringProvider connectionStringProvider)
         {
-            _postgresConnString = postgresConnString;
+            _connectionStringProvider = connectionStringProvider;
         }
 
-        public async Task AddIfNotExistsAsync(IEnumerable<AssetInfo> assets)
+        public async Task AddIfNotExistsAsync(IReadOnlyCollection<AssetInfo> assets)
         {
-            using (var db = new BlockchainDataContext(_postgresConnString))
+            if (!assets.Any())
             {
-                foreach (var asset in assets)
+                return;
+            }
+
+            foreach (var asset in assets)
+            {
+                using (var db =
+                    new BlockchainDataContext(
+                        _connectionStringProvider.GetConnectionString(assets.First().BlockchainType)))
                 {
                     var dbEntity = asset.ToDbEntity();
 
@@ -40,30 +47,30 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
                     {
                         //assume entity already exist in db
                     }
+
                 }
             }
         }
-    
 
         public async Task<AssetInfo> GetOrDefaultAsync(string blockchainType, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_postgresConnString))
+            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.AssetInfos
-                    .SingleOrDefaultAsync(BuildPredicate(blockchainType, asset));
+                    .SingleOrDefaultAsync(BuildPredicate(asset));
 
-                return entity?.ToDomain();
+                return entity?.ToDomain(blockchainType);
             }
         }
 
         public async Task<AssetInfo> GetAsync(string blockchainType, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_postgresConnString))
+            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.AssetInfos
-                    .SingleAsync(BuildPredicate(blockchainType, asset));
+                    .SingleAsync(BuildPredicate(asset));
 
-                return entity.ToDomain();
+                return entity.ToDomain(blockchainType);
             }
         }
 
@@ -71,19 +78,19 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
         {
             var ids = assets.Select(AssetInfoMapper.BuildId).ToList();
 
-            using (var db = new BlockchainDataContext(_postgresConnString))
+            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entities = await db.AssetInfos
-                    .Where(p => p.BlockchainType == blockchainType && ids.Contains(p.Id))
+                    .Where(p => ids.Contains(p.Id))
                     .ToListAsync();
 
-                return entities.Select(p => p.ToDomain()).ToList();
+                return entities.Select(p => p.ToDomain(blockchainType)).ToList();
             }
         }
 
         public async Task<PaginatedItems<AssetInfo>> GetAllAsync(string blockchainType, int limit, string continuation)
         {
-            using (var db = new BlockchainDataContext(_postgresConnString))
+            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 int skip = 0;
                 if (!string.IsNullOrEmpty(continuation))
@@ -98,16 +105,15 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
                 var nextContinuation = entities.Count < limit ? null : (skip + entities.Count).ToString();
 
-                return new PaginatedItems<AssetInfo>(nextContinuation, entities.Select(p => p.ToDomain()).ToList());
+                return new PaginatedItems<AssetInfo>(nextContinuation, entities.Select(p => p.ToDomain(blockchainType)).ToList());
             }
         }
 
-        private Expression<Func<AssetInfoEntity, bool>> BuildPredicate(string blockchainType, Asset asset)
+        private Expression<Func<AssetInfoEntity, bool>> BuildPredicate(Asset asset)
         {
             var id = AssetInfoMapper.BuildId(asset);
 
-            return dbEntity => dbEntity.BlockchainType == blockchainType
-                               && dbEntity.Id == id;
+            return dbEntity => dbEntity.Id == id;
         }
     }
 }
