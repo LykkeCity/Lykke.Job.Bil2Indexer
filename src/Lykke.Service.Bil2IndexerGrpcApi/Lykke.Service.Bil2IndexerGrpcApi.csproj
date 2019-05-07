@@ -32,13 +32,9 @@
     <PackageReference Include="Lykke.Sdk" Version="5.11.0" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.0.601" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\contract\Lykke.Job.Bil2Indexer.Contract\Lykke.Job.Bil2Indexer.Contract.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Protobuf Include="..\..\contract\protos\Indexer.proto">
-      <Link>Indexer.proto</Link>
-    </Protobuf>
   </ItemGroup>
 </Project>

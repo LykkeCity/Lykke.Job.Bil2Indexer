@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Bil2.Indexer;
 using Grpc.Core;
 using JetBrains.Annotations;
 using Lykke.Service.Bil2IndexerGrpcApi.Services;
@@ -19,15 +20,16 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Modules
 
         protected override void Load(ContainerBuilder builder)
         {
-            builder.Register(ctx => new IndexerApiImpl())
+            builder.RegisterType<IndexerApiImpl>()
+                .AsSelf()
                 .SingleInstance();
 
-            const int Port = 50051;
+            var host = "0.0.0.0";
             builder.Register(ctx =>
                 new Server
                 {
                     Services = { IndexerApi.BindService(ctx.Resolve<IndexerApiImpl>()) },
-                    Ports = { new ServerPort("localhost", Port, ServerCredentials.Insecure) }
+                    Ports = { new ServerPort(host, _settings.Bil2IndexerGrpcApi.GrpcSettings.Port, ServerCredentials.Insecure) }
                 }
             ).SingleInstance();
         }
