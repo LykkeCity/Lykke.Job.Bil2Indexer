@@ -253,7 +253,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 });
 
             var actions = coinsToSpend
-                .Where(x => x.Address != null)
+                .Where(x => x.Address != null && x.Address != Address.Unrecognized)
                 .Select(x => new
                 {
                     Address = x.Address,
