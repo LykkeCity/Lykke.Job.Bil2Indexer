@@ -29,15 +29,15 @@ namespace Lykke.Job.Bil2Indexer.Modules
 
         protected override void Load(ContainerBuilder builder)
         {
-            var blockchainConnStringProvider = new PgConnectionStringProvider(
+            IPgConnectionStringProvider blockchainConnStringProvider = new PgConnectionStringProvider(
                 _settings.Bil2IndexerJob.BlockchainIntegrations.ToDictionary(p => p.Type,
                     p => p.Indexer.PgBlockchainDataConnString));
 
-            var stateConnStringProvider = new PgConnectionStringProvider(
+            IPgConnectionStringProvider stateConnStringProvider = new PgConnectionStringProvider(
                 _settings.Bil2IndexerJob.BlockchainIntegrations.ToDictionary(p => p.Type,
                     p => p.Indexer.PgStateDataConnString));
 
-            var transactionConnStringProvider = new PgConnectionStringProvider(
+            IPgConnectionStringProvider transactionConnStringProvider = new PgConnectionStringProvider(
                 _settings.Bil2IndexerJob.BlockchainIntegrations.ToDictionary(p => p.Type,
                     p => p.Indexer.PgTransactionsDataConnString));
 
