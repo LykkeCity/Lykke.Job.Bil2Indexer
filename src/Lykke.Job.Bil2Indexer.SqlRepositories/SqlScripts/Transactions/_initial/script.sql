@@ -13,10 +13,10 @@ create unlogged table transactions
 );
 
 create index transactions_block_id_index
-    on transactions (block_id);
+    on transactions (block_id) tablespace fast_space;
 
 create unique index transactions_natural_key_index
-    on transactions (transaction_id);
+    on transactions (transaction_id) tablespace fast_space;
 
 
 COMMIT;

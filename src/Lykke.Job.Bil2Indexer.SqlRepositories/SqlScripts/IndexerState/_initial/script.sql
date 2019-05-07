@@ -13,7 +13,7 @@ create unlogged table block_headers
 );
 
 create unique index block_headers_number_uindex
-    on block_headers (number);
+    on block_headers (number)   tablespace fast_space;
 
 create unlogged table chain_heads
 (

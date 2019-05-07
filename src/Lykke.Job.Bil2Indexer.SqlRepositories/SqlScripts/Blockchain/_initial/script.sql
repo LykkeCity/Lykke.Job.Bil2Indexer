@@ -30,10 +30,10 @@ create unlogged table coins
 );
 
 create unique index coins_natural_key_index
-    on coins (coin_id);
+    on coins (coin_id)  tablespace fast_space;
 
 create index coins_transaction_id_index
-	on coins (transaction_id);
+	on coins (transaction_id)  tablespace fast_space;
 
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on coins for each row
@@ -54,15 +54,15 @@ create unlogged table fees
 );
 
 create unique index fees_natural_key_index_1
-    on fees (transaction_id, asset_id)
-where asset_address is null;
+    on fees (transaction_id, asset_id)  tablespace fast_space
+where asset_address is null ;
 
 create unique index fees_natural_key_index_2
-    on fees (transaction_id, asset_id, asset_address)
+    on fees (transaction_id, asset_id, asset_address)  tablespace fast_space
 where asset_address is not null;
 
 create index fees_block_id_index
-	on fees (block_id);
+	on fees (block_id)   tablespace fast_space;
     
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on fees for each row
@@ -83,18 +83,18 @@ create unlogged table balance_actions
 );
 
 create unique index balance_actions_natural_key_index_1
-    on balance_actions (transaction_id, address, asset_id)
+    on balance_actions (transaction_id, address, asset_id)   tablespace fast_space
     where asset_address is null;
 
 create unique index balance_actions_natural_key_index_2
-    on balance_actions (transaction_id, address, asset_id, asset_address)
+    on balance_actions (transaction_id, address, asset_id, asset_address)   tablespace fast_space
     where asset_address is not null;
     
 create index balance_actions_block_id
     on balance_actions (block_id);
 
 create index query_covered_by_address
-    on balance_actions (address, block_number desc, asset_id, asset_address, value);
+    on balance_actions (address, block_number desc, asset_id, asset_address, value)  tablespace fast_space;
 
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on balance_actions for each row
