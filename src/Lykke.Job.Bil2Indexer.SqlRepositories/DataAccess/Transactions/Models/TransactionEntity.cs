@@ -11,9 +11,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models
         [Column("id")]
         public Guid Id { get; set; }
 
-        [Column("blockchain_type")]
-        public string BlockchainType { get; set; }
-
         [Column("block_id")]
         public string BlockId { get; set; }
 

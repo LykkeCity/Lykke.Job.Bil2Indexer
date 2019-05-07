@@ -8,7 +8,7 @@ namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
 {
     public class InMemoryAssetInfosRepository : IAssetInfosRepository
     {
-        public Task AddIfNotExistsAsync(IEnumerable<AssetInfo> assetInfos)
+        public Task AddIfNotExistsAsync(IReadOnlyCollection<AssetInfo> assetInfos)
         {
             return Task.CompletedTask;
         }

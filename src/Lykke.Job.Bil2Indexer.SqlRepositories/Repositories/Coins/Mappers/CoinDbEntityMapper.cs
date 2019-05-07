@@ -12,7 +12,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
         {
             return new CoinEntity
             {
-                BlockchainType = source.BlockchainType,
                 TransactionId = source.Id.TransactionId,
                 CoinNumber = source.Id.CoinNumber,
                 Address = source.Address,
@@ -28,9 +27,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
             };
         }
 
-        public static Coin ToDomain(this CoinEntity source)
+        public static Coin ToDomain(this CoinEntity source, string blockchainType)
         {
-            return new Coin(blockchainType: source.BlockchainType,
+            return new Coin(blockchainType: blockchainType,
                 id: new CoinId(source.TransactionId, source.CoinNumber),
                 asset: new Asset(new AssetId(source.AssetId), source.AssetAddress != null ? new AssetAddress(source.AssetAddress) : null),
                 address: source.Address,

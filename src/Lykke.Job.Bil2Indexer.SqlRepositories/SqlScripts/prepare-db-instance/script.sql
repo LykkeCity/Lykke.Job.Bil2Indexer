@@ -1,0 +1,1 @@
+﻿CREATE TABLESPACE fast_space LOCATION '/fast_space';

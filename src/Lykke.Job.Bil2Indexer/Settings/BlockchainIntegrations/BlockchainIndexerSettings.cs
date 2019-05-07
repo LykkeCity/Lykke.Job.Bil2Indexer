@@ -15,5 +15,14 @@ namespace Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations
 
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
         public long BlockNumberToStartTransactionEventsPublication { get; set; }
+
+        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+        public string PgBlockchainDataConnString { get; set; }
+
+        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+        public string PgStateDataConnString { get; set; }
+
+        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
+        public string PgTransactionsDataConnString { get; set; }
     }
 }

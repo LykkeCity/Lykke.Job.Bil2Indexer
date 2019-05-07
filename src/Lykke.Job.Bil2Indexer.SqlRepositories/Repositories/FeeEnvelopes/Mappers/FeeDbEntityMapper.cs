@@ -7,9 +7,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes.Mapper
 {
     internal static class FeeDbEntityMapper
     {
-        public static FeeEnvelope ToDomain(this FeeEnvelopeEntity source)
+        public static FeeEnvelope ToDomain(this FeeEnvelopeEntity source, string blockchainType)
         {
-            return new FeeEnvelope(source.BlockchainType,
+            return new FeeEnvelope(blockchainType,
                 source.BlockId,
                 source.TransactionId,
                 new Fee(new Asset(source.AssetId, source.AssetAddress != null ? new AssetAddress(source.AssetAddress) : null),
@@ -22,7 +22,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes.Mapper
         {
             return new FeeEnvelopeEntity
             {
-                BlockchainType = source.BlockchainType,
                 TransactionId = source.TransactionId,
                 AssetAddress = source.Fee.Asset.Address,
                 AssetId = source.Fee.Asset.Id,

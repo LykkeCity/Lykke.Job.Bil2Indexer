@@ -158,7 +158,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     evt.FailedTransactions
                         .Select(x => new Transaction(blockchainType, evt.BlockId, x))
                 );
-            var saveTransactionsTask = _transactionsRepository.AddIfNotExistsAsync(transactions);
+            var saveTransactionsTask = _transactionsRepository.AddIfNotExistsAsync(transactions.ToList());
 
             var transactionsBalanceChanges = evt.TransferAmountExecutedTransactions
                 .SelectMany
@@ -237,7 +237,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 saveTransactionsTask,
                 saveBalanceActionsTask,
                 saveAssetInfosTask,
-                _feeEnvelopesRepository.AddIfNotExistsAsync(fees)
+                _feeEnvelopesRepository.AddIfNotExistsAsync(fees.ToList())
             );
 
             return MessageHandlingResult.Success();
@@ -268,7 +268,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     evt.FailedTransactions
                         .Select(x => new Transaction(blockchainType, evt.BlockId, x))
                 );
-            var saveTransactionsTask = _transactionsRepository.AddIfNotExistsAsync(transactions);
+            var saveTransactionsTask = _transactionsRepository.AddIfNotExistsAsync(transactions.ToList());
 
             var transactionsReceivedCoins = evt.TransferCoinsExecutedTransactions
                 .SelectMany
@@ -297,7 +297,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     )
                 );
 
-            var saveCoinsTask = _coinsRepository.AddIfNotExistsAsync(coins);
+            var saveCoinsTask = _coinsRepository.AddIfNotExistsAsync(coins.ToList());
 
             var assetInfos = transactionsReceivedCoins
                 .Select(x => new AssetInfo(blockchainType, x.Coin.Asset, x.Coin.Value.Scale))
@@ -344,7 +344,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 saveTransactionsTask,
                 saveCoinsTask,
                 saveAssetInfosTask,
-                _feeEnvelopesRepository.AddIfNotExistsAsync(fees)
+                _feeEnvelopesRepository.AddIfNotExistsAsync(fees.ToList())
             );
 
             return MessageHandlingResult.Success();

@@ -11,12 +11,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
 {
     internal static class TransferCoinsExecutedTransactionMapper
     {
-        public static TransactionEntity MapToDbEntity(this TransferCoinsExecutedTransaction source, string blockchainType, BlockId blockId)
+        public static TransactionEntity MapToDbEntity(this TransferCoinsExecutedTransaction source, BlockId blockId)
         {
             return new TransactionEntity
             {
                 BlockId = blockId,
-                BlockchainType = blockchainType,
                 Payload = new TransferCoinsExecutedTransactionPayload
                 {
                     Fees = source.Fees,

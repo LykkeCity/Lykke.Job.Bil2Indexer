@@ -10,7 +10,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
         {
             return new PostgreSQLCopyHelper<TransactionEntity>("transactions")
                 .UsePostgresQuoting()
-                .Map("blockchain_type", p => p.BlockchainType, NpgsqlDbType.Varchar)
                 .Map("block_id", p => p.BlockId, NpgsqlDbType.Varchar)
                 .Map("transaction_id", p => p.TransactionId, NpgsqlDbType.Varchar)
                 .Map("transaction_number", p => p.TransactionNumber, NpgsqlDbType.Integer)

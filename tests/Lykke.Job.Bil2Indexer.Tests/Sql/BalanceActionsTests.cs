@@ -44,6 +44,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 BuildProviderMock(asset,bType, scale).Object);
 
             await repo.AddIfNotExistsAsync(bType, actions);
+            await repo.AddIfNotExistsAsync(bType, actions);
 
             do
             {
@@ -54,6 +55,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 ctr++;
             } while (ctr <= max * 2);
 
+            await repo.AddIfNotExistsAsync(bType, actions);
             await repo.AddIfNotExistsAsync(bType, actions);
 
             var retrievedSum = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);

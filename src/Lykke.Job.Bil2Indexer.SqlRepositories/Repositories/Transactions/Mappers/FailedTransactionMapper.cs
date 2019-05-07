@@ -15,7 +15,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
             return new TransactionEntity
             {
                 BlockId = blockId,
-                BlockchainType = blockchainType,
                 Payload = new FailedTransactionPayload
                 {
                     Fees = source.Fees,

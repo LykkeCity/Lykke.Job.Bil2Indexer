@@ -31,7 +31,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<AssetInfoEntity>()
-                .HasKey(o => new {o.BlockchainType, o.Id});
+                .HasKey(o => o.Id);
         }
     }
 }

@@ -11,7 +11,6 @@ end;
 create unlogged table coins
 (
     id               uuid default uuid_generate_v1() not null,
-    blockchain_type  varchar(128)                            not null,
     transaction_id   varchar(256)                            not null,
     coin_number      integer                         not null,
     asset_id         varchar(32)                            not null,
@@ -31,10 +30,10 @@ create unlogged table coins
 );
 
 create unique index coins_natural_key_index
-    on coins (blockchain_type, coin_id);
+    on coins (coin_id);
 
-create index coins_blockchain_type_transaction_id_index
-	on coins (blockchain_type, transaction_id);
+create index coins_transaction_id_index
+	on coins (transaction_id);
 
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on coins for each row
@@ -43,7 +42,6 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
 create unlogged table fees
 (
     id              uuid default uuid_generate_v1() not null,
-    blockchain_type varchar(128)                            not null,
     block_id        varchar(256)                            not null,
     transaction_id  varchar(256)                            not null,
     asset_id        varchar(32)                            not null,
@@ -56,15 +54,15 @@ create unlogged table fees
 );
 
 create unique index fees_natural_key_index_1
-    on fees (blockchain_type, transaction_id, asset_id)
+    on fees (transaction_id, asset_id)
 where asset_address is null;
 
 create unique index fees_natural_key_index_2
-    on fees (blockchain_type, transaction_id, asset_id, asset_address)
+    on fees (transaction_id, asset_id, asset_address)
 where asset_address is not null;
 
-create index fees_blockchain_type_block_id_index
-	on fees (blockchain_type, block_id);
+create index fees_block_id_index
+	on fees (block_id);
     
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on fees for each row
@@ -73,7 +71,6 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
 create unlogged table balance_actions
 (
     id              uuid default uuid_generate_v1(),
-    blockchain_type varchar(128)    not null,
     block_id        varchar(256)    not null,
     block_number    integer not null,
     asset_id        varchar(32)    not null,
@@ -86,18 +83,18 @@ create unlogged table balance_actions
 );
 
 create unique index balance_actions_natural_key_index_1
-    on balance_actions (blockchain_type, transaction_id, address, asset_id)
+    on balance_actions (transaction_id, address, asset_id)
     where asset_address is null;
 
 create unique index balance_actions_natural_key_index_2
-    on balance_actions (blockchain_type, transaction_id, address, asset_id, asset_address)
+    on balance_actions (transaction_id, address, asset_id, asset_address)
     where asset_address is not null;
     
-create index balance_actions_blockchain_type_block_id
-    on balance_actions (blockchain_type, block_id);
+create index balance_actions_block_id
+    on balance_actions (block_id);
 
 create index query_covered_by_address
-    on balance_actions (blockchain_type, address, block_number desc, asset_id, asset_address, value);
+    on balance_actions (address, block_number desc, asset_id, asset_address, value);
 
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on balance_actions for each row
@@ -110,10 +107,9 @@ create unlogged table assets
     id              varchar(296)                            not null,
     asset_id        varchar(32)                            not null,
     asset_address   varchar(256),
-	blockchain_type varchar(128)                            not null,
 	scale int not null,
 	constraint assets_natural_key_pk
-		primary key (blockchain_type, id)
+		primary key (id)
 );
 
 COMMIT;

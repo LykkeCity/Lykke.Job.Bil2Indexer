@@ -7,19 +7,20 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
 {
     public class CrawlersRepository:ICrawlersRepository
     {
-        private readonly string _posgresConnString;
-        private const long StopAccemblingNullSqlMagicValue = -1;
+        private readonly IPgConnectionStringProvider _connectionStringProvider;
 
-        public CrawlersRepository(string posgresConnString)
+        public CrawlersRepository(IPgConnectionStringProvider connectionStringProvider)
         {
-            _posgresConnString = posgresConnString;
+            _connectionStringProvider = connectionStringProvider;
         }
+
+        private const long StopAccemblingNullSqlMagicValue = -1;
+        
 
         public async Task<Crawler> GetOrDefaultAsync(string blockchainType, CrawlerConfiguration configuration)
         {
@@ -28,12 +29,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
                 throw new ArgumentNullException(nameof(configuration));
             }
 
-            using (var db = new StateDataContext(_posgresConnString))
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
-                var existed = await db.Crawlers.SingleOrDefaultAsync(BuildIdPredicate(blockchainType,
-                    configuration.StartBlock, configuration.StopAssemblingBlock));
+                var existed = await db.Crawlers.SingleOrDefaultAsync(BuildIdPredicate(configuration.StartBlock,
+                    configuration.StopAssemblingBlock));
 
-                return existed != null ? Map(existed) : null;
+                return existed != null ? Map(existed, blockchainType) : null;
             }
         }
 
@@ -47,7 +48,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
             var dbEntity = Map(crawler);
             var isExisted = crawler.Version != 0;
 
-            using (var db = new StateDataContext(_posgresConnString))
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(crawler.BlockchainType)))
             {
                 if (isExisted)
                 {
@@ -79,19 +80,17 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
             }
         }
 
-        private Expression<Func<CrawlerEntity, bool>> BuildIdPredicate(string blockchainType, long startBlock, long? stopAccemblingBlock)
+        private Expression<Func<CrawlerEntity, bool>> BuildIdPredicate(long startBlock, long? stopAccemblingBlock)
         {
             var mappedStop = stopAccemblingBlock ?? StopAccemblingNullSqlMagicValue;
 
-            return p =>
-                p.BlockchainType == blockchainType
-                && p.StartBlock == startBlock
+            return p =>p.StartBlock == startBlock
                 && p.StopAssemblingBlock == mappedStop;
         }
 
-        private Crawler Map(CrawlerEntity source)
+        private Crawler Map(CrawlerEntity source, string blockchainType)
         {
-            return new Crawler(blockchainType:source.BlockchainType, 
+            return new Crawler(blockchainType: blockchainType, 
                 version:source.Version, 
                 sequence:source.Sequence, 
                 configuration:new CrawlerConfiguration(source.StartBlock, source.StopAssemblingBlock != StopAccemblingNullSqlMagicValue? (long?) source.StopAssemblingBlock:null),
@@ -105,7 +104,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
                 Version = source.Version,
                 StopAssemblingBlock = source.Configuration.StopAssemblingBlock ?? StopAccemblingNullSqlMagicValue,
                 StartBlock = source.Configuration.StartBlock,
-                BlockchainType = source.BlockchainType,
                 Sequence = source.Sequence,
                 ExpectedBlockNumber = source.ExpectedBlockNumber
             };

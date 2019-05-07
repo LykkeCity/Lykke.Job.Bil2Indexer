@@ -8,25 +8,25 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 {
     public class BlockHeadersRepository:IBlockHeadersRepository
     {
-        private readonly string _postgresConnString;
+        private readonly IPgConnectionStringProvider _connectionStringProvider;
 
-        public BlockHeadersRepository(string postgresConnString)
+        public BlockHeadersRepository(IPgConnectionStringProvider connectionStringProvider)
         {
-            _postgresConnString = postgresConnString;
+            _connectionStringProvider = connectionStringProvider;
         }
+
 
         public async Task SaveAsync(BlockHeader block)
         {
             var dbEntity = Map(block);
             var isExisted = block.Version != 0;
 
-            using (var db = new StateDataContext(_postgresConnString))
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(block.BlockchainType)))
             {
                 if (isExisted)
                 {
@@ -59,48 +59,48 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, long blockNumber)
         {
-            using (var db = new StateDataContext(_postgresConnString))
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.BlockHeaders
-                    .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockNumber));
+                    .SingleOrDefaultAsync(BuildPredicate(blockNumber));
 
-                return existed != null ? Map(existed) : null;
+                return existed != null ? Map(existed, blockchainType) : null;
             }
         }
 
         public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new StateDataContext(_postgresConnString))
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.BlockHeaders
-                    .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockId));
+                    .SingleOrDefaultAsync(BuildPredicate(blockId));
 
-                return existed != null ? Map(existed) : null;
+                return existed != null ? Map(existed, blockchainType) : null;
             }
         }
 
         public async Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new StateDataContext(_postgresConnString))
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.BlockHeaders
-                    .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockId));
+                    .SingleOrDefaultAsync(BuildPredicate(blockId));
 
                 if (existed == null)
                 {
                     throw new InvalidOperationException($"Block {blockchainType}:{blockId} is not found");
                 }
 
-                return Map(existed);
+                return Map(existed, blockchainType);
             }
         }
 
         public async Task TryRemoveAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new StateDataContext(_postgresConnString))
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.BlockHeaders
-                    .SingleOrDefaultAsync(BuildPredicate(blockchainType, blockId));
+                    .SingleOrDefaultAsync(BuildPredicate(blockId));
 
                 if (existed != null)
                 {
@@ -111,17 +111,17 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             }
         }
 
-        private Expression<Func<BlockHeaderEntity, bool>> BuildPredicate(string blockchainType, BlockId blockId)
+        private Expression<Func<BlockHeaderEntity, bool>> BuildPredicate(BlockId blockId)
         {
             var stringBlockId = blockId.ToString();
 
-            return p => p.BlockchainType == blockchainType && p.Id == stringBlockId;
+            return p => p.Id == stringBlockId;
 
         }
 
-        private Expression<Func<BlockHeaderEntity, bool>> BuildPredicate(string blockchainType, long blockNumber)
+        private Expression<Func<BlockHeaderEntity, bool>> BuildPredicate(long blockNumber)
         {
-            return p => p.BlockchainType == blockchainType && p.Number == blockNumber;
+            return p => p.Number == blockNumber;
 
         }
 
@@ -168,7 +168,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             return new BlockHeaderEntity
             {
                 Version = (uint) source.Version,
-                BlockchainType = source.BlockchainType,
                 State = Map(source.State),
                 Id = source.Id,
                 MinedAt = source.MinedAt,
@@ -179,11 +178,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             };
         }
 
-        private BlockHeader Map(BlockHeaderEntity source)
+        private BlockHeader Map(BlockHeaderEntity source, string blockchainType)
         {
             return new BlockHeader(id: source.Id, 
                 version: source.Version,
-                blockchainType:source.BlockchainType, 
+                blockchainType: blockchainType, 
                 number: source.Number, 
                 minedAt: source.MinedAt, 
                 size: source.Size, 

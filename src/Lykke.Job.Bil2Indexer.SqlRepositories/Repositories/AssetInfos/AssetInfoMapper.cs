@@ -10,7 +10,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
         {
             return new AssetInfoEntity
             {
-                BlockchainType = source.BlockchainType,
                 AssetId = source.Asset.Id,
                 Scale = source.Scale,
                 AssetAddress = source.Asset.Address,
@@ -18,9 +17,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
             };
         }
 
-        public static AssetInfo ToDomain(this AssetInfoEntity source)
+        public static AssetInfo ToDomain(this AssetInfoEntity source, string blockchainType)
         {
-            return new AssetInfo(source.BlockchainType, new Asset(source.AssetId, source.AssetAddress), source.Scale);
+            return new AssetInfo(blockchainType, new Asset(source.AssetId, source.AssetAddress), source.Scale);
         }
 
         public static string BuildId(Asset asset)
