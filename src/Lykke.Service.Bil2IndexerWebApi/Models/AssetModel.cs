@@ -1,12 +1,8 @@
-﻿namespace DataApi.Models
+﻿namespace Lykke.Service.Bil2IndexerWebApi.Models
 {
-    public class AssetModelLinks
-    {
-        public string TransactionUrl { get; set; }
-        public string BlockUrl { get; set; }
-    }
-
     public class AssetModel
     {
+        public AssetIdModel Id { get; set; }
+        public int Accuracy { get;set; }
     }
 }

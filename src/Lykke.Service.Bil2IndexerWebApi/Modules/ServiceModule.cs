@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using DataApi.Factories;
+using Lykke.Service.Bil2IndexerWebApi.Factories;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Modules
 {

@@ -1,9 +1,9 @@
-﻿using DataApi.Models;
+﻿using Lykke.Service.Bil2IndexerWebApi.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DataApi.Controllers
+namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/blockchains")]
     [ApiController]
     public class BlockchainsController : ControllerBase
     {
@@ -12,8 +12,8 @@ namespace DataApi.Controllers
         {
             return Ok(new[]
             {
-                new BlockchainModel {Id = "Bitcoin", IndexerUrl = "https://bitcoin.data.qoob.tech"},
-                new BlockchainModel {Id = "Ripple", IndexerUrl = "https://ripple.data.qoob.tech"}
+                new BlockchainModel {BlockchainType = "Bitcoin"},
+                new BlockchainModel {BlockchainType = "Ripple"}
             });
         }
     }

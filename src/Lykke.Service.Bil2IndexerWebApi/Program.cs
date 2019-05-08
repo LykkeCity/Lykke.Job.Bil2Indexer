@@ -8,7 +8,7 @@ namespace Lykke.Service.Bil2IndexerWebApi
         public static async Task Main(string[] args)
         {
 #if DEBUG
-            await LykkeStarter.Start<Startup>(true, 5001);
+            await LykkeStarter.Start<Startup>(true, 5101);
 #else
             await LykkeStarter.Start<Startup>(false);
 #endif

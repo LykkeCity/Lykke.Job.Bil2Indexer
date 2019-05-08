@@ -1,8 +1,12 @@
-﻿namespace DataApi.Models
+﻿using Newtonsoft.Json;
+
+namespace Lykke.Service.Bil2IndexerWebApi.Models
 {
     public class BlockchainModel
     {
-        public string Id { get; set; }
-        public string IndexerUrl { get; set; }
+        public string BlockchainType { get; set; }
+
+        [JsonProperty(PropertyName = "_links")]
+        public BlockchainLinksModel Links { get; set; }
     }
 }

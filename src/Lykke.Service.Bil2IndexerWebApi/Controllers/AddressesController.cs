@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DataApi.Core.Domain;
-using DataApi.Factories;
-using DataApi.Models;
-using DataApi.Models.Common;
-using DataApi.Services;
+using Lykke.Service.Bil2IndexerWebApi.Factories;
+using Lykke.Service.Bil2IndexerWebApi.Models;
+using Lykke.Service.Bil2IndexerWebApi.Models.Common;
+using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DataApi.Controllers
+namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/blockchains/{blockchainType}/addresses")]
     [ApiController]
     public class AddressesController : ControllerBase
     {
@@ -22,16 +21,23 @@ namespace DataApi.Controllers
             _addressModelFactory = addressModelFactory;
         }
 
-        [HttpGet("/addresses/{id}/balances", Name = nameof(GetAddressBalances))]
-        public async Task<ActionResult<Paginated<BalanceModel[]>>> GetAddressBalances([FromRoute] string id,
-            [FromQuery] string blockId, [FromQuery] int? blockNumber, DateTime? date,
-            PaginationOrder order, string startingAfter, string endingBefore, int limit = 25)
+        [HttpGet("/{address}/balances", Name = nameof(GetAddressBalances))]
+        public async Task<ActionResult<Paginated<AddressBalanceModel[]>>> GetAddressBalances(
+            [FromRoute] string blockchainType,
+            [FromRoute] string address,
+            [FromQuery] string blockId, 
+            [FromQuery] int? blockNumber, 
+            [FromQuery] DateTimeOffset? datetime,
+            PaginationOrder order, 
+            string startingAfter, 
+            string endingBefore, 
+            int limit = 25)
         {
             Balance[] balances = null;
 
-            if (id != null)
+            if (address != null)
             {
-                balances = await _addressService.GetBalancesByAddress(id, limit, order == PaginationOrder.Asc,
+                balances = await _addressService.GetBalancesByAddress(address, limit, order == PaginationOrder.Asc,
                     startingAfter, endingBefore);
             }
 
@@ -50,7 +56,7 @@ namespace DataApi.Controllers
 
             if (date != null)
             {
-                balances = await _addressService.GetBalancesOnDate(date.Value, limit,
+                balances = await _addressService.GetBalancesOnDate((date.Value.UtcDateTime, limit,
                     order == PaginationOrder.Asc,
                     startingAfter, endingBefore);
             }
@@ -60,11 +66,16 @@ namespace DataApi.Controllers
             return model;
         }
 
-        [HttpGet("/addresses/{id}/unspentOutputs", Name = nameof(GetAddressUnspentOutputs))]
-        public async Task<ActionResult<Paginated<UnspentOutputModel[]>>> GetAddressUnspentOutputs([FromRoute] string id,
-            PaginationOrder order, string startingAfter, string endingBefore, int limit = 25)
+        [HttpGet("/{address}/unspent-outputs", Name = nameof(GetAddressUnspentOutputs))]
+        public async Task<ActionResult<Paginated<AddressUnspentOutputModel[]>>> GetAddressUnspentOutputs(
+            [FromRoute] string blockchainType,
+            [FromRoute] string addresses,
+            PaginationOrder order, 
+            string startingAfter,
+            string endingBefore, 
+            int limit = 25)
         {
-            var unspentOutputs = await _addressService.GetUnspentOutputs(id, limit, order == PaginationOrder.Asc,
+            var unspentOutputs = await _addressService.GetUnspentOutputs(addresses, limit, order == PaginationOrder.Asc,
                 startingAfter, endingBefore);
 
             var model = _addressModelFactory.PrepareUnspentOutputsPaginated(unspentOutputs);

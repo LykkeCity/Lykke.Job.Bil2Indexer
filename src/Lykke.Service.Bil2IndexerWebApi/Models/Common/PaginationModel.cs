@@ -1,14 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace DataApi.Models.Common
+namespace Lykke.Service.Bil2IndexerWebApi.Models.Common
 {
-    public enum PaginationOrder
-    {
-        Asc,
-        Desc
-    }
-
     public class PaginationModel
     {
         public string EndingBefore { get; set; }
@@ -18,7 +12,7 @@ namespace DataApi.Models.Common
         public int Limit { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
-        public PaginationModel Order { get; set; }
+        public PaginationOrder Order { get; set; }
 
         public string PrevUrl { get; set; }
 

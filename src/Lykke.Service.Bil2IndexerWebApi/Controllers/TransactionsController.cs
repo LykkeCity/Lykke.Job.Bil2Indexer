@@ -1,14 +1,14 @@
 ﻿using System.Threading.Tasks;
-using DataApi.Core.Domain;
-using DataApi.Factories;
-using DataApi.Models;
-using DataApi.Models.Common;
-using DataApi.Services;
+using Lykke.Job.Bil2Indexer.Domain;
+using Lykke.Service.Bil2IndexerWebApi.Factories;
+using Lykke.Service.Bil2IndexerWebApi.Models;
+using Lykke.Service.Bil2IndexerWebApi.Models.Common;
+using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DataApi.Controllers
+namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/blockchains/{blockchainType}/transactions")]
     [ApiController]
     public class TransactionsController : ControllerBase
     {
@@ -21,20 +21,16 @@ namespace DataApi.Controllers
             _transactionModelFactory = transactionModelFactory;
         }
 
-        [HttpGet("{id}", Name = nameof(GetTransactionById))]
-        public async Task<ActionResult<TransactionModel>> GetTransactionById([FromRoute] string id)
-        {
-            var transaction = await _transactionService.GetTransactionById(id);
-
-            var model = _transactionModelFactory.PrepareTransactionModel(transaction);
-
-            return model;
-        }
-
         [HttpGet(Name = nameof(GetTransactions))]
-        public async Task<ActionResult<Paginated<TransactionModel[]>>> GetTransactions([FromRoute] string blockId,
-            [FromRoute] int? blockNumber, [FromRoute] string address,
-            PaginationOrder order, string startingAfter, string endingBefore, int limit = 25)
+        public async Task<ActionResult<Paginated<TransactionModel[]>>> GetTransactions(
+            [FromRoute] string blockchainType,
+            [FromQuery] string blockId,
+            [FromQuery] int? blockNumber, 
+            [FromQuery] string address,
+            PaginationOrder order, 
+            string startingAfter,
+            string endingBefore, 
+            int limit = 25)
         {
             Transaction[] transactions = null;
 
@@ -57,6 +53,18 @@ namespace DataApi.Controllers
             }
 
             var model = _transactionModelFactory.PrepareTransactionsPaginated(transactions);
+
+            return model;
+        }
+
+        [HttpGet("{id}", Name = nameof(GetTransactionById))]
+        public async Task<ActionResult<TransactionModel>> GetTransactionById(
+            [FromRoute] string blockchainType,
+            [FromRoute] string id)
+        {
+            var transaction = await _transactionService.GetTransactionById(id);
+
+            var model = _transactionModelFactory.PrepareTransactionModel(transaction);
 
             return model;
         }

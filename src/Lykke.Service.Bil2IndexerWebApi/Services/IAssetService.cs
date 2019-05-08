@@ -1,7 +1,6 @@
-﻿using DataApi.Core.Domain;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace DataApi.Services
+namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
     public interface IAssetService
     {

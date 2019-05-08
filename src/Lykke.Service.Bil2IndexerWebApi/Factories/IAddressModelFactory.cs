@@ -1,13 +1,11 @@
-﻿using DataApi.Core.Domain;
-using DataApi.Models;
-using DataApi.Models.Common;
-using Microsoft.AspNetCore.Mvc;
+﻿using Lykke.Service.Bil2IndexerWebApi.Models;
+using Lykke.Service.Bil2IndexerWebApi.Models.Common;
 
-namespace DataApi.Factories
+namespace Lykke.Service.Bil2IndexerWebApi.Factories
 {
     public interface IAddressModelFactory
     {
-        Paginated<BalanceModel[]> PrepareBalancesPaginated(Balance[] balances);
-        Paginated<UnspentOutputModel[]> PrepareUnspentOutputsPaginated(UnspentOutput[] unspentOutputs);
+        Paginated<AddressBalanceModel[]> PrepareBalancesPaginated(Balance[] balances);
+        Paginated<AddressUnspentOutputModel[]> PrepareUnspentOutputsPaginated(UnspentOutput[] unspentOutputs);
     }
 }

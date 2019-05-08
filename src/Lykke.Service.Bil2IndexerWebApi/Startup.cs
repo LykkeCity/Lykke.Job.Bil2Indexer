@@ -2,6 +2,7 @@
 using JetBrains.Annotations;
 using Lykke.Logs.Loggers.LykkeSlack;
 using Lykke.Sdk;
+using Lykke.Service.Bil2IndexerWebApi.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,11 +32,9 @@ namespace Lykke.Service.Bil2IndexerWebApi
                 {
                     logs.AzureTableName = "Bil2IndexerWebApiLog";
                     logs.AzureTableConnectionStringResolver = settings => settings.Bil2IndexerService.Db.LogsConnString;
-                    
+
                     logs.Extended = extendedLogs =>
                     {
-                        //extendedLogs.AddFilter((provider, component, level) => provider == "Lykke.Logs.Loggers.LykkeConsole.LykkeConsoleLoggerProvider");
-                       
                         extendedLogs.AddAdditionalSlackChannel("CommonBlockChainIntegration", channelOptions =>
                         {
                             channelOptions.MinLogLevel = Microsoft.Extensions.Logging.LogLevel.Information;
@@ -43,7 +42,7 @@ namespace Lykke.Service.Bil2IndexerWebApi
                             channelOptions.IncludeHealthNotifications();
                         });
 
-                        extendedLogs.AddAdditionalSlackChannel("CommonBlockChainIntegrationImportantMessages",channelOptions =>
+                        extendedLogs.AddAdditionalSlackChannel("CommonBlockChainIntegrationImportantMessages", channelOptions =>
                         {
                             channelOptions.MinLogLevel = Microsoft.Extensions.Logging.LogLevel.Warning;
                             channelOptions.SpamGuard.DisableGuarding();

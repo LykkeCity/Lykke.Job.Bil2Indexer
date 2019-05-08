@@ -1,12 +1,13 @@
 ﻿using System.Threading.Tasks;
-using DataApi.Core.Domain;
+using Lykke.Bil2.SharedDomain;
+using Lykke.Job.Bil2Indexer.Domain;
 
-namespace DataApi.Services
+namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
     public interface IBlockService
     {
-        Task<Block> GetBlockById(string id);
-        Task<Block> GetBlockByNumber(int number);
-        Task<Block[]> GetBlocks(int limit, bool orderAsc, string startingAfter, string endingBefore);
+        Task<BlockHeader> GetBlockByIdOrDefault(BlockId id);
+        Task<BlockHeader> GetBlockByNumberOrDefault(int number);
+        Task<BlockHeader[]> GetBlocks(int limit, bool orderAsc, string startingAfter, string endingBefore);
     }
 }

@@ -1,12 +1,12 @@
-﻿using DataApi.Core.Domain;
-using DataApi.Models;
-using DataApi.Models.Common;
+﻿using Lykke.Job.Bil2Indexer.Domain;
+using Lykke.Service.Bil2IndexerWebApi.Models;
+using Lykke.Service.Bil2IndexerWebApi.Models.Common;
 
-namespace DataApi.Factories
+namespace Lykke.Service.Bil2IndexerWebApi.Factories
 {
     public interface IBlockModelFactory
     {
-        BlockModel PrepareBlockModel(Block block);
-        Paginated<BlockModel[]> PrepareBlocksPaginated(Block[] blocks);
+        BlockModel PrepareBlockModel(BlockHeader block);
+        Paginated<BlockModel[]> PrepareBlocksPaginated(BlockHeader[] blocks);
     }
 }

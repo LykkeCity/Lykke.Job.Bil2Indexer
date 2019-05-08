@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
-using DataApi.Core.Domain;
 
-namespace DataApi.Services
+namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
     public interface ITransactionService
     {
