@@ -11,6 +11,9 @@
     <RepositoryUrl>https://github.com/LykkeCity/Lykke.Job.Bil2Indexer.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Lykke;Bil2Indexer;Grpc</PackageTags>
+    <ApplicationIcon />
+    <OutputType>Exe</OutputType>
+    <StartupObject />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -23,17 +26,26 @@
     <NoWarn>1701;1702;1705;1591</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup Label="dotnet pack instructions">
-    <Content Include="$(OutputPath)Lykke.Service.Bil2IndexerGrpcApi.Client.pdb">
-      <Pack>true</Pack>
-      <PackagePath>lib/netcoreapp2.2</PackagePath>
-    </Content>
+  <ItemGroup>
+    <Compile Remove="bin\**" />
+    <Compile Remove="Models\**" />
+    <EmbeddedResource Remove="bin\**" />
+    <EmbeddedResource Remove="Models\**" />
+    <None Remove="bin\**" />
+    <None Remove="Models\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.7.0" />
+    <PackageReference Include="Grpc.Core" Version="1.20.0" />
+    <PackageReference Include="Grpc.Tools" Version="1.20.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Lykke.SettingsReader" Version="5.1.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <Folder Include="Models\" />
+    <ProjectReference Include="..\..\contract\Lykke.Job.Bil2Indexer.Contract\Lykke.Job.Bil2Indexer.Contract.csproj" />
   </ItemGroup>
 </Project>

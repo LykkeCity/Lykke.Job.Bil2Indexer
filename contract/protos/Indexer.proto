@@ -1,37 +1,43 @@
 syntax = "proto3";
 
+package bil2.indexer;
+
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 
 service IndexerApi {
-    rpc GetTransactionExecutedEvent(TransactionExecutedEventsFilter) returns (stream TransactionExecuted) {}
-    rpc GetTransactionFailedEvent(TransactionFailedEventsFilter) returns (stream TransactionFailed) {}
-    rpc GetLastIrreversibleBlockUpdatedEvent(LastIrreversibleBlockUpdatedEventsFilter) returns (stream LastIrreversibleBlockUpdated) {}
-    rpc GetChainHeadExtendedEvent(ChainHeadExtendedEventsFilter) returns (stream ChainHeadExtended) {}
-    rpc GetBlockRolledBackEvent(BlockRolledBackEventsFilter) returns (stream BlockRolledBack) {}
+    rpc StartBlockchainObservation(BlockchainFilter) returns (google.protobuf.Empty) {}
+    rpc EndBlockchainObservation(BlockchainFilter) returns (google.protobuf.Empty) {}
+    rpc StartAddressObservation(AddressObservationFilter) returns (google.protobuf.Empty) {}
+    rpc EndAddressObservation(AddressObservationFilter) returns (google.protobuf.Empty) {}
+    rpc StartTransactionObservation(TransactionObservationFilter) returns (google.protobuf.Empty) {}
+    rpc EndTransactionObservation(TransactionObservationFilter) returns (google.protobuf.Empty) {}
+
+    rpc GetTransactionExecutedEvents(google.protobuf.Empty) returns (stream TransactionExecuted) {}
+    rpc GetTransactionFailedEvents(google.protobuf.Empty) returns (stream TransactionFailed) {}
+    rpc GetLastIrreversibleBlockUpdatedEvents(BlockchainFilter) returns (stream LastIrreversibleBlockUpdated) {}
+    rpc GetChainHeadExtendedEvents(BlockchainFilter) returns (stream ChainHeadExtended) {}
+    rpc GetBlockRolledBackEvents(BlockchainFilter) returns (stream BlockRolledBack) {}
 }
 
-message TransactionExecutedEventsFilter {
-    google.protobuf.StringValue blockchainType = 1;
-    google.protobuf.StringValue transactionId = 2;
-    google.protobuf.StringValue address = 3;
-}
-
-message TransactionFailedEventsFilter {
-    google.protobuf.StringValue blockchainType = 1;
-    google.protobuf.StringValue transactionId = 2;
-}
-
-message LastIrreversibleBlockUpdatedEventsFilter {
+message BlockchainFilter {
     string blockchainType = 1;
 }
 
-message ChainHeadExtendedEventsFilter {
+message AddressObservationFilter {
+    enum ObservationType {
+        allTransactions  = 0;
+        incomingTransactions  = 1;
+        outcomingTransactions  = 2;
+    }
     string blockchainType = 1;
+    string address = 2;
+    ObservationType observationType = 3;
 }
 
-message BlockRolledBackEventsFilter {
+message TransactionObservationFilter {
     string blockchainType = 1;
+    string transactionId = 2;
 }
 
 message TransactionExecuted {

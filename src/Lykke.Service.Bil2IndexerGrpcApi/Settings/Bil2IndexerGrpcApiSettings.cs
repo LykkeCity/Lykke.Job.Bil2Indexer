@@ -10,5 +10,9 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Settings
 
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
         public RabbitMqSettings RabbitMq { get; set; }
+
+        public CacheSettings CacheSettings { get; set; }
+
+        public GrpcSettings GrpcSettings { get; set; }
     }
 }
