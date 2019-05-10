@@ -24,52 +24,52 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
             _appInsightTelemetryProvider = appInsightTelemetryProvider;
         }
 
-        public async Task AddIfNotExistsAsync(string blockchainType, IEnumerable<BalanceAction> actions)
+        public Task AddIfNotExistsAsync(string blockchainType, IEnumerable<BalanceAction> actions)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
-            await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
                 async () => await _impl.AddIfNotExistsAsync(blockchainType, actions));
         }
 
-        public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
+        public Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{blockId}";
 
-            await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
                 async () => await _impl.TryRemoveAllOfBlockAsync(blockchainType, blockId));
         }
 
-        public async Task<Money> GetBalanceAsync(string blockchainType, Address address, Asset asset, long atBlockNumber)
+        public Task<Money> GetBalanceAsync(string blockchainType, Address address, Asset asset, long atBlockNumber)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{address}-{asset.Id}-{atBlockNumber}";
 
-            return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
                 async () => await _impl.GetBalanceAsync(blockchainType, address, asset, atBlockNumber));
         }
 
-        public async Task<IReadOnlyDictionary<Asset, Money>> GetBalancesAsync(string blockchainType, Address address, long atBlockNumber)
+        public Task<IReadOnlyDictionary<Asset, Money>> GetBalancesAsync(string blockchainType, Address address, long atBlockNumber)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{address}-{atBlockNumber}";
 
-            return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
                 async () => await _impl.GetBalancesAsync(blockchainType, address, atBlockNumber));
         }
 
-        public async Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetSomeOfBalancesAsync(string blockchainType, ISet<TransactionId> transactionIds)
+        public Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetSomeOfBalancesAsync(string blockchainType, ISet<TransactionId> transactionIds)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
-            return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
                 async () => await _impl.GetSomeOfBalancesAsync(blockchainType, transactionIds));
         }
