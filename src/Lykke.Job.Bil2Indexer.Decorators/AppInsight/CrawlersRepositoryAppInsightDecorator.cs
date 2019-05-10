@@ -27,7 +27,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetOrDefaultAsync(blockchainType, configuration));
+                () => _impl.GetOrDefaultAsync(blockchainType, configuration));
         }
 
         public Task SaveAsync(Crawler crawler)
@@ -37,7 +37,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _impl.SaveAsync(crawler));
+                () => _impl.SaveAsync(crawler));
         }
     }
 }

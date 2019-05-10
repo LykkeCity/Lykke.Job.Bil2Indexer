@@ -29,7 +29,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName, 
                 operationId, 
-                async () => await _impl.AddIfNotExistsAsync(assetInfos));
+                () => _impl.AddIfNotExistsAsync(assetInfos));
         }
 
         public Task<AssetInfo> GetOrDefaultAsync(string blockchainType, Asset asset)
@@ -39,7 +39,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetOrDefaultAsync(blockchainType, asset));
+                () => _impl.GetOrDefaultAsync(blockchainType, asset));
         }
 
         public Task<AssetInfo> GetAsync(string blockchainType, Asset asset)
@@ -49,7 +49,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetAsync(blockchainType, asset));
+                () => _impl.GetAsync(blockchainType, asset));
         }
 
         public Task<IReadOnlyCollection<AssetInfo>> GetSomeOfAsync(string blockchainType, IEnumerable<Asset> assets)
@@ -59,7 +59,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetSomeOfAsync(blockchainType, assets));
+                () => _impl.GetSomeOfAsync(blockchainType, assets));
         }
 
         public Task<PaginatedItems<AssetInfo>> GetAllAsync(string blockchainType, int limit, string continuation)
@@ -69,7 +69,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetAllAsync(blockchainType, limit, continuation));
+                () => _impl.GetAllAsync(blockchainType, limit, continuation));
         }
     }
 }

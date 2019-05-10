@@ -29,7 +29,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _impl.AddIfNotExistsAsync(coins));
+                () => _impl.AddIfNotExistsAsync(coins));
         }
 
         public Task SpendAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
@@ -39,7 +39,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _impl.SpendAsync(blockchainType, ids));
+                () => _impl.SpendAsync(blockchainType, ids));
         }
 
         public Task RevertSpendingAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
@@ -49,7 +49,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _impl.RevertSpendingAsync(blockchainType, ids));
+                () => _impl.RevertSpendingAsync(blockchainType, ids));
         }
 
         public Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<CoinId> ids)
@@ -59,7 +59,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetSomeOfAsync(blockchainType, ids));
+                () => _impl.GetSomeOfAsync(blockchainType, ids));
         }
 
         public Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds)
@@ -69,7 +69,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _impl.RemoveIfExistAsync(blockchainType, receivedInTransactionIds));
+                () => _impl.RemoveIfExistAsync(blockchainType, receivedInTransactionIds));
         }
     }
 }
