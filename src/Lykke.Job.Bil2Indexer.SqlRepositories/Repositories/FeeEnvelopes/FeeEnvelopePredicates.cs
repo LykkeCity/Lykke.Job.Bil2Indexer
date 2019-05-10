@@ -51,8 +51,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
         {
             if (isAssetAddressNull == null)
             {
-                return dbEntity => (dbEntity.AssetAddress == null || dbEntity.AssetAddress != null) //force to use index intersection instead of bitmap
-                                   && transactionIds.Contains(dbEntity.TransactionId);
+                return dbEntity => transactionIds.Contains(dbEntity.TransactionId);
             }
 
             if (isAssetAddressNull.Value)
