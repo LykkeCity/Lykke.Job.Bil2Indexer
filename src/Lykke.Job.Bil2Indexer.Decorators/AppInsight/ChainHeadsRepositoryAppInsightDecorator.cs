@@ -26,7 +26,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetOrDefaultAsync(blockchainType));
+                () => _impl.GetOrDefaultAsync(blockchainType));
         }
 
         public Task<ChainHead> GetAsync(string blockchainType)
@@ -36,7 +36,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetAsync(blockchainType));
+                () => _impl.GetAsync(blockchainType));
         }
 
         public Task SaveAsync(ChainHead head)
@@ -46,7 +46,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _impl.SaveAsync(head));
+                () => _impl.SaveAsync(head));
         }
     }
 }

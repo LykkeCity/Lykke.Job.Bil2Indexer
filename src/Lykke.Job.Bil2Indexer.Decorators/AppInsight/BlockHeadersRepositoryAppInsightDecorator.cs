@@ -27,7 +27,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _impl.SaveAsync(block));
+                () => _impl.SaveAsync(block));
         }
 
         public Task<BlockHeader> GetOrDefaultAsync(string blockchainType, long blockNumber)
@@ -37,7 +37,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetOrDefaultAsync(blockchainType, blockNumber));
+                () => _impl.GetOrDefaultAsync(blockchainType, blockNumber));
         }
 
         public Task<BlockHeader> GetOrDefaultAsync(string blockchainType, BlockId blockId)
@@ -47,7 +47,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetOrDefaultAsync(blockchainType, blockId));
+                () => _impl.GetOrDefaultAsync(blockchainType, blockId));
         }
 
         public Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
@@ -57,7 +57,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetAsync(blockchainType, blockId));
+                () => _impl.GetAsync(blockchainType, blockId));
         }
 
         public Task TryRemoveAsync(string blockchainType, BlockId blockId)
@@ -67,7 +67,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _impl.TryRemoveAsync(blockchainType, blockId));
+                () => _impl.TryRemoveAsync(blockchainType, blockId));
         }
     }
 }

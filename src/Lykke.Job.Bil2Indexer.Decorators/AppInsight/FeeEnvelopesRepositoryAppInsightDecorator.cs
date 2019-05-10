@@ -29,7 +29,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _impl.AddIfNotExistsAsync(fees));
+                () => _impl.AddIfNotExistsAsync(fees));
         }
 
         public Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
@@ -39,7 +39,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                async () => await _impl.TryRemoveAllOfBlockAsync(blockchainType, blockId));
+                () => _impl.TryRemoveAllOfBlockAsync(blockchainType, blockId));
         }
 
         public Task<FeeEnvelope> GetOrDefaultAsync(string blockchainType, TransactionId transactionId, Asset asset)
@@ -49,7 +49,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetOrDefaultAsync(blockchainType, transactionId, asset));
+                () => _impl.GetOrDefaultAsync(blockchainType, transactionId, asset));
         }
 
         public Task<FeeEnvelope> GetAsync(string blockchainType, TransactionId transactionId, Asset asset)
@@ -59,7 +59,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetAsync(blockchainType, transactionId, asset));
+                () => _impl.GetAsync(blockchainType, transactionId, asset));
         }
 
         public Task<IReadOnlyCollection<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, TransactionId transactionId)
@@ -69,7 +69,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetTransactionFeesAsync(blockchainType, transactionId));
+                () => _impl.GetTransactionFeesAsync(blockchainType, transactionId));
         }
 
         public Task<PaginatedItems<FeeEnvelope>> GetBlockFeesAsync(string blockchainType, BlockId blockId, long limit, string continuation)
@@ -79,7 +79,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                async () => await _impl.GetBlockFeesAsync(blockchainType, blockId, limit, continuation));
+                () => _impl.GetBlockFeesAsync(blockchainType, blockId, limit, continuation));
         }
     }
 }
