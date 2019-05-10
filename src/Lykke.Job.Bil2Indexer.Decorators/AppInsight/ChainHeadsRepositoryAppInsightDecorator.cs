@@ -19,32 +19,32 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
             _appInsightTelemetryProvider = appInsightTelemetryProvider;
         }
 
-        public async Task<ChainHead> GetOrDefaultAsync(string blockchainType)
+        public Task<ChainHead> GetOrDefaultAsync(string blockchainType)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}";
 
-            return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
                 async () => await _impl.GetOrDefaultAsync(blockchainType));
         }
 
-        public async Task<ChainHead> GetAsync(string blockchainType)
+        public Task<ChainHead> GetAsync(string blockchainType)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}";
 
-            return await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
                 async () => await _impl.GetAsync(blockchainType));
         }
 
-        public async Task SaveAsync(ChainHead head)
+        public Task SaveAsync(ChainHead head)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{head.BlockId}";
 
-            await _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
                 async () => await _impl.SaveAsync(head));
         }
