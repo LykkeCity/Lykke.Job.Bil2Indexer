@@ -11,9 +11,9 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
     {
         private static readonly TelemetryClient TelemetryClient= new TelemetryClient();
 
-        public async Task ExecuteMethodWithTelemetryAsync(string operationName, string operationId, Func<Task> awaitableFunc)
+        public Task ExecuteMethodWithTelemetryAsync(string operationName, string operationId, Func<Task> awaitableFunc)
         {
-            var operation = TelemetryClient.StartOperation<RequestTelemetry>(new RequestTelemetry()
+            var operation = TelemetryClient.StartOperation(new RequestTelemetry
             {
                 Name = operationName,
                 Id = operationId
@@ -21,7 +21,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
 
             try
             {
-                await awaitableFunc();
+                return awaitableFunc();
             }
             catch (Exception e)
             {
@@ -36,9 +36,9 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
             }
         }
 
-        public async Task<T> ExecuteMethodWithTelemetryAndReturnAsync<T>(string operationName, string operationId, Func<Task<T>> awaitableFunc)
+        public Task<T> ExecuteMethodWithTelemetryAndReturnAsync<T>(string operationName, string operationId, Func<Task<T>> awaitableFunc)
         {
-            var operation = TelemetryClient.StartOperation<RequestTelemetry>(new RequestTelemetry()
+            var operation = TelemetryClient.StartOperation(new RequestTelemetry
             {
                 Name = operationName,
                 Id = operationId
@@ -46,7 +46,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
 
             try
             {
-                return await awaitableFunc();
+                return awaitableFunc();
             }
             catch (Exception e)
             {
