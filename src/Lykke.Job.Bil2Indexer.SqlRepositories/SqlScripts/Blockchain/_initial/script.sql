@@ -8,7 +8,7 @@ begin
 end;
  ' language plpgsql;
 
-create unlogged table coins
+create table coins
 (
     id               uuid default uuid_generate_v1() not null,
     transaction_id   varchar(256)                            not null,
@@ -39,7 +39,7 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
      on coins for each row
      execute procedure set_numeric_value_from_string ();
 
-create unlogged table fees
+create table fees
 (
     id              uuid default uuid_generate_v1() not null,
     block_id        varchar(256)                            not null,
@@ -68,7 +68,7 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
      on fees for each row
      execute procedure set_numeric_value_from_string ();
 
-create unlogged table balance_actions
+create table balance_actions
 (
     id              uuid default uuid_generate_v1(),
     block_id        varchar(256)    not null,
@@ -102,7 +102,7 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
 
 
 
-create unlogged table assets
+create table assets
 (
     id              varchar(296)                            not null,
     asset_id        varchar(32)                            not null,
