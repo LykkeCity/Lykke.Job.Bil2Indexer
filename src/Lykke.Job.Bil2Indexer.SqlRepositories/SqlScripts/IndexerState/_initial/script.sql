@@ -1,5 +1,5 @@
 ﻿BEGIN;
-create unlogged table block_headers
+create table block_headers
 (
     number            bigint  not null,
     mined_at          timestamp with time zone     not null,
@@ -15,7 +15,7 @@ create unlogged table block_headers
 create unique index block_headers_number_uindex
     on block_headers (number)   tablespace fast_space;
 
-create unlogged table chain_heads
+create table chain_heads
 (
     id                 varchar(128) not null,
     first_block_number bigint not null,
@@ -27,7 +27,7 @@ create unlogged table chain_heads
         primary key (id)
 );
 
-create unlogged table crawlers
+create table crawlers
 (
     start_block           bigint not null,
     stop_accembling_block bigint not null,

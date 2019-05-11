@@ -1,6 +1,6 @@
 ﻿create extension if not exists "uuid-ossp";
 
-create unlogged table transactions
+create table transactions
 (
     id                 uuid default uuid_generate_v1() not null,
     block_id           varchar(256)                            not null,
