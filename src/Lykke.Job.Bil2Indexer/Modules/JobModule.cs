@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using System.Threading;
+using Autofac;
 using JetBrains.Annotations;
 using Lykke.Common.Chaos;
 using Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure;
@@ -26,6 +27,8 @@ namespace Lykke.Job.Bil2Indexer.Modules
 
             builder.RegisterType<AppInsightTelemetryProvider>()
                 .As<IAppInsightTelemetryProvider>();
+
+            ThreadPool.SetMinThreads(100, 100);
         }
     }
 }
