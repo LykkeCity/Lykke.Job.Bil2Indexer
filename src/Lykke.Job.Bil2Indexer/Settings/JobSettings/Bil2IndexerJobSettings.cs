@@ -24,6 +24,6 @@ namespace Lykke.Job.Bil2Indexer.Settings.JobSettings
         public IReadOnlyList<BlockchainIntegrationSettings> BlockchainIntegrations { get; set; }
 
         [Optional]
-        public bool TelemetryEnabled { get; set; } = false;
+        public bool TelemetryEnabled { get; set; } = true;
     }
 }
