@@ -83,15 +83,18 @@ namespace Lykke.Job.Bil2Indexer.Modules
 
             #region Decorators
 
-            builder.RegisterDecorator<BalanceActionsRepositoryAppInsightDecorator, IBalanceActionsRepository>();
-            builder.RegisterDecorator<BlockHeadersRepositoryAppInsightDecorator, IBlockHeadersRepository>();
-            builder.RegisterDecorator<CoinsRepositoryAppInsightDecorator, ICoinsRepository>();
-            builder.RegisterDecorator<CrawlersRepositoryAppInsightDecorator, ICrawlersRepository>();
-            builder.RegisterDecorator<TransactionsRepositoryAppInsightDecorator, ITransactionsRepository>();
-            builder.RegisterDecorator<ChainHeadsRepositoryAppInsightDecorator, IChainHeadsRepository>();
-            builder.RegisterDecorator<FeeEnvelopesRepositoryAppInsightDecorator, IFeeEnvelopesRepository>();
-            builder.RegisterDecorator<AssetInfosRepositoryAppInsightDecorator, IAssetInfosRepository>();
-            
+            if (_settings.Bil2IndexerJob.TelemetryEnabled)
+            {
+                builder.RegisterDecorator<BalanceActionsRepositoryAppInsightDecorator, IBalanceActionsRepository>();
+                builder.RegisterDecorator<BlockHeadersRepositoryAppInsightDecorator, IBlockHeadersRepository>();
+                builder.RegisterDecorator<CoinsRepositoryAppInsightDecorator, ICoinsRepository>();
+                builder.RegisterDecorator<CrawlersRepositoryAppInsightDecorator, ICrawlersRepository>();
+                builder.RegisterDecorator<TransactionsRepositoryAppInsightDecorator, ITransactionsRepository>();
+                builder.RegisterDecorator<ChainHeadsRepositoryAppInsightDecorator, IChainHeadsRepository>();
+                builder.RegisterDecorator<FeeEnvelopesRepositoryAppInsightDecorator, IFeeEnvelopesRepository>();
+                builder.RegisterDecorator<AssetInfosRepositoryAppInsightDecorator, IAssetInfosRepository>();
+            }
+
             #endregion
         }
     }

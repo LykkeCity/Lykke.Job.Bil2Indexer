@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations;
+using Lykke.SettingsReader.Attributes;
+using System.Collections.Generic;
 
 namespace Lykke.Job.Bil2Indexer.Settings.JobSettings
 {
@@ -21,5 +22,8 @@ namespace Lykke.Job.Bil2Indexer.Settings.JobSettings
 
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
         public IReadOnlyList<BlockchainIntegrationSettings> BlockchainIntegrations { get; set; }
+
+        [Optional]
+        public bool TelemetryEnabled { get; set; } = false;
     }
 }
