@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure;
@@ -13,7 +14,9 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
 
         public async Task ExecuteMethodWithTelemetryAsync(string operationName, string operationId, Func<Task> awaitableFunc)
         {
-            var startedAt = DateTime.UtcNow;
+            var stWatch = new Stopwatch();
+            stWatch.Start();
+
             var success = true;
 
             try
@@ -29,10 +32,12 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
             }
             finally
             {
+                stWatch.Stop();
+
                 TelemetryClient.TrackDependency(new DependencyTelemetry
                 {
                     Id = operationId,
-                    Duration = DateTime.UtcNow - startedAt,
+                    Duration = stWatch.Elapsed,
                     Name = operationName,
                     Success = success
                 });
@@ -42,7 +47,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
         public async Task<T> ExecuteMethodWithTelemetryAndReturnAsync<T>(string operationName, string operationId, Func<Task<T>> awaitableFunc)
         {
             var success = true;
-            var startedAt = DateTime.UtcNow;
+            var startedAt = Stopwatch.GetTimestamp();
 
             try
             {
@@ -60,7 +65,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
                 TelemetryClient.TrackDependency(new DependencyTelemetry
                 {
                     Id = operationId,
-                    Duration = DateTime.UtcNow - startedAt,
+                    Duration = new TimeSpan(Stopwatch.GetTimestamp() - startedAt),
                     Name = operationName,
                     Success = success
                 });
