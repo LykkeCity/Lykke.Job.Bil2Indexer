@@ -42,6 +42,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
         public async Task<T> ExecuteMethodWithTelemetryAndReturnAsync<T>(string operationName, string operationId, Func<Task<T>> awaitableFunc)
         {
             var success = true;
+            var startedAt = DateTime.UtcNow;
 
             try
             {
