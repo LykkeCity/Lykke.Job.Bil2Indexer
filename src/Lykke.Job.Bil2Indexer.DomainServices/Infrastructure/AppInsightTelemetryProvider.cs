@@ -72,8 +72,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
                     Id = operationId,
                     Duration = stWatch.Elapsed,
                     Name = operationName,
-                    Success = success,
-                    Timestamp = 
+                    Success = success
                 });
             }
         }
