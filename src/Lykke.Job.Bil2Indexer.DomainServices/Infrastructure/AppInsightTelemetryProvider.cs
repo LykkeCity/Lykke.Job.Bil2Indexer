@@ -16,6 +16,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
         {
             var stWatch = new Stopwatch();
             stWatch.Start();
+            var startedAt = DateTime.UtcNow;
 
             var success = true;
 
@@ -39,7 +40,8 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
                     Id = operationId,
                     Duration = stWatch.Elapsed,
                     Name = operationName,
-                    Success = success
+                    Success = success,
+                    Timestamp = new DateTimeOffset(startedAt)
                 });
             }
         }
@@ -50,6 +52,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
 
             var stWatch = new Stopwatch();
             stWatch.Start();
+            var startedAt = DateTime.UtcNow;
 
             try
             {
@@ -71,7 +74,8 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
                     Id = operationId,
                     Duration = stWatch.Elapsed,
                     Name = operationName,
-                    Success = success
+                    Success = success,
+                    Timestamp = new DateTimeOffset(startedAt)
                 });
             }
         }
