@@ -37,26 +37,35 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 return;
             }
 
-            using (var conn = new NpgsqlConnection(_connectionStringProvider.GetConnectionString(fees.First().BlockchainType)))
+            var blockchainType = fees.First().BlockchainType;
+
+            try
+            {
+                Copy(dbEntities, blockchainType);
+            }
+            catch (PostgresException e) when (e.IsNaturalKeyViolationException())
+            {
+                var notExisted = await ExcludeExistedInDbAsync(blockchainType, dbEntities);
+
+                Copy(notExisted, blockchainType);
+            }
+        }
+
+        private void Copy(IReadOnlyCollection<FeeEnvelopeEntity> dbEntities, string blockchainType)
+        {
+            if (!dbEntities.Any())
+            {
+                return;
+            }
+
+            using (var conn = new NpgsqlConnection(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 conn.Open();
 
-                try
-                {
-                    _copyMapper.SaveAll(conn, dbEntities);
-                }
-                catch (PostgresException e) when (e.IsNaturalKeyViolationException())
-                {
-                    var notExisted = await ExcludeExistedInDbAsync(fees.First().BlockchainType, dbEntities);
-
-                    if (notExisted.Any())
-                    {
-                        _copyMapper.SaveAll(conn, notExisted);
-                    }
-                }
+                _copyMapper.SaveAll(conn, dbEntities);
             }
         }
-        
+
         private async Task<IReadOnlyCollection<FeeEnvelopeEntity>> ExcludeExistedInDbAsync(string blockchainType, IReadOnlyCollection<FeeEnvelopeEntity> dbEntities)
         {
             string BuildId(string transactionId, string assetId, string assetAddress)

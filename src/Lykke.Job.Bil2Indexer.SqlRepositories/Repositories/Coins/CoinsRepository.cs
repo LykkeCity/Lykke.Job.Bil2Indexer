@@ -42,23 +42,32 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                 return;
             }
 
-            using (var conn = new NpgsqlConnection(_connectionStringProvider.GetConnectionString(coins.First().BlockchainType)))
+            var blockchainType = coins.First().BlockchainType;
+
+            try
+            {
+                Copy(dbEntities, blockchainType);
+            }
+            catch (PostgresException e) when (e.IsNaturalKeyViolationException())
+            {
+                var notExisted = await ExcludeExistedInDbAsync(blockchainType, dbEntities);
+
+                Copy(notExisted, blockchainType);
+            }
+        }
+
+        private void Copy(IReadOnlyCollection<CoinEntity> dbEntities, string blockchainType)
+        {
+            if (!dbEntities.Any())
+            {
+                return;
+            }
+
+            using (var conn = new NpgsqlConnection(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 conn.Open();
 
-                try
-                {
-                    _copyMapper.SaveAll(conn, dbEntities);
-                }
-                catch (PostgresException e) when (e.IsNaturalKeyViolationException())
-                {
-                    var notExisted = await ExcludeExistedInDbAsync(coins.First().BlockchainType, dbEntities);
-
-                    if (notExisted.Any())
-                    {
-                        _copyMapper.SaveAll(conn, notExisted);
-                    }
-                }
+                _copyMapper.SaveAll(conn, dbEntities);
             }
         }
 

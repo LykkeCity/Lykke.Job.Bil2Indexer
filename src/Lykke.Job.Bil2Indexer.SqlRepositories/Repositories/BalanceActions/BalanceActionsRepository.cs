@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
@@ -40,7 +41,22 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             IEnumerable<BalanceAction> actions)
         {
             var dbEntities = actions.Select(domain => domain.ToDbEntity(blockchainType)).ToList();
+            
+            try
+            {
+                Copy(dbEntities, blockchainType);
+            }
+            catch (PostgresException e) when (e.IsNaturalKeyViolationException())
+            {
+                var notExisted = await ExcludeExistedInDbAsync(blockchainType, dbEntities);
 
+                Copy(notExisted, blockchainType);
+            }
+        }
+
+
+        private void Copy(IReadOnlyCollection<BalanceActionEntity> dbEntities, string blockchainType)
+        {
             if (!dbEntities.Any())
             {
                 return;
@@ -50,19 +66,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             {
                 conn.Open();
 
-                try
-                {
-                    _copyMapper.SaveAll(conn, dbEntities);
-                }
-                catch (PostgresException e) when(e.IsNaturalKeyViolationException())
-                {
-                    var notExisted = await ExcludeExistedInDbAsync(blockchainType, dbEntities);
-
-                    if (notExisted.Any())
-                    {
-                        _copyMapper.SaveAll(conn, notExisted);
-                    }
-                }
+                _copyMapper.SaveAll(conn, dbEntities);
             }
         }
 
@@ -73,18 +77,18 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 return $"{transactionId}_{address}_{assetId}_{assetAddress}";
             }
 
+            //force to use partial natural index
+
+            var txIdsWithAssetAddress = dbEntities
+                .Where(p => p.AssetAddress != null)
+                .Select(p => p.TransactionId);
+
+            var txIdsWithoutAssetAddress = dbEntities
+                .Where(p => p.AssetAddress == null)
+                .Select(p => p.TransactionId);
+            
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
-                //force to use partial natural index
-                
-                var txIdsWithAssetAddress = dbEntities
-                    .Where(p => p.AssetAddress != null)
-                    .Select(p => p.TransactionId);
-
-                var txIdsWithoutAssetAddress = dbEntities
-                    .Where(p => p.AssetAddress == null)
-                    .Select(p => p.TransactionId);
-
                 var getNaturalIds1 = db.BalanceActions
                     .Where(BalanceActionsPredicates.Build(txIdsWithAssetAddress, isAssetAddressNull: false))
                     .Select(p => new { p.TransactionId, p.Address, p.AssetId, p.AssetAddress })
