@@ -16,6 +16,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
         {
             var stWatch = new Stopwatch();
             stWatch.Start();
+            var started = Stopwatch.GetTimestamp();
 
             var success = true;
 
@@ -39,7 +40,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
                     Id = operationId,
                     Duration = stWatch.Elapsed,
                     Name = operationName,
-                    Success = success
+                    Success = success,
                 });
             }
         }
@@ -47,7 +48,9 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
         public async Task<T> ExecuteMethodWithTelemetryAndReturnAsync<T>(string operationName, string operationId, Func<Task<T>> awaitableFunc)
         {
             var success = true;
-            var startedAt = Stopwatch.GetTimestamp();
+
+            var stWatch = new Stopwatch();
+            stWatch.Start();
 
             try
             {
@@ -62,12 +65,15 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
             }
             finally
             {
+                stWatch.Stop();
+
                 TelemetryClient.TrackDependency(new DependencyTelemetry
                 {
                     Id = operationId,
-                    Duration = new TimeSpan(Stopwatch.GetTimestamp() - startedAt),
+                    Duration = stWatch.Elapsed,
                     Name = operationName,
-                    Success = success
+                    Success = success,
+                    Timestamp = 
                 });
             }
         }
