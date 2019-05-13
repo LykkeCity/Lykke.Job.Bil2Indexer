@@ -16,7 +16,6 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
         {
             var stWatch = new Stopwatch();
             stWatch.Start();
-            var started = Stopwatch.GetTimestamp();
 
             var success = true;
 
@@ -40,7 +39,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
                     Id = operationId,
                     Duration = stWatch.Elapsed,
                     Name = operationName,
-                    Success = success,
+                    Success = success
                 });
             }
         }
