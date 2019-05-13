@@ -20,7 +20,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
         {
             var stringTransactionId = transactionId.ToString();
 
-            return p => p.TransactionId == stringTransactionId;
+            return p => p.TransactionId == stringTransactionId && (p.AssetAddress == null || p.AssetAddress != null);
 
         }
 
