@@ -13,11 +13,8 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
 
         public async Task ExecuteMethodWithTelemetryAsync(string operationName, string operationId, Func<Task> awaitableFunc)
         {
-            var operation = TelemetryClient.StartOperation(new RequestTelemetry
-            {
-                Name = operationName,
-                Id = operationId
-            });
+            var startedAt = DateTime.UtcNow;
+            var success = true;
 
             try
             {
@@ -25,24 +22,26 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
             }
             catch (Exception e)
             {
-                operation.Telemetry.Success = false;
+                success = false;
                 TelemetryClient.TrackException(e);
 
                 throw;
             }
             finally
             {
-                TelemetryClient.StopOperation(operation);
+                TelemetryClient.TrackDependency(new DependencyTelemetry
+                {
+                    Id = operationId,
+                    Duration = DateTime.UtcNow - startedAt,
+                    Name = operationName,
+                    Success = success
+                });
             }
         }
 
         public async Task<T> ExecuteMethodWithTelemetryAndReturnAsync<T>(string operationName, string operationId, Func<Task<T>> awaitableFunc)
         {
-            var operation = TelemetryClient.StartOperation(new RequestTelemetry
-            {
-                Name = operationName,
-                Id = operationId
-            });
+            var success = true;
 
             try
             {
@@ -50,14 +49,20 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
             }
             catch (Exception e)
             {
-                operation.Telemetry.Success = false;
+                success = false;
                 TelemetryClient.TrackException(e);
 
                 throw;
             }
             finally
             {
-                TelemetryClient.StopOperation(operation);
+                TelemetryClient.TrackDependency(new DependencyTelemetry
+                {
+                    Id = operationId,
+                    Duration = DateTime.UtcNow - startedAt,
+                    Name = operationName,
+                    Success = success
+                });
             }
         }
 
