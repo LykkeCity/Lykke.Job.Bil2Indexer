@@ -14,7 +14,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanSaveAndRead()
         {
-            var repo = new CrawlersRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new CrawlersRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             var source1 = BuildRandom();
 
@@ -36,7 +36,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanHandlerNullStopBlock()
         {
-            var repo = new CrawlersRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new CrawlersRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             var source1 = Crawler.StartNew(Guid.NewGuid().ToString(), new CrawlerConfiguration(new Random().Next(), null));
 
@@ -54,7 +54,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var from = new Random().Next();
             var to = new Random().Next();
 
-            var repo = new CrawlersRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new CrawlersRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             var notFound = await repo.GetOrDefaultAsync(blockchainType, new CrawlerConfiguration(from, to));
             
@@ -64,7 +64,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task HandlesOptimisticConcurrency()
         {
-            var repo = new CrawlersRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new CrawlersRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             var source1 = BuildRandom();
 

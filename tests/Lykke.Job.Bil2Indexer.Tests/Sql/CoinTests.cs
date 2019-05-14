@@ -20,7 +20,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanSaveAndRead()
         {
-            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
+            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnStringProvider(), EmptyLogFactory.Instance);
 
             var bType = Guid.NewGuid().ToString();
 
@@ -64,7 +64,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanDelete()
         {
-            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
+            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnStringProvider(), EmptyLogFactory.Instance);
 
             var bType = Guid.NewGuid().ToString();
 
@@ -115,7 +115,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanSpend()
         {
-            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
+            var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnStringProvider(), EmptyLogFactory.Instance);
 
             var bType = Guid.NewGuid().ToString();
 

@@ -25,9 +25,6 @@
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Services\" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Lykke.Job.Bil2Indexer.Domain\Lykke.Job.Bil2Indexer.Domain.csproj" />
   </ItemGroup>
 </Project>

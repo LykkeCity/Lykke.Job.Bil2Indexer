@@ -40,7 +40,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 ctr++;
             } while (ctr <= max);
 
-            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
+            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnStringProvider(),
                 BuildProviderMock(asset,bType, scale).Object);
 
             await repo.AddIfNotExistsAsync(bType, actions);
@@ -103,7 +103,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 ctr++;
             } while (ctr <= max);
 
-            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
+            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnStringProvider(),
                 BuildProviderMock(asset, bType, scale).Object);
 
             await repo.AddIfNotExistsAsync(bType, actions);
@@ -159,7 +159,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             };
 
-            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
+            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnStringProvider(),
                 BuildProviderMock(asset, bType, scale).Object);
             await repo.AddIfNotExistsAsync(bType, actions);
         }
@@ -176,7 +176,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var sum = Money.Parse("0");
 
 
-            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnString(),
+            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnStringProvider(),
                 BuildProviderMock(asset, bType, scale).Object);
 
             var retrievedSum = await repo.GetBalanceAsync(bType, address, asset, int.MaxValue);

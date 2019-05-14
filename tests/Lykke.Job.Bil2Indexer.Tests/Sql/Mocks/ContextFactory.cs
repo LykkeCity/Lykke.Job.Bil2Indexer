@@ -40,15 +40,20 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql.Mocks
             }
         }
         
-        public static IPgConnectionStringProvider GetPosgresTestsConnString()
+        public static IPgConnectionStringProvider GetPosgresTestsConnStringProvider()
         {
-            var connString = Environment.GetEnvironmentVariable("PosgresConnString");
+            var connString = GetPosgresTestsConnString();
 
             var result = new Mock<IPgConnectionStringProvider>();
 
             result.Setup(p => p.GetConnectionString(It.IsAny<string>())).Returns(connString);
 
             return result.Object;
+        }
+
+        public static string GetPosgresTestsConnString()
+        {
+            return Environment.GetEnvironmentVariable("PosgresConnString");
         }
     }
 }

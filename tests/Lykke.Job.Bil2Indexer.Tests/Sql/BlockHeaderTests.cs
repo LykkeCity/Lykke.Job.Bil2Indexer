@@ -14,7 +14,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanSaveAndRead()
         {
-            var repo = new BlockHeadersRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new BlockHeadersRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             var source1 = BuildRandom();
 
@@ -36,7 +36,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanRemove()
         {
-            var repo = new BlockHeadersRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new BlockHeadersRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             var source1 = BuildRandom();
 
@@ -61,7 +61,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var blockNumber = new Random().Next();
             var blockId = Guid.NewGuid().ToString();
 
-            var repo = new BlockHeadersRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new BlockHeadersRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             var notFound1 = await repo.GetOrDefaultAsync(blockchainType, blockId);
 
@@ -78,7 +78,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task HandlesOptimisticConcurrency()
         {
-            var repo = new BlockHeadersRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new BlockHeadersRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             var source1 = BuildRandom();
 

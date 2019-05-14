@@ -265,7 +265,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
         private static TransactionsRepository BuildRepo()
         {
-            return new TransactionsRepository(ContextFactory.GetPosgresTestsConnString());
+            return new TransactionsRepository(ContextFactory.GetPosgresTestsConnStringProvider());
         }
     }
 }

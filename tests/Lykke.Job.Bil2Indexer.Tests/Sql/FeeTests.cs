@@ -36,7 +36,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             } while (count<=max);
 
-            var repo = new FeeEnvelopesRepository(ContextFactory.GetPosgresTestsConnString());
+            var repo = new FeeEnvelopesRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             await repo.AddIfNotExistsAsync(fees);
 
