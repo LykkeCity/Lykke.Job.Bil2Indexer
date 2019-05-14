@@ -16,7 +16,15 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
         {
             var stWatch = new Stopwatch();
             stWatch.Start();
-            var startedAt = DateTime.UtcNow;
+
+            var dependency = new DependencyTelemetry
+            {
+                Id = operationId,
+                Duration = stWatch.Elapsed,
+                Name = operationName
+            };
+
+            dependency.Start();
 
             var success = true;
 
@@ -35,14 +43,10 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
             {
                 stWatch.Stop();
 
-                TelemetryClient.TrackDependency(new DependencyTelemetry
-                {
-                    Id = operationId,
-                    Duration = stWatch.Elapsed,
-                    Name = operationName,
-                    Success = success,
-                    Timestamp = new DateTimeOffset(startedAt)
-                });
+                dependency.Success = success;
+                dependency.Duration = stWatch.Elapsed;
+
+                TelemetryClient.TrackDependency(dependency);
             }
         }
 
@@ -52,7 +56,13 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
 
             var stWatch = new Stopwatch();
             stWatch.Start();
-            var startedAt = DateTime.UtcNow;
+
+            var dependency = new DependencyTelemetry
+            {
+                Id = operationId,
+                Duration = stWatch.Elapsed,
+                Name = operationName
+            };
 
             try
             {
@@ -69,14 +79,10 @@ namespace Lykke.Job.Bil2Indexer.DomainServices.Infrastructure
             {
                 stWatch.Stop();
 
-                TelemetryClient.TrackDependency(new DependencyTelemetry
-                {
-                    Id = operationId,
-                    Duration = stWatch.Elapsed,
-                    Name = operationName,
-                    Success = success,
-                    Timestamp = new DateTimeOffset(startedAt)
-                });
+                dependency.Success = success;
+                dependency.Duration = stWatch.Elapsed;
+
+                TelemetryClient.TrackDependency(dependency);
             }
         }
 
