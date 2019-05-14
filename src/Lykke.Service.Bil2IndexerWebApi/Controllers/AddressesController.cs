@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Lykke.Service.Bil2IndexerWebApi.Factories;
+using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
 using Lykke.Service.Bil2IndexerWebApi.Services;
@@ -13,74 +13,109 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
     public class AddressesController : ControllerBase
     {
         private readonly IAddressService _addressService;
-        private readonly IAddressModelFactory _addressModelFactory;
 
-        public AddressesController(IAddressService addressService, IAddressModelFactory addressModelFactory)
+        public AddressesController(IAddressService addressService)
         {
             _addressService = addressService;
-            _addressModelFactory = addressModelFactory;
         }
 
         [HttpGet("/{address}/balances", Name = nameof(GetAddressBalances))]
-        public async Task<ActionResult<Paginated<AddressBalanceModel[]>>> GetAddressBalances(
+        public async Task<ActionResult<Paginated<AddressBalanceModel>>> GetAddressBalances(
             [FromRoute] string blockchainType,
             [FromRoute] string address,
             [FromQuery] string blockId, 
             [FromQuery] int? blockNumber, 
             [FromQuery] DateTimeOffset? datetime,
-            PaginationOrder order, 
-            string startingAfter, 
-            string endingBefore, 
-            int limit = 25)
+            [FromQuery] PaginationOrder order, 
+            [FromQuery] string startingAfter, 
+            [FromQuery] string endingBefore, 
+            [FromQuery] int limit = 25)
         {
-            Balance[] balances = null;
-
-            if (address != null)
-            {
-                balances = await _addressService.GetBalancesByAddress(address, limit, order == PaginationOrder.Asc,
-                    startingAfter, endingBefore);
-            }
+            // TODO: Validate parameters
 
             if (blockId != null)
             {
-                balances = await _addressService.GetBalancesByBlockId(blockId, limit, order == PaginationOrder.Asc,
-                    startingAfter, endingBefore);
+                var balances = await _addressService.GetBalancesByBlockId
+                (
+                    blockchainType,
+                    address,
+                    blockId,
+                    limit,
+                    order == PaginationOrder.Asc,
+                    startingAfter,
+                    endingBefore
+                );
+
+                return AddressBalanceModelMapper.Map(balances);
             }
 
             if (blockNumber != null)
             {
-                balances = await _addressService.GetBalancesByBlockNumber(blockNumber.Value, limit,
+                var balances = await _addressService.GetBalancesByBlockNumber
+                (
+                    blockchainType,
+                    address,
+                    blockNumber.Value,
+                    limit,
                     order == PaginationOrder.Asc,
-                    startingAfter, endingBefore);
+                    startingAfter,
+                    endingBefore
+                );
+
+                return AddressBalanceModelMapper.Map(balances);
             }
 
-            if (date != null)
+            if (datetime != null)
             {
-                balances = await _addressService.GetBalancesOnDate((date.Value.UtcDateTime, limit,
+                var balances = await _addressService.GetBalancesOnDate
+                (
+                    blockchainType,
+                    address,
+                    datetime.Value.UtcDateTime,
+                    limit,
                     order == PaginationOrder.Asc,
-                    startingAfter, endingBefore);
+                    startingAfter,
+                    endingBefore
+                );
+
+                return AddressBalanceModelMapper.Map(balances);
             }
 
-            var model = _addressModelFactory.PrepareBalancesPaginated(balances);
+            {
+                var balances = await _addressService.GetBalances
+                (
+                    blockchainType,
+                    address,
+                    limit,
+                    order == PaginationOrder.Asc,
+                    startingAfter,
+                    endingBefore
+                );
 
-            return model;
+                return AddressBalanceModelMapper.Map(balances);
+            }
         }
 
         [HttpGet("/{address}/unspent-outputs", Name = nameof(GetAddressUnspentOutputs))]
-        public async Task<ActionResult<Paginated<AddressUnspentOutputModel[]>>> GetAddressUnspentOutputs(
+        public async Task<ActionResult<Paginated<AddressUnspentOutputModel>>> GetAddressUnspentOutputs(
             [FromRoute] string blockchainType,
             [FromRoute] string addresses,
-            PaginationOrder order, 
-            string startingAfter,
-            string endingBefore, 
-            int limit = 25)
+            [FromQuery] PaginationOrder order, 
+            [FromQuery] string startingAfter,
+            [FromQuery] string endingBefore, 
+            [FromQuery] int limit = 25)
         {
-            var unspentOutputs = await _addressService.GetUnspentOutputs(addresses, limit, order == PaginationOrder.Asc,
-                startingAfter, endingBefore);
+            var unspentOutputs = await _addressService.GetUnspentOutputs
+            (
+                blockchainType,
+                addresses,
+                limit,
+                order == PaginationOrder.Asc,
+                startingAfter,
+                endingBefore
+            );
 
-            var model = _addressModelFactory.PrepareUnspentOutputsPaginated(unspentOutputs);
-
-            return model;
+            return AddressUnspentOutputModelMapper.Map(unspentOutputs);
         }
     }
 }

@@ -9,7 +9,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Models.Common
 
         public string StartingAfter { get; set; }
 
-        public int Limit { get; set; }
+        public int Count { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         public PaginationOrder Order { get; set; }

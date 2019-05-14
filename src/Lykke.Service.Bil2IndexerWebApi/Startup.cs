@@ -72,6 +72,7 @@ namespace Lykke.Service.Bil2IndexerWebApi
             {
                 options.DisableUnhandledExceptionLoggingMiddleware();
                 options.DisableValidationExceptionMiddleware();
+                // TODO: Add option to specify empty RoutePrefix for swagger to the Lykke.Sdk
                 options.SwaggerOptions = _swaggerOptions;
             });
         }

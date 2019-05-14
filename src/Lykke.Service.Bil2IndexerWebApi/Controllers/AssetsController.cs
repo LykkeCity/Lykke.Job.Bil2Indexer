@@ -1,6 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain;
-using Lykke.Service.Bil2IndexerWebApi.Factories;
+using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
 using Lykke.Service.Bil2IndexerWebApi.Services;
@@ -13,12 +15,10 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
     public class AssetsController : ControllerBase
     {
         private readonly IAssetService _assetService;
-        private readonly IAssetModelFactory _assetModelFactory;
 
-        public AssetsController(IAssetService assetService, IAssetModelFactory assetModelFactory)
+        public AssetsController(IAssetService assetService)
         {
             _assetService = assetService;
-            _assetModelFactory = assetModelFactory;
         }
 
         [HttpGet(Name = nameof(GetAssets))]
@@ -26,54 +26,44 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromRoute] string blockchainType,
             [FromQuery] string assetTicker,
             [FromQuery] string assetAddress,
-            PaginationOrder order, 
-            string startingAfter, 
-            string endingBefore, 
-            int limit = 25)
+            [FromQuery] PaginationOrder order, 
+            [FromQuery] string startingAfter, 
+            [FromQuery] string endingBefore, 
+            [FromQuery] int limit = 25)
         {
-            AssetInfo[] assets = null;
+            IReadOnlyCollection<AssetInfo> assets;
 
-            if (address != null && ticker != null)
+            if (assetTicker != null && assetAddress != null)
             {
-                var asset = await _assetService.GetAsset(address, ticker);
+                var asset = await _assetService.GetAsset(blockchainType, assetAddress, assetTicker);
+
                 assets = new []{asset};
             }
             else
             {
-                assets = await _assetService.GetAssets(limit, order == PaginationOrder.Asc,
-                    startingAfter, endingBefore);
+                assets = await _assetService.GetAssets(blockchainType, limit, order == PaginationOrder.Asc, startingAfter, endingBefore);
             }
 
-            var model = _assetModelFactory.PrepareAssetsPaginated(assets);
+            var model = AssetModelMapper.Map(assets);
 
             return model;
         }
 
-        [HttpGet("/{assetTicker}", Name = nameof(GetAssets))]
-        public async Task<ActionResult<Paginated<AssetModel[]>>> GetAssets(
+        [HttpGet("/{assetTicker}/without-address", Name = nameof(GetAssets))]
+        public async Task<ActionResult<AssetModel>> GetAssetWithoutAddress(
             [FromRoute] string blockchainType,
             [FromRoute] string assetTicker)
         {
-            AssetInfo asset = null;
-
-
-            var model = _assetModelFactory.PrepareAssetsPaginated(assets);
-
-            return model;
+            throw new NotImplementedException();
         }
 
         [HttpGet("/{assetTicker}/addresses/{assetAddress}", Name = nameof(GetAssets))]
-        public async Task<ActionResult<Paginated<AssetModel[]>>> GetAssets(
+        public async Task<ActionResult<AssetModel>> GetAssetWithAddress(
             [FromRoute] string blockchainType,
             [FromRoute] string assetTicker,
             [FromRoute] string assetAddress)
         {
-            AssetInfo asset = null;
-
-
-            var model = _assetModelFactory.PrepareAssetsPaginated(assets);
-
-            return model;
+            throw new NotImplementedException();
         }
     }
 }
