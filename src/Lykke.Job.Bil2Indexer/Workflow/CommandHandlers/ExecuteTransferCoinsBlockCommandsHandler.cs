@@ -83,18 +83,18 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     _coinsRepository,
                     _balanceActionsRepository,
                     _feeEnvelopesRepository,
-                    false
+                    command.HaveToExecuteEntireBlock
                 );
 
                 await _blockHeadersRepository.SaveAsync(block);
             }
 
-            //if (!block.IsExecuted && command.HaveToExecuteEntireBlock)
-            //{
-            //    throw new InvalidOperationException($"Block should be executed. Actual state: {block.State}");
-            //}
+            if (!block.IsExecuted && command.HaveToExecuteEntireBlock)
+            {
+                throw new InvalidOperationException($"Block should be executed. Actual state: {block.State}");
+            }
 
-            if(block.IsExecuted)
+            if (block.IsExecuted)
             {
                 replyPublisher.Publish(new BlockExecutedEvent
                 {
