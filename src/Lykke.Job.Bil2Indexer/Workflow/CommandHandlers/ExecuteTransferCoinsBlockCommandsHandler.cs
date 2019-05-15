@@ -89,10 +89,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 await _blockHeadersRepository.SaveAsync(block);
             }
 
-            if (!block.IsExecuted && command.HaveToExecuteEntireBlock)
-            {
-                throw new InvalidOperationException($"Block should be executed. Actual state: {block.State}");
-            }
+            //if (!block.IsExecuted && command.HaveToExecuteEntireBlock)
+            //{
+            //    throw new InvalidOperationException($"Block should be executed. Actual state: {block.State}");
+            //}
 
             if(block.IsExecuted)
             {
