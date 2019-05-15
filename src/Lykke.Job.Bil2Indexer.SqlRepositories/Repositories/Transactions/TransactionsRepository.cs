@@ -119,7 +119,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             }
         }
 
-        public async Task<IReadOnlyCollection<Transaction>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<TransactionId> ids)
+        public async Task<IReadOnlyCollection<Transaction>> GetSomeOfAsync(string blockchainType, IEnumerable<TransactionId> ids)
         {
             using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
@@ -170,7 +170,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
         private Expression<Func<TransactionEntity, bool>> BuildPredicate(IEnumerable<TransactionId> transactionIds)
         {
-            var stringTransactionIds = transactionIds.Select(p => p.ToString()).ToList();
+            var stringTransactionIds = transactionIds.Select(p => p.ToString());
 
             return p => stringTransactionIds.Contains(p.TransactionId);
         }

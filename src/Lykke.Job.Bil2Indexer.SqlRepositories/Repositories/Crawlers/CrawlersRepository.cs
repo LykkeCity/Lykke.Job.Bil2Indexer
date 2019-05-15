@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -19,7 +20,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
             _connectionStringProvider = connectionStringProvider;
         }
 
-        private const long StopAccemblingNullSqlMagicValue = -1;
+        private const long StopAssemblingNullSqlMagicValue = -1;
         
 
         public async Task<Crawler> GetOrDefaultAsync(string blockchainType, CrawlerConfiguration configuration)
@@ -80,29 +81,49 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
             }
         }
 
-        private Expression<Func<CrawlerEntity, bool>> BuildIdPredicate(long startBlock, long? stopAccemblingBlock)
+        public async Task<IReadOnlyCollection<Crawler>> GetAllAsync(string blockchainType, IEnumerable<CrawlerConfiguration> configurations)
         {
-            var mappedStop = stopAccemblingBlock ?? StopAccemblingNullSqlMagicValue;
+            // TODO: Get in the single requst
+            var result = new List<Crawler>();
+
+            foreach (var configuration in configurations)
+            {
+                var crawler = await GetOrDefaultAsync(blockchainType, configuration);
+
+                if (crawler == null)
+                {
+                    throw new InvalidOperationException($"Crawler {blockchainType}:{configuration} not found");
+                }
+
+                result.Add(crawler);
+            }
+
+            return result;
+        }
+        
+        private Expression<Func<CrawlerEntity, bool>> BuildIdPredicate(long startBlock, long? stopAssemblingBlock)
+        {
+            var mappedStop = stopAssemblingBlock ?? StopAssemblingNullSqlMagicValue;
 
             return p =>p.StartBlock == startBlock
                 && p.StopAssemblingBlock == mappedStop;
         }
 
-        private Crawler Map(CrawlerEntity source, string blockchainType)
+        private static Crawler Map(CrawlerEntity source, string blockchainType)
         {
             return new Crawler(blockchainType: blockchainType, 
                 version:source.Version, 
                 sequence:source.Sequence, 
-                configuration:new CrawlerConfiguration(source.StartBlock, source.StopAssemblingBlock != StopAccemblingNullSqlMagicValue? (long?) source.StopAssemblingBlock:null),
+                configuration:new CrawlerConfiguration(source.StartBlock, source.StopAssemblingBlock != StopAssemblingNullSqlMagicValue? (long?) source.StopAssemblingBlock:null),
                 expectedBlockNumber: source.ExpectedBlockNumber);
         }
 
-        private CrawlerEntity Map(Crawler source)
+        private static CrawlerEntity Map(Crawler source)
         {
             return new CrawlerEntity
             {
                 Version = source.Version,
-                StopAssemblingBlock = source.Configuration.StopAssemblingBlock ?? StopAccemblingNullSqlMagicValue,
+                StopAssemblingBlock = source.Configuration.StopAssemblingBlock ?? StopAssemblingNullSqlMagicValue,
                 StartBlock = source.Configuration.StartBlock,
                 Sequence = source.Sequence,
                 ExpectedBlockNumber = source.ExpectedBlockNumber

@@ -123,12 +123,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
             {
+                var areAllPreviousCrawlersCompleted = await _crawlersManager.AreAllPreviousCrawlersCompletedAsync
+                (
+                    evt.BlockchainType,
+                    crawler.Configuration
+                );
+
                 replyPublisher.Publish
                 (
                     new ExecuteTransferCoinsBlockCommand
                     {
                         BlockchainType = evt.BlockchainType,
-                        BlockId = newBlock.Id
+                        BlockId = newBlock.Id,
+                        HaveToExecuteEntireBlock = areAllPreviousCrawlersCompleted
                     }
                 );
             }

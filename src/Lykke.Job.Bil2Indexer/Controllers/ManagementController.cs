@@ -32,7 +32,8 @@ namespace Lykke.Job.Bil2Indexer.Controllers
                 new ExecuteTransferCoinsBlockCommand
                 {
                     BlockchainType = request.BlockchainType,
-                    BlockId = request.BlockId
+                    BlockId = request.BlockId,
+                    HaveToExecuteEntireBlock = request.HaveToExecuteEntireBlock
                 },
                 request.CorrelationId
             );

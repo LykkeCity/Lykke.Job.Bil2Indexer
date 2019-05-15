@@ -15,7 +15,7 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
             string continuation);
         Task<Transaction> GetAsync(string blockchainType, TransactionId transactionId);
         Task<Transaction> GetOrDefaultAsync(string blockchainType, TransactionId transactionId);
-        Task<IReadOnlyCollection<Transaction>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<TransactionId> ids);
+        Task<IReadOnlyCollection<Transaction>> GetSomeOfAsync(string blockchainType, IEnumerable<TransactionId> ids);
         Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId);
     }
 }

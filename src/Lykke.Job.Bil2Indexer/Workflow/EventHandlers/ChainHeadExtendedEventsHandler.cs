@@ -86,7 +86,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     replyPublisher.Publish(new ExecuteTransferCoinsBlockCommand
                     {
                         BlockchainType = evt.BlockchainType,
-                        BlockId = nextBlock.Id
+                        BlockId = nextBlock.Id,
+                        HaveToExecuteEntireBlock = true
                     });
                 } 
                 else if (nextBlock.IsExecuted)

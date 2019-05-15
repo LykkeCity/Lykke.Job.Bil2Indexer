@@ -10,6 +10,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public CrawlerConfiguration Configuration { get; }
         public long Sequence { get; private set; }
         public long ExpectedBlockNumber { get; private set; }
+        public bool IsCompleted => ExpectedBlockNumber == Configuration.StopAssemblingBlock;
 
         public Crawler(
             string blockchainType,
