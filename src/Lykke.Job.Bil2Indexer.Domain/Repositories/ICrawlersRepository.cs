@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace Lykke.Job.Bil2Indexer.Domain.Repositories
 {
@@ -7,6 +6,5 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
     {
         Task<Crawler> GetOrDefaultAsync(string blockchainType, CrawlerConfiguration configuration);
         Task SaveAsync(Crawler crawler);
-        Task<IReadOnlyCollection<Crawler>> GetAllAsync(string blockchainType, IEnumerable<CrawlerConfiguration> configurations);
     }
 }

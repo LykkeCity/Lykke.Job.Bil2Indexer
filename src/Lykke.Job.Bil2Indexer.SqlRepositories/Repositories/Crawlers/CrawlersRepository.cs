@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -81,26 +80,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
             }
         }
 
-        public async Task<IReadOnlyCollection<Crawler>> GetAllAsync(string blockchainType, IEnumerable<CrawlerConfiguration> configurations)
-        {
-            // TODO: Get in the single requst
-            var result = new List<Crawler>();
-
-            foreach (var configuration in configurations)
-            {
-                var crawler = await GetOrDefaultAsync(blockchainType, configuration);
-
-                if (crawler == null)
-                {
-                    throw new InvalidOperationException($"Crawler {blockchainType}:{configuration} not found");
-                }
-
-                result.Add(crawler);
-            }
-
-            return result;
-        }
-        
         private Expression<Func<CrawlerEntity, bool>> BuildIdPredicate(long startBlock, long? stopAssemblingBlock)
         {
             var mappedStop = stopAssemblingBlock ?? StopAssemblingNullSqlMagicValue;

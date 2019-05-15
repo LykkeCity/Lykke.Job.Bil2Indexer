@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -39,16 +38,6 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
                 () => _impl.SaveAsync(crawler));
-        }
-
-        public Task<IReadOnlyCollection<Crawler>> GetAllAsync(string blockchainType, IEnumerable<CrawlerConfiguration> configurations)
-        {
-            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
-            var operationId = $"{blockchainType}-{Guid.NewGuid()}";
-
-            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
-                operationId,
-                () => _impl.GetAllAsync(blockchainType, configurations));
         }
     }
 }

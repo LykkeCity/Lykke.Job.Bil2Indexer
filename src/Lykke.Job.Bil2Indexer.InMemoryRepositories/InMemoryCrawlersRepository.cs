@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Common.Log;
@@ -62,11 +61,6 @@ namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
             );
 
             return Task.CompletedTask;
-        }
-
-        public Task<IReadOnlyCollection<Crawler>> GetAllAsync(string blockchainType, IEnumerable<CrawlerConfiguration> configurations)
-        {
-            throw new NotImplementedException();
         }
     }
 }
