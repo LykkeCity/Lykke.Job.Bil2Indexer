@@ -14,15 +14,15 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
     [ApiController]
     public class AssetsController : ControllerBase
     {
-        private readonly IAssetService _assetService;
+        private readonly IAssetQueryFacade _assetQueryFacade;
 
-        public AssetsController(IAssetService assetService)
+        public AssetsController(IAssetQueryFacade assetQueryFacade)
         {
-            _assetService = assetService;
+            _assetQueryFacade = assetQueryFacade;
         }
 
         [HttpGet(Name = nameof(GetAssets))]
-        public async Task<ActionResult<Paginated<AssetModel[]>>> GetAssets(
+        public async Task<ActionResult<Paginated<AssetModel>>> GetAssets(
             [FromRoute] string blockchainType,
             [FromQuery] string assetTicker,
             [FromQuery] string assetAddress,
@@ -35,21 +35,21 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 
             if (assetTicker != null && assetAddress != null)
             {
-                var asset = await _assetService.GetAsset(blockchainType, assetAddress, assetTicker);
+                var asset = await _assetQueryFacade.GetAsset(blockchainType, assetAddress, assetTicker);
 
                 assets = new []{asset};
             }
             else
             {
-                assets = await _assetService.GetAssets(blockchainType, limit, order == PaginationOrder.Asc, startingAfter, endingBefore);
+                assets = await _assetQueryFacade.GetAssets(blockchainType, limit, order == PaginationOrder.Asc, startingAfter, endingBefore);
             }
 
-            var model = AssetModelMapper.Map(assets);
+            var model = AssetModelMapper.ToViewModel(assets);
 
             return model;
         }
 
-        [HttpGet("/{assetTicker}/without-address", Name = nameof(GetAssets))]
+        [HttpGet("/{assetTicker}/without-address", Name = nameof(GetAssetWithoutAddress))]
         public async Task<ActionResult<AssetModel>> GetAssetWithoutAddress(
             [FromRoute] string blockchainType,
             [FromRoute] string assetTicker)
@@ -57,7 +57,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             throw new NotImplementedException();
         }
 
-        [HttpGet("/{assetTicker}/addresses/{assetAddress}", Name = nameof(GetAssets))]
+        [HttpGet("/{assetTicker}/addresses/{assetAddress}", Name = nameof(GetAssetWithAddress))]
         public async Task<ActionResult<AssetModel>> GetAssetWithAddress(
             [FromRoute] string blockchainType,
             [FromRoute] string assetTicker,

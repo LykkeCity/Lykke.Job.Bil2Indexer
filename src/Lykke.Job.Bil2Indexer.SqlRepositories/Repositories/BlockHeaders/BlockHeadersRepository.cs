@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using LinqKit;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -95,6 +98,31 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             }
         }
 
+        public async Task<IReadOnlyCollection<BlockHeader>> GetAllAsync(string blockchainType, int limit, bool orderAsc, string startingAfter = null,
+            string endingBefore = null)
+        {
+            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            {
+                var query = db.BlockHeaders
+                    .Where(BuildPredicate(startingAfter, endingBefore))
+                    .Take(limit);
+
+                if (orderAsc)
+                {
+                    query = query.OrderBy(p => p.Number);
+                }
+                else
+                {
+                    query = query.OrderByDescending(p => p.Number);
+                }
+
+                var entities = await query
+                    .ToListAsync();
+
+                return entities.Select(p => Map(p, blockchainType)).ToList();
+            }
+        }
+
         public async Task TryRemoveAsync(string blockchainType, BlockId blockId)
         {
             using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
@@ -122,7 +150,23 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
         private Expression<Func<BlockHeaderEntity, bool>> BuildPredicate(long blockNumber)
         {
             return p => p.Number == blockNumber;
+        }
 
+        private Expression<Func<BlockHeaderEntity, bool>> BuildPredicate(string startingAfter, string endingBefore)
+        {
+            var predicate = PredicateBuilder.New<BlockHeaderEntity>(p => true);
+            if (!string.IsNullOrEmpty(startingAfter))
+            {
+                // ReSharper disable once StringCompareToIsCultureSpecific
+                predicate = predicate.And(p => p.Id.CompareTo(startingAfter) > 0);
+            }
+            if (!string.IsNullOrEmpty(endingBefore))
+            {
+                // ReSharper disable once StringCompareToIsCultureSpecific
+                predicate = predicate.And(p => p.Id.CompareTo(endingBefore) < 0);
+            }
+
+            return predicate;
         }
 
         private BlockState Map(BlockHeaderEntity.BlockState source)

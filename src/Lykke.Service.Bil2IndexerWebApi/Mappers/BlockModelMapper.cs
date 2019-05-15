@@ -7,12 +7,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
     public static class BlockModelMapper
     {
-        public static BlockModel Map(BlockHeader block)
+        public static BlockModel ToViewModel(this BlockHeader block)
         {
             throw new System.NotImplementedException();
         }
 
-        public static Paginated<BlockModel> Map(IReadOnlyCollection<BlockHeader> blocks)
+        public static Paginated<BlockModel> ToViewModel(this IReadOnlyCollection<BlockHeader> blocks)
         {
             throw new System.NotImplementedException();
         }

@@ -8,7 +8,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
     public static class AssetModelMapper
     {
-        public static ActionResult<Paginated<AssetModel[]>> Map(IReadOnlyCollection<AssetInfo> assets)
+        public static Paginated<AssetModel> ToViewModel(this IReadOnlyCollection<AssetInfo> assets)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public static AssetModel ToViewModel(this AssetInfo source)
         {
             throw new System.NotImplementedException();
         }

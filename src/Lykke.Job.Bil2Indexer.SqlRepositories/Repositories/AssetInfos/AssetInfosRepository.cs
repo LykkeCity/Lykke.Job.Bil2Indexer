@@ -110,11 +110,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
             }
         }
 
-        public async Task<IReadOnlyCollection<AssetInfo>> GetAllAsync(string blockchainType, int limit, bool orderAsc, string startingAfter, string endingBefore)
+        public async Task<IReadOnlyCollection<AssetInfo>> GetAllAsync(string blockchainType, int limit, bool orderAsc, string startingAfter = null, string endingBefore = null)
         {
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
-                var query = db.AssetInfos.Where(BuildPredicate(startingAfter, endingBefore))
+                var query = db.AssetInfos
+                    .Where(BuildPredicate(startingAfter, endingBefore))
                     .Take(limit);
 
                 if (orderAsc)

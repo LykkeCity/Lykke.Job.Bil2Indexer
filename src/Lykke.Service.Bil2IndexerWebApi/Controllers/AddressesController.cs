@@ -12,11 +12,11 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
     [ApiController]
     public class AddressesController : ControllerBase
     {
-        private readonly IAddressService _addressService;
+        private readonly IAddressQueryFacade _addressQueryFacade;
 
-        public AddressesController(IAddressService addressService)
+        public AddressesController(IAddressQueryFacade addressQueryFacade)
         {
-            _addressService = addressService;
+            _addressQueryFacade = addressQueryFacade;
         }
 
         [HttpGet("/{address}/balances", Name = nameof(GetAddressBalances))]
@@ -35,7 +35,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 
             if (blockId != null)
             {
-                var balances = await _addressService.GetBalancesByBlockId
+                var balances = await _addressQueryFacade.GetBalancesByBlockId
                 (
                     blockchainType,
                     address,
@@ -46,12 +46,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                     endingBefore
                 );
 
-                return AddressBalanceModelMapper.Map(balances);
+                return AddressBalanceModelMapper.ToViewModel(balances);
             }
 
             if (blockNumber != null)
             {
-                var balances = await _addressService.GetBalancesByBlockNumber
+                var balances = await _addressQueryFacade.GetBalancesByBlockNumber
                 (
                     blockchainType,
                     address,
@@ -62,12 +62,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                     endingBefore
                 );
 
-                return AddressBalanceModelMapper.Map(balances);
+                return AddressBalanceModelMapper.ToViewModel(balances);
             }
 
             if (datetime != null)
             {
-                var balances = await _addressService.GetBalancesOnDate
+                var balances = await _addressQueryFacade.GetBalancesOnDate
                 (
                     blockchainType,
                     address,
@@ -78,11 +78,11 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                     endingBefore
                 );
 
-                return AddressBalanceModelMapper.Map(balances);
+                return AddressBalanceModelMapper.ToViewModel(balances);
             }
 
             {
-                var balances = await _addressService.GetBalances
+                return await _addressQueryFacade.GetBalances
                 (
                     blockchainType,
                     address,
@@ -91,8 +91,6 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                     startingAfter,
                     endingBefore
                 );
-
-                return AddressBalanceModelMapper.Map(balances);
             }
         }
 
@@ -105,7 +103,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromQuery] string endingBefore, 
             [FromQuery] int limit = 25)
         {
-            var unspentOutputs = await _addressService.GetUnspentOutputs
+            var unspentOutputs = await _addressQueryFacade.GetUnspentOutputs
             (
                 blockchainType,
                 addresses,
@@ -115,7 +113,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                 endingBefore
             );
 
-            return AddressUnspentOutputModelMapper.Map(unspentOutputs);
+            return AddressUnspentOutputModelMapper.ToViewModel(unspentOutputs);
         }
     }
 }

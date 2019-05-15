@@ -13,11 +13,11 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
     [ApiController]
     public class BlocksController : ControllerBase
     {
-        private readonly IBlockService _blockService;
+        private readonly IBlockQueryFacade _blockQueryFacade;
 
-        public BlocksController(IBlockService blockService)
+        public BlocksController(IBlockQueryFacade blockQueryFacade)
         {
-            _blockService = blockService;
+            _blockQueryFacade = blockQueryFacade;
         }
 
         [HttpGet(Name = nameof(GetBlocks))]
@@ -33,7 +33,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 
             if (number != null)
             {
-                var block = await _blockService.GetBlockByNumberOrDefault(blockchainType, number.Value);
+                var block = await _blockQueryFacade.GetBlockByNumberOrDefault(blockchainType, number.Value);
 
                 if (block == null)
                 {
@@ -43,7 +43,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                 return BlockModelMapper.Map(new[] { block });
             }
 
-            var blocks = await _blockService.GetBlocks(blockchainType, limit, order == PaginationOrder.Asc, startingAfter, endingBefore);
+            var blocks = await _blockQueryFacade.GetBlocks(blockchainType, limit, order == PaginationOrder.Asc, startingAfter, endingBefore);
 
             return BlockModelMapper.Map(blocks);
         }
@@ -53,7 +53,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromRoute] string blockchainType,
             [FromRoute] string id)
         {
-            var block = await _blockService.GetBlockByIdOrDefault(blockchainType, id);
+            var block = await _blockQueryFacade.GetBlockByIdOrDefault(blockchainType, id);
 
             if (block == null)
             {
@@ -65,10 +65,10 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             return model;
         }
 
-        [HttpGet("/last-irreversible", Name = nameof(GetBlockById))]
+        [HttpGet("/last-irreversible", Name = nameof(GetIrreversibleBlock))]
         public async Task<ActionResult<BlockModel>> GetIrreversibleBlock([FromRoute] string blockchainType)
         {
-            var block = await _blockService.GetLastIrreversibleBlockAsync(blockchainType);
+            var block = await _blockQueryFacade.GetLastIrreversibleBlockAsync(blockchainType);
 
             if (block == null)
             {
@@ -80,10 +80,10 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             return model;
         }
 
-        [HttpGet("/last", Name = nameof(GetBlockById))]
+        [HttpGet("/last", Name = nameof(GetLastBlock))]
         public async Task<ActionResult<BlockModel>> GetLastBlock([FromRoute] string blockchainType)
         {
-            var block = await _blockService.GetLastBlockAsync(blockchainType);
+            var block = await _blockQueryFacade.GetLastBlockAsync(blockchainType);
 
             if (block == null)
             {

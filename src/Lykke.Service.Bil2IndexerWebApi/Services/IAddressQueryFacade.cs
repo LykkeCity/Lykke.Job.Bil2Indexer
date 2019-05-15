@@ -4,12 +4,14 @@ using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Numerics;
+using Lykke.Service.Bil2IndexerWebApi.Models;
+using Lykke.Service.Bil2IndexerWebApi.Models.Common;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
-    public interface IAddressService
+    public interface IAddressQueryFacade
     {
-        Task<IReadOnlyCollection<Coin>> GetUnspentOutputs(
+        Task<Paginated<AddressBalanceModel>> GetUnspentOutputs(
             string blockchainType, 
             string address,
             int limit,
@@ -17,7 +19,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             string startingAfter,
             string endingBefore);
 
-        Task<IReadOnlyDictionary<Asset, Money>> GetBalances(
+        Task<Paginated<AddressBalanceModel>> GetBalances(
             string blockchainType, 
             string address, 
             int limit, 

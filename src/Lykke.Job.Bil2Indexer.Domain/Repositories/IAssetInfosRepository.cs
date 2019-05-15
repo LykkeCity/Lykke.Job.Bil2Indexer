@@ -11,6 +11,6 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
         Task<AssetInfo> GetAsync(string blockchainType, Asset asset);
         Task<IReadOnlyCollection<AssetInfo>> GetSomeOfAsync(string blockchainType, IEnumerable<Asset> assets);
         Task<PaginatedItems<AssetInfo>> GetAllAsync(string blockchainType, int limit, string continuation);
-        Task<IReadOnlyCollection<AssetInfo>> GetAllAsync(string blockchainType, int limit, bool orderAsc, string startingAfter, string endingBefore);
+        Task<IReadOnlyCollection<AssetInfo>> GetAllAsync(string blockchainType, int limit, bool orderAsc, string startingAfter = null, string endingBefore = null);
     }
 }

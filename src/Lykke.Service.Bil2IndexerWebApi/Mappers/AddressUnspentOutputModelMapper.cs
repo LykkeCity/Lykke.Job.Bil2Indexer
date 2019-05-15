@@ -9,7 +9,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
     public static class AddressUnspentOutputModelMapper
     {
-        public static ActionResult<Paginated<AddressUnspentOutputModel>> Map(IReadOnlyCollection<Coin> unspentOutputs)
+        public static Paginated<AddressUnspentOutputModel> ToViewModel(this IReadOnlyCollection<Coin> unspentOutputs)
         {
             throw new NotImplementedException();
         }
