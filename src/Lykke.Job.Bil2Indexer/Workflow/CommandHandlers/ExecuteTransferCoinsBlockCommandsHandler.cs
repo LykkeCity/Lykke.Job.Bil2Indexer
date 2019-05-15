@@ -83,7 +83,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     _coinsRepository,
                     _balanceActionsRepository,
                     _feeEnvelopesRepository,
-                    command.HaveToExecuteEntireBlock
+                    false
                 );
 
                 await _blockHeadersRepository.SaveAsync(block);
