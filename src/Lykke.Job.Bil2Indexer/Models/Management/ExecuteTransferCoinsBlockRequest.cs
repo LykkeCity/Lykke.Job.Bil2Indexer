@@ -5,5 +5,6 @@
         public string CorrelationId { get; set; }
         public string BlockchainType { get; set; }
         public string BlockId { get; set; }
+        public bool HaveToExecuteEntireBlock { get; set; }
     }
 }

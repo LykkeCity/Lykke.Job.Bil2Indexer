@@ -77,12 +77,24 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             if (block.CanBeExecuted)
             {
-                await block.ExecuteAsync(_transactionsRepository, _coinsRepository, _balanceActionsRepository, _feeEnvelopesRepository);
+                await block.ExecuteAsync
+                (
+                    _transactionsRepository,
+                    _coinsRepository,
+                    _balanceActionsRepository,
+                    _feeEnvelopesRepository,
+                    command.HaveToExecuteEntireBlock
+                );
 
                 await _blockHeadersRepository.SaveAsync(block);
             }
 
-            if(block.IsExecuted)
+            if (!block.IsExecuted && command.HaveToExecuteEntireBlock)
+            {
+                throw new InvalidOperationException($"Block should be executed. Actual state: {block.State}");
+            }
+
+            if (block.IsExecuted)
             {
                 replyPublisher.Publish(new BlockExecutedEvent
                 {
@@ -95,7 +107,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             {
                 throw new InvalidOperationException($"Unexpected block state: {block.State}");
             }
-
+            
             return MessageHandlingResult.Success();
         }
     }
