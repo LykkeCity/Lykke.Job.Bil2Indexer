@@ -30,9 +30,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
                 Count = source.Limit,
                 Order = source.Order,
                 EndingBefore = source.EndingBefore,
-                NextUrl = "TODO",
-                PrevUrl = "TODO",
-                StartingAfter = source.StartingAfter
+                StartingAfter = source.StartingAfter,
+
+                //TODO
+                NextUrl = null,
+                //TODO
+                PrevUrl = null
             };
         }
     }

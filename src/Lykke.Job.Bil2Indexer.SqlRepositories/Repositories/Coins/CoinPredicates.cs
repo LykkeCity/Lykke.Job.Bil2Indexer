@@ -15,7 +15,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
             if (includeDeleted)
             {
-                return dbCoin =>coinIds.Contains(dbCoin.CoinId);
+                return dbCoin => coinIds.Contains(dbCoin.CoinId);
             }
 
             return dbCoin => coinIds.Contains(dbCoin.CoinId)
