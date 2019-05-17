@@ -23,13 +23,16 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
                 AssetId = source.Asset.Id,
                 ValueScale = source.Value.Scale,
                 ValueString = MoneyHelper.BuildPgString(source.Value),
-                CoinId = CoinIdBuilder.BuildCoinId(source.Id)
+                CoinId = source.Id.BuildCoinId()
+                // TODO: Block ID, Block number
             };
         }
 
         public static Coin ToDomain(this CoinEntity source, string blockchainType)
         {
-            return new Coin(blockchainType: blockchainType,
+            return new Coin
+            (
+                blockchainType: blockchainType,
                 id: new CoinId(source.TransactionId, source.CoinNumber),
                 asset: new Asset(new AssetId(source.AssetId), source.AssetAddress != null ? new AssetAddress(source.AssetAddress) : null),
                 address: source.Address,
@@ -37,7 +40,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
                 addressNonce: source.AddressNonce,
                 addressTag: source.AddressTag,
                 addressTagType: ToDomain(source.AddressTagType),
-                isSpent: source.IsSpent);
+                isSpent: source.IsSpent,
+                // TODO: Use real values:
+                blockId: "123",
+                blockNumber: 0
+            );
         }
 
 

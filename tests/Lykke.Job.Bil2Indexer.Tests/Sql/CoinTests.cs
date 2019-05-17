@@ -171,7 +171,20 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         {
             var rdm = new Random();
 
-            return new Coin(blockchainType, new CoinId(Guid.NewGuid().ToString(), rdm.Next()), new Asset(Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString()), new UMoney(new BigInteger(long.MaxValue - rdm.Next()), 0), Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), AddressTagType.Number, null, false);
+            return new Coin
+            (
+                blockchainType,
+                new CoinId(Guid.NewGuid().ToString(), rdm.Next()),
+                new Asset(Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString()),
+                new UMoney(new BigInteger(long.MaxValue - rdm.Next()), 0),
+                Guid.NewGuid().ToString(),
+                Guid.NewGuid().ToString(),
+                AddressTagType.Number,
+                null,
+                false,
+                Guid.NewGuid().ToString(),
+                rdm.Next()
+            );
         }
     }
 }

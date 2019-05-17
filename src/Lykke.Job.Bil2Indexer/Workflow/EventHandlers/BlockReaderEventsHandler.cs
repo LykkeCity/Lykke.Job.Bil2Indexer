@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Bil2.Client.BlocksReader.Services;
@@ -79,6 +80,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return MessageHandlingResult.TransientFailure();
             }
 
+            if (crawler.ExpectedBlockNumber != evt.BlockNumber)
+            {
+                throw new InvalidOperationException($"Expected block number is {crawler.ExpectedBlockNumber}, but received block number is {evt.BlockNumber}");
+            }
+
             var blockHeader = await _blockHeadersRepository.GetOrDefaultAsync(blockchainType, evt.BlockId)
                               ?? BlockHeader.StartAssembling
                               (
@@ -122,6 +128,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             {
                 // The message is premature, it can't be processed yet, we should retry it later.
                 return MessageHandlingResult.TransientFailure();
+            }
+
+            if (crawler.ExpectedBlockNumber != evt.BlockNumber)
+            {
+                throw new InvalidOperationException($"Expected block number is {crawler.ExpectedBlockNumber}, but received block number is {evt.BlockNumber}");
             }
 
             await Task.Delay(_integrationSettingsProvider.Get(blockchainType).Indexer.NotFoundBlockRetryDelay);
@@ -293,7 +304,9 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         x.Coin.Address,
                         x.Coin.AddressTag,
                         x.Coin.AddressTagType,
-                        x.Coin.AddressNonce
+                        x.Coin.AddressNonce,
+                        evt.BlockId,
+                        crawler.ExpectedBlockNumber
                     )
                 );
 

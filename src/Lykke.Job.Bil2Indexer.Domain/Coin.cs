@@ -28,6 +28,10 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public bool IsSpent { get; }
 
+        public BlockId BlockId { get; }
+
+        public long BlockNumber { get; }
+
         public Coin(
             string blockchainType,
             CoinId id,
@@ -37,7 +41,9 @@ namespace Lykke.Job.Bil2Indexer.Domain
             AddressTag addressTag,
             AddressTagType? addressTagType,
             long? addressNonce,
-            bool isSpent)
+            bool isSpent,
+            BlockId blockId,
+            long blockNumber)
         {
             BlockchainType = blockchainType;
             Id = id;
@@ -48,6 +54,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
             AddressTagType = addressTagType;
             AddressNonce = addressNonce;
             IsSpent = isSpent;
+            BlockId = blockId;
+            BlockNumber = blockNumber;
         }
 
         public static Coin CreateUnspent(
@@ -58,7 +66,9 @@ namespace Lykke.Job.Bil2Indexer.Domain
             Address address,
             AddressTag addressTag,
             AddressTagType? addressTagType,
-            long? addressNonce)
+            long? addressNonce,
+            BlockId blockId,
+            long blockNumber)
         {
             return new Coin
             (
@@ -70,7 +80,9 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 addressTag: addressTag,
                 addressTagType: addressTagType,
                 addressNonce: addressNonce,
-                isSpent: false
+                isSpent: false,
+                blockId: blockId,
+                blockNumber: blockNumber
             );
         }
 

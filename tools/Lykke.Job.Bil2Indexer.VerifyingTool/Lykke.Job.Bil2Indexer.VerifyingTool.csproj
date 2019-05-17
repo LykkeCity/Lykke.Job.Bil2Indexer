@@ -14,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Lykke.Job.Bil2Indexer.InMemoryRepositories\Lykke.Job.Bil2Indexer.InMemoryRepositories.csproj" />
     <ProjectReference Include="..\..\src\Lykke.Job.Bil2Indexer\Lykke.Job.Bil2Indexer.csproj" />
   </ItemGroup>
 
