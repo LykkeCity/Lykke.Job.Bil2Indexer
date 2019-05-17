@@ -50,6 +50,16 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
                 () => _impl.GetOrDefaultAsync(blockchainType, blockId));
         }
 
+        public Task<BlockHeader> GetAsync(string blockchainType, long blockNumber)
+        {
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
+            var operationId = $"{blockchainType}-{blockNumber}";
+
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
+                operationId,
+                () => _impl.GetAsync(blockchainType, blockNumber));
+        }
+
         public Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);

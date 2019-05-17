@@ -38,7 +38,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public bool CanBeExecuted => State == BlockState.Assembled || State == BlockState.PartiallyExecuted;
 
-        public bool CanBeReverted => State == BlockState.Executed || State == BlockState.PartiallyExecuted;
+        public bool ExecutionCanBeReverted => State == BlockState.Executed || State == BlockState.PartiallyExecuted;
 
         public BlockHeader(
             BlockId id, 
@@ -178,14 +178,17 @@ namespace Lykke.Job.Bil2Indexer.Domain
         }
 
         public async Task RevertExecutionAsync(
+            IBalanceActionsRepository balanceActionsRepository,
             ITransactionsRepository transactionsRepository,
             ICoinsRepository coinsRepository)
         {
-            if (!CanBeReverted)
+            if (!ExecutionCanBeReverted)
             {
                 throw new InvalidOperationException($"Block can be reverted only in states: {BlockState.Executed} or {BlockState.PartiallyExecuted}, actual: {State}");
             }
 
+            var removeBalanceActionsTask = balanceActionsRepository.TryRemoveAllOfBlockAsync(BlockchainType, Id);
+            
             PaginatedItems<Transaction> transactions = null;
 
             do
@@ -198,21 +201,18 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     transactions?.Continuation
                 );
 
-                var transferCoinsTransactions = transactions.Items
+                var coinsToRevertSpending = transactions.Items
                     .Where(x => x.IsTransferCoins)
                     .Select(x => x.AsTransferCoins())
-                    .ToArray();
-                var coinsToRevertSpending = transferCoinsTransactions.SelectMany(t => t.SpentCoins).ToList();
-                var transactionIds = transferCoinsTransactions.Select(t => t.TransactionId).ToHashSet();
+                    .SelectMany(t => t.SpentCoins)
+                    .ToList();
 
-                await Task.WhenAll
-                (
-                    coinsRepository.RemoveIfExistAsync(BlockchainType, transactionIds),
-                    coinsRepository.RevertSpendingAsync(BlockchainType, coinsToRevertSpending)
-                );
-                
+                await coinsRepository.RevertSpendingAsync(BlockchainType, coinsToRevertSpending);
+
             } while (transactions.Continuation != null);
             
+            await removeBalanceActionsTask;
+
             State = BlockState.RolledBack;
         }
 

@@ -79,20 +79,28 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             }
         }
 
+        public async Task<BlockHeader> GetAsync(string blockchainType, long blockNumber)
+        {
+            var block = await GetOrDefaultAsync(blockchainType, blockNumber);
+
+            if (block == null)
+            {
+                throw new InvalidOperationException($"Block {blockchainType}:{blockNumber} is not found");
+            }
+
+            return block;
+        }
+
         public async Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            var block = await GetOrDefaultAsync(blockchainType, blockId);
+
+            if (block == null)
             {
-                var existed = await db.BlockHeaders
-                    .SingleOrDefaultAsync(BuildPredicate(blockId));
-
-                if (existed == null)
-                {
-                    throw new InvalidOperationException($"Block {blockchainType}:{blockId} is not found");
-                }
-
-                return Map(existed, blockchainType);
+                throw new InvalidOperationException($"Block {blockchainType}:{blockId} is not found");
             }
+
+            return block;
         }
 
         public async Task TryRemoveAsync(string blockchainType, BlockId blockId)

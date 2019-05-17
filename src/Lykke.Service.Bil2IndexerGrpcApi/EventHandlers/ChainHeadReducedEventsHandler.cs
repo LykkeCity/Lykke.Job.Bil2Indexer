@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace Lykke.Service.Bil2IndexerGrpcApi.EventHandlers
 {
-    public class BlockRolledBackEventsHandler : IMessageHandler<BlockRolledBackEvent>
+    public class ChainHeadReducedEventsHandler : IMessageHandler<ChainHeadReducedEvent>
     {
         private readonly IndexerApiImpl _indexerApi;
 
-        public BlockRolledBackEventsHandler(IndexerApiImpl indexerApi)
+        public ChainHeadReducedEventsHandler(IndexerApiImpl indexerApi)
         {
             _indexerApi = indexerApi;
         }
 
-        public Task<MessageHandlingResult> HandleAsync(BlockRolledBackEvent evt, MessageHeaders headers, IMessagePublisher _)
+        public Task<MessageHandlingResult> HandleAsync(ChainHeadReducedEvent evt, MessageHeaders headers, IMessagePublisher _)
         {
             _indexerApi.Publish(evt);
 

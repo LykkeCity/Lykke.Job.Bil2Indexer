@@ -30,6 +30,9 @@ namespace Lykke.Job.Bil2Indexer.Modules
             builder.RegisterType<MessageSendersFactory>()
                 .As<IMessageSendersFactory>();
             
+            IReadOnlyDictionary<string, long> blockNumbersToStartTransactionEventsPublication = _settings.Bil2IndexerJob.BlockchainIntegrations
+                .ToDictionary(x => x.Type, x => x.Indexer.BlockNumberToStartTransactionEventsPublication);
+
             builder.RegisterType<BlockReaderEventsHandler>().As<IBlockEventsHandler>();
             builder.RegisterType<BlockAssembledEventsHandler>().AsSelf();
             builder.RegisterType<BlockExecutedEventsHandler>().AsSelf();
@@ -39,17 +42,14 @@ namespace Lykke.Job.Bil2Indexer.Modules
 
             builder.RegisterType<ExecuteTransferCoinsBlockCommandsHandler>().AsSelf();
             builder.RegisterType<MoveCrawlerCommandsHandler>().AsSelf();
-            builder.RegisterType<RollbackBlockCommandsHandler>().AsSelf();
-            builder.RegisterType<WaitForBlockAssemblingCommandsHandler>()
-                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.BlocksAssembling.RetryTimeout))
-                .AsSelf();
-
-            IReadOnlyDictionary<string, long> blockNumbersToStartTransactionEventsPublication = _settings.Bil2IndexerJob.BlockchainIntegrations
-                .ToDictionary(x => x.Type, x => x.Indexer.BlockNumberToStartTransactionEventsPublication);
-
             builder.RegisterType<ExtendChainHeadCommandsHandler>()
                 .WithParameter(TypedParameter.From(blockNumbersToStartTransactionEventsPublication))
                 .AsSelf();
+            builder.RegisterType<ReduceChainHeadCommandsHandler>().AsSelf();
+            builder.RegisterType<WaitForBlockAssemblingCommandsHandler>()
+                .WithParameter(TypedParameter.From(_settings.Bil2IndexerJob.BlocksAssembling.RetryTimeout))
+                .AsSelf();
+            
             builder.RegisterType<ReduceChainHeadCommandsHandler>().AsSelf();
         }
     }

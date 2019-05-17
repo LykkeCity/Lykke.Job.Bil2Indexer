@@ -62,14 +62,14 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
                 () => _impl.GetSomeOfAsync(blockchainType, ids));
         }
 
-        public Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds)
+        public Task RemoveIfExistAsync(string blockchainType, BlockId blockId)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{Guid.NewGuid()}";
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAsync(operationName,
                 operationId,
-                () => _impl.RemoveIfExistAsync(blockchainType, receivedInTransactionIds));
+                () => _impl.RemoveIfExistAsync(blockchainType, blockId));
         }
     }
 }

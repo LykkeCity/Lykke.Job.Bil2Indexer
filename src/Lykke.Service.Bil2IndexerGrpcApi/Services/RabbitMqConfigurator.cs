@@ -29,7 +29,7 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Services
 
             var eventsSubscriptions = new MessageSubscriptionsRegistry()
                 .Handle<ChainHeadExtendedEvent>(o => o.WithHandler<ChainHeadExtendedEventsHandler>())
-                .Handle<BlockRolledBackEvent>(o => o.WithHandler<BlockRolledBackEventsHandler>())
+                .Handle<ChainHeadReducedEvent>(o => o.WithHandler<ChainHeadReducedEventsHandler>())
                 .Handle<LastIrreversibleBlockUpdatedEvent>(o => o.WithHandler<LastIrreversibleBlockUpdatedEventsHandler>())
                 .Handle<TransactionExecutedEvent>(o => o.WithHandler<TransactionExecutedEventsHandler>())
                 .Handle<TransactionFailedEvent>(o => o.WithHandler<TransactionFailedEventsHandler>());

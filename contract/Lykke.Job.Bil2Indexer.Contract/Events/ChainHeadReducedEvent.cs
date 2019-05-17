@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace Lykke.Job.Bil2Indexer.Workflow.Events
+namespace Lykke.Job.Bil2Indexer.Contract.Events
 {
     [DataContract]
     public class ChainHeadReducedEvent
@@ -21,7 +21,13 @@ namespace Lykke.Job.Bil2Indexer.Workflow.Events
         public string PreviousBlockId { get; set; }
         
         [DataMember(Order = 5)]
-        public string BlockIdToRollback { get; set; }
+        public string OutdatedBlockId { get; set; }
+        
+        [DataMember(Order = 6)]
+        public long OutdatedBlockNumber { get; set; }
+
+        [DataMember(Order = 7)]
+        public object TriggeredByBlockId { get; set; }
 
         public override string ToString()
         {

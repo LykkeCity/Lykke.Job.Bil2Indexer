@@ -8,6 +8,7 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
         Task SaveAsync(BlockHeader block);
         Task<BlockHeader> GetOrDefaultAsync(string blockchainType, long blockNumber);
         Task<BlockHeader> GetOrDefaultAsync(string blockchainType, BlockId blockId);
+        Task<BlockHeader> GetAsync(string blockchainType, long blockNumber);
         Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId);
         Task TryRemoveAsync(string blockchainType, BlockId blockId);
     }

@@ -12,6 +12,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public BlockId BlockId { get; private set; }
         public BlockId PreviousBlockId { get; private set; }
         public long Sequence { get; private set; }
+        public ChainHeadMode Mode { get; private set; }
 
         public ChainHead(
             string blockchainType,

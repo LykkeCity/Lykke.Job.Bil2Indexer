@@ -8,8 +8,9 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
     {
         Task AddIfNotExistsAsync(IReadOnlyCollection<Coin> coins);
         Task SpendAsync(string blockchainType, IReadOnlyCollection<CoinId> ids);
+        // TODO: By block id
         Task RevertSpendingAsync(string blockchainType, IReadOnlyCollection<CoinId> ids);
         Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<CoinId> ids);
-        Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds);
+        Task RemoveIfExistAsync(string blockchainType, BlockId blockId);
     }
 }
