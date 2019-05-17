@@ -42,9 +42,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
         [Column("address_tag")]
         public string AddressTag { get; set; }
 
-        [Column("is_deleted")]
-        public bool IsDeleted { get; set; }
-
         [CanBeNull]
         [Column("address_tag_type")]
         public AddressTagTypeValues? AddressTagType { get; set; }

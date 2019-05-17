@@ -24,11 +24,10 @@ create table coins
     is_deleted       boolean                         not null,
     address_tag_type smallint,
     address_nonce    numeric,
-    is_spent         boolean                         not null,
     constraint coins_pk
         primary key (id)
 );
-
+ 
 create unique index coins_natural_key_index
     on coins (coin_id)  tablespace fast_space;
 

@@ -78,7 +78,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
             
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
-                var existedNaturalIds = (await db.Coins.Where(CoinPredicates.Build(ids, includeDeleted: true))
+                var existedNaturalIds = (await db.Coins.Where(CoinPredicates.Build(ids))
                         .Select(p => new { p.TransactionId, p.CoinNumber })
                         .ToListAsync())
                     .Select(p => new CoinId(p.TransactionId, p.CoinNumber))
@@ -99,7 +99,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
-                var foundCount = await db.Coins.Where(CoinPredicates.Build(ids, includeDeleted: false))
+                var foundCount = await db.Coins.Where(CoinPredicates.Build(ids))
                     .UpdateAsync(p => new CoinEntity { IsSpent = true });
 
                 if (foundCount != ids.Count)
@@ -119,7 +119,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var foundCount = await db.Coins
-                    .Where(CoinPredicates.Build(ids, includeDeleted: true))
+                    .Where(CoinPredicates.Build(ids))
                     .UpdateAsync(p => new CoinEntity {IsSpent = false});
 
                 if (foundCount != ids.Count)
@@ -138,7 +138,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
-                return (await db.Coins.Where(CoinPredicates.Build(ids, includeDeleted:false))
+                return (await db.Coins.Where(CoinPredicates.Build(ids))
                         .ToListAsync())
                     .Select(p => p.ToDomain(blockchainType))
                     .ToList();
@@ -156,7 +156,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
             {
                 await db.Coins
                         .Where(CoinPredicates.Build(receivedInTransactionIds))
-                    .UpdateAsync(p => new CoinEntity {IsDeleted = true});
+                    .DeleteAsync();
             }
         }
     }
