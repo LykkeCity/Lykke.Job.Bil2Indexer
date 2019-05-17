@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
@@ -25,26 +24,38 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromQuery] string blockId,
             [FromQuery] int? blockNumber, 
             [FromQuery] string address,
-            [FromQuery] PaginationOrder order, 
-            [FromQuery] string startingAfter,
-            [FromQuery] string endingBefore, 
-            [FromQuery] int limit = 25)
+            PaginationRequest pagination)
         {
-            Paginated<TransactionModel> transactions;
+            IReadOnlyCollection<TransactionModel> transactions;
 
             // TODO: Validate parameters
 
             if (blockId != null)
             {
-                transactions = await _transactionQueryFacade.GetTransactionsByBlockId(blockchainType, blockId, limit, order == PaginationOrder.Asc, startingAfter, endingBefore);
+                transactions = await _transactionQueryFacade.GetTransactionsByBlockId(blockchainType, 
+                    blockId,
+                    pagination.Limit,
+                    pagination.Order == PaginationOrder.Asc,
+                    pagination.StartingAfter,
+                    pagination.EndingBefore);
             } 
             else if (blockNumber != null)
             {
-                transactions = await _transactionQueryFacade.GetTransactionsByBlockNumber(blockchainType, blockNumber.Value, limit, order == PaginationOrder.Asc, startingAfter, endingBefore);
+                transactions = await _transactionQueryFacade.GetTransactionsByBlockNumber(blockchainType, 
+                    blockNumber.Value,
+                    pagination.Limit,
+                    pagination.Order == PaginationOrder.Asc,
+                    pagination.StartingAfter,
+                    pagination.EndingBefore);
             }
             else if (address != null)
             {
-                transactions = await _transactionQueryFacade.GetTransactionsByAddress(blockchainType, address, limit, order == PaginationOrder.Asc, startingAfter, endingBefore);
+                transactions = await _transactionQueryFacade.GetTransactionsByAddress(blockchainType, 
+                    address,
+                    pagination.Limit,
+                    pagination.Order == PaginationOrder.Asc,
+                    pagination.StartingAfter,
+                    pagination.EndingBefore);
             }
             else
             {
@@ -52,7 +63,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                 return BadRequest();
             }
 
-            return transactions;
+            return transactions.Paginate(pagination);
         }
 
         [HttpGet("{id}", Name = nameof(GetTransactionById))]

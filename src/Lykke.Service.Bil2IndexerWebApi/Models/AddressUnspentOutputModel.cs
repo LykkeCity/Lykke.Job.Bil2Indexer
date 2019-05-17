@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Lykke.Service.Bil2IndexerWebApi.Models
+﻿namespace Lykke.Service.Bil2IndexerWebApi.Models
 {
     public class AddressUnspentOutputModel
     {

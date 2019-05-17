@@ -1,17 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Lykke.Bil2.SharedDomain;
-using Lykke.Job.Bil2Indexer.Domain;
-using Lykke.Numerics;
 using Lykke.Service.Bil2IndexerWebApi.Models;
-using Lykke.Service.Bil2IndexerWebApi.Models.Common;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
     public interface IAddressQueryFacade
     {
-        Task<Paginated<AddressBalanceModel>> GetUnspentOutputs(
+        Task<IReadOnlyCollection<AddressUnspentOutputModel>> GetUnspentOutputs(
             string blockchainType, 
             string address,
             int limit,
@@ -19,7 +15,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             string startingAfter,
             string endingBefore);
 
-        Task<Paginated<AddressBalanceModel>> GetBalances(
+        Task<IReadOnlyCollection<AddressBalanceModel>> GetBalances(
             string blockchainType, 
             string address, 
             int limit, 
@@ -27,7 +23,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             string startingAfter,
             string endingBefore);
 
-        Task<IReadOnlyDictionary<Address, IReadOnlyDictionary<Asset, Money>>> GetBalancesByBlockId(
+        Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesByBlockId(
             string blockchainType, 
             string address,
             string blockId,
@@ -36,7 +32,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             string startingAfter,
             string endingBefore);
 
-        Task<IReadOnlyDictionary<Address, IReadOnlyDictionary<Asset, Money>>> GetBalancesByBlockNumber(
+        Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesByBlockNumber(
             string blockchainType, 
             string address,
             int blockNumber,
@@ -45,7 +41,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             string startingAfter,
             string endingBefore);
 
-        Task<IReadOnlyDictionary<Address, IReadOnlyDictionary<Asset, Money>>> GetBalancesOnDate(string blockchainType,
+        Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesOnDate(string blockchainType,
             string address,
             DateTime date,
             int limit,

@@ -32,5 +32,11 @@ namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
         {
             throw new System.NotImplementedException();
         }
+
+        public Task<IReadOnlyCollection<AssetInfo>> GetAllAsync(string blockchainType, int limit, bool orderAsc, string startingAfter = null,
+            string endingBefore = null)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

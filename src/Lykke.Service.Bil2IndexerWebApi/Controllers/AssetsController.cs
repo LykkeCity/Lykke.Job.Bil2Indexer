@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
@@ -26,27 +24,26 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromRoute] string blockchainType,
             [FromQuery] string assetTicker,
             [FromQuery] string assetAddress,
-            [FromQuery] PaginationOrder order, 
-            [FromQuery] string startingAfter, 
-            [FromQuery] string endingBefore, 
-            [FromQuery] int limit = 25)
+            PaginationRequest pagination)
         {
-            IReadOnlyCollection<AssetInfo> assets;
+            Paginated<AssetModel> result;
 
             if (assetTicker != null && assetAddress != null)
             {
                 var asset = await _assetQueryFacade.GetAsset(blockchainType, assetAddress, assetTicker);
 
-                assets = new []{asset};
+                result = asset.PaginateSingle(pagination);
             }
             else
             {
-                assets = await _assetQueryFacade.GetAssets(blockchainType, limit, order == PaginationOrder.Asc, startingAfter, endingBefore);
+                result = (await _assetQueryFacade.GetAssets(blockchainType, 
+                    pagination.Limit, 
+                    pagination.Order == PaginationOrder.Asc, 
+                    pagination.StartingAfter,
+                    pagination.EndingBefore)).Paginate(pagination);
             }
 
-            var model = AssetModelMapper.ToViewModel(assets);
-
-            return model;
+            return Ok(result);
         }
 
         [HttpGet("/{assetTicker}/without-address", Name = nameof(GetAssetWithoutAddress))]

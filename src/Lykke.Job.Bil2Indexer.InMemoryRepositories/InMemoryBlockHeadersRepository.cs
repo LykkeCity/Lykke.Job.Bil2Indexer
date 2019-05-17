@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
@@ -87,6 +88,12 @@ namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
             }
 
             return block;
+        }
+
+        public Task<IReadOnlyCollection<BlockHeader>> GetAllAsync(string blockchainType, int limit, bool orderAsc, string startingAfter = null,
+            string endingBefore = null)
+        {
+            throw new NotImplementedException();
         }
 
         public Task TryRemoveAsync(string blockchainType, BlockId blockId)

@@ -26,13 +26,11 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromQuery] string blockId, 
             [FromQuery] int? blockNumber, 
             [FromQuery] DateTimeOffset? datetime,
-            [FromQuery] PaginationOrder order, 
-            [FromQuery] string startingAfter, 
-            [FromQuery] string endingBefore, 
-            [FromQuery] int limit = 25)
+            PaginationRequest pagination)
         {
             // TODO: Validate parameters
 
+            Paginated<AddressBalanceModel> result;
             if (blockId != null)
             {
                 var balances = await _addressQueryFacade.GetBalancesByBlockId
@@ -40,13 +38,15 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                     blockchainType,
                     address,
                     blockId,
-                    limit,
-                    order == PaginationOrder.Asc,
-                    startingAfter,
-                    endingBefore
+                    pagination.Limit,
+                    pagination.Order == PaginationOrder.Asc,
+                    pagination.StartingAfter,
+                    pagination.EndingBefore
                 );
 
-                return AddressBalanceModelMapper.ToViewModel(balances);
+                result = balances.Paginate(pagination);
+
+                return result;
             }
 
             if (blockNumber != null)
@@ -56,13 +56,15 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                     blockchainType,
                     address,
                     blockNumber.Value,
-                    limit,
-                    order == PaginationOrder.Asc,
-                    startingAfter,
-                    endingBefore
+                    pagination.Limit,
+                    pagination.Order == PaginationOrder.Asc,
+                    pagination.StartingAfter,
+                    pagination.EndingBefore
                 );
 
-                return AddressBalanceModelMapper.ToViewModel(balances);
+                result = balances.Paginate(pagination);
+
+                return result;
             }
 
             if (datetime != null)
@@ -72,48 +74,47 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                     blockchainType,
                     address,
                     datetime.Value.UtcDateTime,
-                    limit,
-                    order == PaginationOrder.Asc,
-                    startingAfter,
-                    endingBefore
+                    pagination.Limit,
+                    pagination.Order == PaginationOrder.Asc,
+                    pagination.StartingAfter,
+                    pagination.EndingBefore
                 );
 
-                return AddressBalanceModelMapper.ToViewModel(balances);
-            }
+                result = balances.Paginate(pagination);
 
-            {
-                return await _addressQueryFacade.GetBalances
-                (
-                    blockchainType,
-                    address,
-                    limit,
-                    order == PaginationOrder.Asc,
-                    startingAfter,
-                    endingBefore
-                );
+                return result;
             }
+            
+            result = (await _addressQueryFacade.GetBalances
+            (
+                blockchainType,
+                address,
+                pagination.Limit,
+                pagination.Order == PaginationOrder.Asc,
+                pagination.StartingAfter,
+                pagination.EndingBefore
+            )).Paginate(pagination);
+
+            return result;
         }
 
         [HttpGet("/{address}/unspent-outputs", Name = nameof(GetAddressUnspentOutputs))]
         public async Task<ActionResult<Paginated<AddressUnspentOutputModel>>> GetAddressUnspentOutputs(
             [FromRoute] string blockchainType,
             [FromRoute] string addresses,
-            [FromQuery] PaginationOrder order, 
-            [FromQuery] string startingAfter,
-            [FromQuery] string endingBefore, 
-            [FromQuery] int limit = 25)
+            PaginationRequest pagination)
         {
-            var unspentOutputs = await _addressQueryFacade.GetUnspentOutputs
+            var result = await _addressQueryFacade.GetUnspentOutputs
             (
                 blockchainType,
                 addresses,
-                limit,
-                order == PaginationOrder.Asc,
-                startingAfter,
-                endingBefore
+                pagination.Limit,
+                pagination.Order == PaginationOrder.Asc,
+                pagination.StartingAfter,
+                pagination.EndingBefore
             );
 
-            return AddressUnspentOutputModelMapper.ToViewModel(unspentOutputs);
+            return result.Paginate(pagination);
         }
     }
 }

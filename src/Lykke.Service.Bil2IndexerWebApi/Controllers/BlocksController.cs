@@ -1,6 +1,5 @@
-﻿using System.IO;
+﻿using System;
 using System.Threading.Tasks;
-using Lykke.Bil2.SharedDomain.Extensions;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
@@ -24,10 +23,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         public async Task<ActionResult<Paginated<BlockModel>>> GetBlocks(
             [FromRoute] string blockchainType,
             [FromQuery] int? number,
-            [FromQuery] PaginationOrder order,
-            [FromQuery] string startingAfter, 
-            [FromQuery] string endingBefore, 
-            [FromQuery] int limit = 25)
+            PaginationRequest pagination)
         {
             // TODO: Validate parameters
 
@@ -40,12 +36,15 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                     return NotFound();
                 }
 
-                return BlockModelMapper.Map(new[] { block });
+                return block.PaginateSingle(pagination);
             }
 
-            var blocks = await _blockQueryFacade.GetBlocks(blockchainType, limit, order == PaginationOrder.Asc, startingAfter, endingBefore);
+            var blocks = await _blockQueryFacade.GetBlocks(blockchainType, pagination.Limit, 
+                pagination.Order == PaginationOrder.Asc,
+                pagination.StartingAfter,
+                pagination.EndingBefore);
 
-            return BlockModelMapper.Map(blocks);
+            return blocks.Paginate(pagination);
         }
 
         [HttpGet("/{id}", Name = nameof(GetBlockById))]
@@ -59,10 +58,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             {
                 return NotFound();
             }
-
-            var model = BlockModelMapper.Map(block);
-
-            return model;
+            
+            return block;
         }
 
         [HttpGet("/last-irreversible", Name = nameof(GetIrreversibleBlock))]
@@ -75,9 +72,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                 return NotFound();
             }
 
-            var model = BlockModelMapper.Map(block);
-
-            return model;
+            return block;
         }
 
         [HttpGet("/last", Name = nameof(GetLastBlock))]
@@ -90,9 +85,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
                 return NotFound();
             }
 
-            var model = BlockModelMapper.Map(block);
-
-            return model;
+            return block;
         }
 
         [HttpGet("/{id}/raw", Name = nameof(GetRawBlock))]
@@ -100,16 +93,17 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromRoute] string blockchainType,
             [FromRoute] string id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            throw new NotImplementedException();
+            //if (id == null)
+            //{
+            //    return NotFound();
+            //}
 
-            var test = "Some big block raw contents".ToBase64();
+            //var test = "Some big block raw contents".ToBase64();
 
-            var stream = new MemoryStream(test.DecodeToBytes());
+            //var stream = new MemoryStream(test.DecodeToBytes());
             
-            return File(stream, "application/octet-stream", $"{blockchainType}-{id}");
+            //return File(stream, "application/octet-stream", $"{blockchainType}-{id}");
         }
     }
 }

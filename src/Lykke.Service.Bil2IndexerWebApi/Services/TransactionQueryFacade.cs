@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
     public class TransactionQueryFacade: ITransactionQueryFacade
     {
-        public Task<Transaction> GetTransactionById(string blockchainType, string id)
+        public Task<TransactionModel> GetTransactionById(string blockchainType, string id)
         {
             throw new NotImplementedException();
         }

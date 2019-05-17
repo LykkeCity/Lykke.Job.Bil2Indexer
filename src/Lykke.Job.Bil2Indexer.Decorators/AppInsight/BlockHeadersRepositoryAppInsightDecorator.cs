@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -58,6 +59,17 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
                 () => _impl.GetAsync(blockchainType, blockId));
+        }
+
+        public Task<IReadOnlyCollection<BlockHeader>> GetAllAsync(string blockchainType, int limit, bool orderAsc, string startingAfter = null,
+            string endingBefore = null)
+        {
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
+            var operationId = $"{blockchainType}-{limit}-{orderAsc}-{startingAfter}";
+
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
+                operationId,
+                () => _impl.GetAllAsync(blockchainType, limit, orderAsc, startingAfter, endingBefore));
         }
 
         public Task TryRemoveAsync(string blockchainType, BlockId blockId)
