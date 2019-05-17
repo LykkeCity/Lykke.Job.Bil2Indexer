@@ -123,12 +123,15 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
             {
+                var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
+
                 replyPublisher.Publish
                 (
                     new ExecuteTransferCoinsBlockCommand
                     {
                         BlockchainType = evt.BlockchainType,
-                        BlockId = newBlock.Id
+                        BlockId = newBlock.Id,
+                        HaveToExecuteEntireBlock = chainHead.IsOnBlock(newBlock.Number - 1)
                     }
                 );
             }

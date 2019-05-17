@@ -119,6 +119,16 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             }
         }
 
+        public async Task<IReadOnlyCollection<Transaction>> GetSomeOfAsync(string blockchainType, IEnumerable<TransactionId> ids)
+        {
+            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            {
+                var entities = await db.Transactions.Where(BuildPredicate(ids)).ToListAsync();
+
+                return entities.Select(p => p.MapToTransactionEnvelope(blockchainType)).ToList();
+            }
+        }
+
         public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
             using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
@@ -156,6 +166,13 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             var stringTransactionId = transactionId.ToString();
 
             return p => p.TransactionId == stringTransactionId;
+        }
+
+        private Expression<Func<TransactionEntity, bool>> BuildPredicate(IEnumerable<TransactionId> transactionIds)
+        {
+            var stringTransactionIds = transactionIds.Select(p => p.ToString());
+
+            return p => stringTransactionIds.Contains(p.TransactionId);
         }
     }
 }

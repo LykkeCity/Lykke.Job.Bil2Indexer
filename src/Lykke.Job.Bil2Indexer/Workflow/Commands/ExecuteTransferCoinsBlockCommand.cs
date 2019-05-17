@@ -10,7 +10,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.Commands
         
         [DataMember(Order = 1)]
         public string BlockId { get; set; }
-        
+
+        [DataMember(Order = 2)]
+        public bool HaveToExecuteEntireBlock { get; set; }
+
         public override string ToString()
         {
             return $"{BlockchainType}:{BlockId}";

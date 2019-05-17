@@ -108,7 +108,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
             ITransactionsRepository transactionsRepository,
             ICoinsRepository coinsRepository,
             IBalanceActionsRepository balanceActionsRepository,
-            IFeeEnvelopesRepository feeEnvelopesRepository)
+            IFeeEnvelopesRepository feeEnvelopesRepository,
+            bool haveToExecuteEntireBlock)
         {
             if (!CanBeExecuted)
             {
@@ -117,11 +118,12 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
             PaginatedItems<Transaction> transactions = null;
             var spendCoinsTask = default(Task);
-            
+            var notExecutedTransactions = new ConcurrentBag<TransferCoinsExecutedTransaction>();
+
             do
             {
                 var coinsToSpend = new ConcurrentBag<CoinId>();
-
+                
                 transactions = await transactionsRepository.GetAllOfBlockAsync
                 (
                     BlockchainType,
@@ -138,26 +140,26 @@ namespace Lykke.Job.Bil2Indexer.Domain
                         degreeOfParallelism: 8,
                         body: async transaction =>
                         {
-                            // TODO: Get Batch for all transactions in the page
-                            var coinsToSpendByTransaction = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
-                            var isExecuted = await ExecuteTransactionAsync
+                            
+                            var isExecuted = await TryExecuteTransactionAsync
                             (
-                                coinsToSpendByTransaction,
+                                coinsRepository,
                                 balanceActionsRepository,
                                 feeEnvelopesRepository,
-                                transaction
+                                transaction,
+                                coinsToSpend
                             );
 
-                            if (isExecuted)
+                            if (!isExecuted)
                             {
-                                foreach (var coin in coinsToSpendByTransaction.Where(x => !x.IsSpent))
-                                {
-                                    coinsToSpend.Add(coin.Id);
-                                }
+                                notExecutedTransactions.Add(transaction);
+
+                                return haveToExecuteEntireBlock;
                             }
 
-                            return isExecuted;
-                        });
+                            return true;
+                        }
+                    );
 
                 if (spendCoinsTask != default(Task))
                 {
@@ -174,7 +176,89 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
             } while (transactions.Continuation != null);
 
+            if (haveToExecuteEntireBlock)
+            {
+                var currentNotExecutedTransactions = notExecutedTransactions;
+
+                while (currentNotExecutedTransactions.Any())
+                {
+                    var coinsToSpend = new ConcurrentBag<CoinId>();
+                    var remainderOfNotExecutedTransactions = new ConcurrentBag<TransferCoinsExecutedTransaction>();
+
+                    await currentNotExecutedTransactions
+                        .ForEachAsync
+                        (
+                            degreeOfParallelism: 8,
+                            body: async transaction =>
+                            {
+
+                                var isExecuted = await TryExecuteTransactionAsync
+                                (
+                                    coinsRepository,
+                                    balanceActionsRepository,
+                                    feeEnvelopesRepository,
+                                    transaction,
+                                    coinsToSpend
+                                );
+
+                                if (!isExecuted)
+                                {
+                                    remainderOfNotExecutedTransactions.Add(transaction);
+                                }
+                            }
+                        );
+
+                    if (spendCoinsTask != default(Task))
+                    {
+                        await spendCoinsTask;
+                    }
+
+                    if (remainderOfNotExecutedTransactions.Count == currentNotExecutedTransactions.Count)
+                    {
+                        throw new InvalidOperationException($"Can't execute entire block. Coins to spend by {remainderOfNotExecutedTransactions.Count} transactions are missed");
+                    }
+
+                    spendCoinsTask = coinsRepository.SpendAsync(BlockchainType, coinsToSpend);
+
+                    currentNotExecutedTransactions = remainderOfNotExecutedTransactions;
+                }
+            }
+
+            await spendCoinsTask;
+
             State = BlockState.Executed;
+        }
+
+        private async Task<bool> TryExecuteTransactionAsync(
+            ICoinsRepository coinsRepository,
+            IBalanceActionsRepository balanceActionsRepository,
+            IFeeEnvelopesRepository feeEnvelopesRepository,
+            TransferCoinsExecutedTransaction transaction, 
+            ConcurrentBag<CoinId> coinsToSpend)
+        {
+            // TODO: Get Batch for all transactions in the page
+            var coinsToSpendByTransaction = await coinsRepository.GetSomeOfAsync(BlockchainType, transaction.SpentCoins);
+            var coinsMissedInTransaction = transaction.SpentCoins.Except(coinsToSpendByTransaction.Select(x => x.Id)).ToArray();
+
+            if (coinsMissedInTransaction.Any())
+            {
+                return false;
+            }
+
+            await ExecuteTransactionAsync
+            (
+                coinsToSpendByTransaction,
+                balanceActionsRepository,
+                feeEnvelopesRepository,
+                transaction
+            );
+
+            foreach (var coin in coinsToSpendByTransaction.Where(x => !x.IsSpent))
+            {
+                coinsToSpend.Add(coin.Id);
+            }
+
+            return true;
         }
 
         public async Task RevertExecutionAsync(
@@ -216,26 +300,17 @@ namespace Lykke.Job.Bil2Indexer.Domain
             State = BlockState.RolledBack;
         }
 
-        private async Task<bool> ExecuteTransactionAsync(
+        private async Task ExecuteTransactionAsync(
             IReadOnlyCollection<Coin> coinsToSpend,
             IBalanceActionsRepository balanceActionsRepository,
             IFeeEnvelopesRepository feeEnvelopesRepository,
             TransferCoinsExecutedTransaction transaction)
         {
-            var missedCoins = transaction.SpentCoins.Except(coinsToSpend.Select(x => x.Id));
-
-            if (missedCoins.Any())
-            {
-                return false;
-            }
-
             await Task.WhenAll
             (
                 SaveBalanceActionsAsync(balanceActionsRepository, transaction, coinsToSpend),
                 SaveFeesAsync(feeEnvelopesRepository, transaction, coinsToSpend)
             );
-
-            return true;
         }
 
         private async Task SaveBalanceActionsAsync(
