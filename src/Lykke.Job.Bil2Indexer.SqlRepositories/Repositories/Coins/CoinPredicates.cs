@@ -9,17 +9,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 {
     public static class CoinPredicates
     {
-        public static Expression<Func<CoinEntity, bool>> Build(IEnumerable<CoinId> ids, bool includeDeleted)
+        public static Expression<Func<CoinEntity, bool>> Build(IEnumerable<CoinId> ids)
         {
             var coinIds = ids.Select(p => p.BuildCoinId());
-
-            if (includeDeleted)
-            {
-                return dbCoin => coinIds.Contains(dbCoin.CoinId);
-            }
-
-            return dbCoin => coinIds.Contains(dbCoin.CoinId)
-                             && !dbCoin.IsDeleted;
+            
+            return dbCoin => coinIds.Contains(dbCoin.CoinId);
         }
 
         public static Expression<Func<CoinEntity, bool>> Build(IEnumerable<TransactionId> txIds)
