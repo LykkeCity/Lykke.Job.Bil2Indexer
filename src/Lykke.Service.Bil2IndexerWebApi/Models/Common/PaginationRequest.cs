@@ -2,16 +2,16 @@
 
 namespace Lykke.Service.Bil2IndexerWebApi.Models.Common
 {
-    public class PaginationRequest
+    public class PaginationRequest<T>
     {
         [FromQuery]
         public PaginationOrder Order { get; set; }
 
         [FromQuery]
-        public string StartingAfter { get; set; }
+        public T StartingAfter { get; set; }
 
         [FromQuery]
-        public string EndingBefore { get; set; }
+        public T EndingBefore { get; set; }
 
         [FromQuery]
         public int Limit { get; set; } = 25;

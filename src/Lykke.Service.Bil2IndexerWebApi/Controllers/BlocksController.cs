@@ -20,10 +20,10 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(Name = nameof(GetBlocks))]
-        public async Task<ActionResult<Paginated<BlockModel>>> GetBlocks(
+        public async Task<ActionResult<Paginated<BlockModel, long>>> GetBlocks(
             [FromRoute] string blockchainType,
             [FromQuery] int? number,
-            PaginationRequest pagination)
+            PaginationRequest<long> pagination)
         {
             // TODO: Validate parameters
 

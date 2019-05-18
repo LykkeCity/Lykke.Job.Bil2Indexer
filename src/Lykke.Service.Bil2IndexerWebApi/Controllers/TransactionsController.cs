@@ -19,12 +19,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(Name = nameof(GetTransactions))]
-        public async Task<ActionResult<Paginated<TransactionModel>>> GetTransactions(
+        public async Task<ActionResult<Paginated<TransactionModel, string>>> GetTransactions(
             [FromRoute] string blockchainType,
             [FromQuery] string blockId,
             [FromQuery] int? blockNumber, 
             [FromQuery] string address,
-            PaginationRequest pagination)
+            PaginationRequest<string> pagination)
         {
             IReadOnlyCollection<TransactionModel> transactions;
 

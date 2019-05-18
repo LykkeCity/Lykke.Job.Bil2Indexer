@@ -6,7 +6,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Models
     public class BlockModel
     {
         public string Id { get; set; }
-        public int Number { get; set; }
+        public long Number { get; set; }
         public DateTime MinedAt { get; set; }
         public int Size { get; set; }
         public int TransactionsCount { get; set; }

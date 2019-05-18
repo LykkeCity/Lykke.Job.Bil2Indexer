@@ -90,8 +90,8 @@ namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
             return block;
         }
 
-        public Task<IReadOnlyCollection<BlockHeader>> GetAllAsync(string blockchainType, int limit, bool orderAsc, string startingAfter = null,
-            string endingBefore = null)
+        public Task<IReadOnlyCollection<BlockHeader>> GetAllAsync(string blockchainType, int limit, bool orderAsc, long? startingAfterHeight = null,
+            long? endingAfterHeight = null)
         {
             throw new NotImplementedException();
         }

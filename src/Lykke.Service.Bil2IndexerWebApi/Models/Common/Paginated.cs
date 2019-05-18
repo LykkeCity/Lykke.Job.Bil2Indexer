@@ -2,9 +2,9 @@
 
 namespace Lykke.Service.Bil2IndexerWebApi.Models.Common
 {
-    public class Paginated<T>
+    public class Paginated<TItem, TId>
     {
-        public PaginationModel Pagination { get; set; }
-        public IReadOnlyCollection<T> Items { get; set; }
+        public PaginationModel<TId> Pagination { get; set; }
+        public IReadOnlyCollection<TItem> Items { get; set; }
     }
 }

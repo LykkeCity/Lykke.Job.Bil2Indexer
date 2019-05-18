@@ -20,17 +20,17 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet("/{address}/balances", Name = nameof(GetAddressBalances))]
-        public async Task<ActionResult<Paginated<AddressBalanceModel>>> GetAddressBalances(
+        public async Task<ActionResult<Paginated<AddressBalanceModel, string>>> GetAddressBalances(
             [FromRoute] string blockchainType,
             [FromRoute] string address,
             [FromQuery] string blockId, 
             [FromQuery] int? blockNumber, 
             [FromQuery] DateTimeOffset? datetime,
-            PaginationRequest pagination)
+            PaginationRequest<string> pagination)
         {
             // TODO: Validate parameters
 
-            Paginated<AddressBalanceModel> result;
+            Paginated<AddressBalanceModel, string> result;
             if (blockId != null)
             {
                 var balances = await _addressQueryFacade.GetBalancesByBlockId
@@ -99,10 +99,10 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet("/{address}/unspent-outputs", Name = nameof(GetAddressUnspentOutputs))]
-        public async Task<ActionResult<Paginated<AddressUnspentOutputModel>>> GetAddressUnspentOutputs(
+        public async Task<ActionResult<Paginated<AddressUnspentOutputModel, string>>> GetAddressUnspentOutputs(
             [FromRoute] string blockchainType,
             [FromRoute] string addresses,
-            PaginationRequest pagination)
+            PaginationRequest<string> pagination)
         {
             var result = await _addressQueryFacade.GetUnspentOutputs
             (

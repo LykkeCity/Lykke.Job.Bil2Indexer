@@ -98,13 +98,13 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             }
         }
 
-        public async Task<IReadOnlyCollection<BlockHeader>> GetAllAsync(string blockchainType, int limit, bool orderAsc, string startingAfter = null,
-            string endingBefore = null)
+        public async Task<IReadOnlyCollection<BlockHeader>> GetAllAsync(string blockchainType, int limit, bool orderAsc, long? startingAfterNumber = null,
+            long? endingBeforeNumber = null)
         {
             using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var query = db.BlockHeaders
-                    .Where(BuildPredicate(startingAfter, endingBefore))
+                    .Where(BuildPredicate(startingAfterNumber, endingBeforeNumber))
                     .Take(limit);
 
                 if (orderAsc)
@@ -152,18 +152,18 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             return p => p.Number == blockNumber;
         }
 
-        private Expression<Func<BlockHeaderEntity, bool>> BuildPredicate(string startingAfter, string endingBefore)
+        private Expression<Func<BlockHeaderEntity, bool>> BuildPredicate(long? startingAfterNumber, long? endingBeforeNumber)
         {
             var predicate = PredicateBuilder.New<BlockHeaderEntity>(p => true);
-            if (!string.IsNullOrEmpty(startingAfter))
+            if (startingAfterNumber != null)
             {
                 // ReSharper disable once StringCompareToIsCultureSpecific
-                predicate = predicate.And(p => p.Id.CompareTo(startingAfter) > 0);
+                predicate = predicate.And(p => p.Number > startingAfterNumber );
             }
-            if (!string.IsNullOrEmpty(endingBefore))
+            if (endingBeforeNumber != null)
             {
                 // ReSharper disable once StringCompareToIsCultureSpecific
-                predicate = predicate.And(p => p.Id.CompareTo(endingBefore) < 0);
+                predicate = predicate.And(p => p.Number < endingBeforeNumber);
             }
 
             return predicate;

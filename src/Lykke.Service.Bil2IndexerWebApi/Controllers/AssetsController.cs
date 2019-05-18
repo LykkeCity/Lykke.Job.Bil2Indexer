@@ -20,13 +20,13 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(Name = nameof(GetAssets))]
-        public async Task<ActionResult<Paginated<AssetModel>>> GetAssets(
+        public async Task<ActionResult<Paginated<AssetModel, string>>> GetAssets(
             [FromRoute] string blockchainType,
             [FromQuery] string assetTicker,
             [FromQuery] string assetAddress,
-            PaginationRequest pagination)
+            PaginationRequest<string> pagination)
         {
-            Paginated<AssetModel> result;
+            Paginated<AssetModel, string> result;
 
             if (assetTicker != null && assetAddress != null)
             {

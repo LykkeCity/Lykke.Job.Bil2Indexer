@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Service.Bil2IndexerWebApi.Models;
-using Lykke.Service.Bil2IndexerWebApi.Models.Common;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
@@ -9,12 +9,20 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
     {
         public static IReadOnlyCollection<AssetModel> ToViewModel(this IReadOnlyCollection<AssetInfo> source)
         {
-            throw new System.NotImplementedException();
+            return source.Select(ToViewModel).ToList();
         }
 
         public static AssetModel ToViewModel(this AssetInfo source)
         {
-            throw new System.NotImplementedException();
+            return new AssetModel
+            {
+                Accuracy = source.Scale,
+                Id = new AssetIdModel
+                {
+                    Address = source.Asset.Address,
+                    Ticker = source.Asset.Id
+                }
+            };
         }
     }
 }

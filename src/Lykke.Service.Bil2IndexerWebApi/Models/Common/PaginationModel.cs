@@ -3,11 +3,11 @@ using Newtonsoft.Json.Converters;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Models.Common
 {
-    public class PaginationModel
+    public class PaginationModel<T>
     {
-        public string EndingBefore { get; set; }
+        public T EndingBefore { get; set; }
 
-        public string StartingAfter { get; set; }
+        public T StartingAfter { get; set; }
 
         public int Count { get; set; }
 

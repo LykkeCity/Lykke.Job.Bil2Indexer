@@ -87,10 +87,10 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
 
             var retrieved4 = await repo.GetAllAsync(bType, 999, orderAsc: false, 
-                startingAfter: blocks.OrderBy(p=>p.Id.ToString()).Skip(2).First().Id, 
-                endingBefore: blocks.OrderBy(p => p.Id.ToString()).Skip(5).First().Id);
+                startingAfterNumber: 1, 
+                endingBeforeNumber: 6);
 
-            Assert.AreEqual(2, retrieved4.Count);
+            Assert.AreEqual(4, retrieved4.Count);
         }
 
 
