@@ -21,7 +21,7 @@ create table coins
     value_scale      integer                         not null,
     address          varchar(256),
     address_tag      varchar(1024),
-    is_deleted       boolean                         not null,
+    is_spent       boolean                         not null,
     address_tag_type smallint,
     address_nonce    numeric,
     constraint coins_pk
