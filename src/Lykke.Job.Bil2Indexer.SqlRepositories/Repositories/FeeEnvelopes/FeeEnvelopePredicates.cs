@@ -21,9 +21,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             var stringTransactionId = transactionId.ToString();
 
             return p => p.TransactionId == stringTransactionId && (p.AssetAddress == null || p.AssetAddress != null);
-
         }
-
         public static Expression<Func<FeeEnvelopeEntity, bool>> Build(TransactionId transactionId, Asset asset)
         {
             var stringTransactionId = transactionId.ToString();
@@ -47,23 +45,24 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             }
         }
 
-        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(IEnumerable<string> transactionIds, bool? isAssetAddressNull = null)
+        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(IEnumerable<TransactionId> transactionIds, bool? isAssetAddressNull = null)
         {
+            var stringValues = transactionIds.Select(p => p.ToString());
             if (isAssetAddressNull == null)
             {
                 return dbEntity => (dbEntity.AssetAddress == null || dbEntity.AssetAddress != null) //force to use index intersection instead of bitmap
-                                   && transactionIds.Contains(dbEntity.TransactionId);
+                                   && stringValues.Contains(dbEntity.TransactionId);
             }
 
             if (isAssetAddressNull.Value)
             {
                 return dbEntity => dbEntity.AssetAddress == null
-                                   && transactionIds.Contains(dbEntity.TransactionId);
+                                   && stringValues.Contains(dbEntity.TransactionId);
             }
             else
             {
                 return dbEntity => dbEntity.AssetAddress != null
-                                   && transactionIds.Contains(dbEntity.TransactionId);
+                                   && stringValues.Contains(dbEntity.TransactionId);
             }
         }
     }

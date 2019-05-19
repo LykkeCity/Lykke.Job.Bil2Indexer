@@ -78,12 +78,14 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 var txIdsWithAssetAddress = dbEntities
                     .Where(p => p.AssetAddress != null)
                     .Select(p => p.TransactionId)
-                    .ToList();
+                    .ToList()
+                    .Select(p=> new TransactionId(p));
 
                 var txIdsWithoutAssetAddress = dbEntities
                     .Where(p => p.AssetAddress == null)
                     .Select(p => p.TransactionId)
-                    .ToList();
+                    .ToList()
+                    .Select(p => new TransactionId(p));
 
                 var getNaturalIds1 = db.FeeEnvelopes
                     .Where(FeeEnvelopePredicates.Build(txIdsWithAssetAddress, isAssetAddressNull: false))
@@ -140,6 +142,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
         public Task<IReadOnlyCollection<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, TransactionId transactionId)
         {
             return GetAllAsync(blockchainType, FeeEnvelopePredicates.Build(transactionId));
+        }
+
+        public Task<IReadOnlyCollection<FeeEnvelope>> GetCollectionsAsync(string blockchainType, IReadOnlyCollection<TransactionId> transactionIds)
+        {
+            return GetAllAsync(blockchainType, FeeEnvelopePredicates.Build(transactionIds));
         }
 
         public Task<PaginatedItems<FeeEnvelope>> GetBlockFeesAsync(string blockchainType, BlockId blockId, long limit, string continuation)

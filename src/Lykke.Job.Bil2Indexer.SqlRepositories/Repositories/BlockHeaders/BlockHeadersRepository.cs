@@ -98,7 +98,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             }
         }
 
-        public async Task<IReadOnlyCollection<BlockHeader>> GetAllAsync(string blockchainType, int limit, bool orderAsc, long? startingAfterNumber = null,
+        public async Task<IReadOnlyCollection<BlockHeader>> GetCollectionAsync(string blockchainType, int limit, bool orderAsc, long? startingAfterNumber = null,
             long? endingBeforeNumber = null)
         {
             using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))

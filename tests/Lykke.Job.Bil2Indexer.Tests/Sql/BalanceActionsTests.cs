@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using Common;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -66,19 +67,77 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             Assert.AreEqual(actions.Count, byTx.Count);
 
+            var retrievedCollection = (await repo.GetCollectionAsync(bType, actions.Select(p => p.TransactionId).ToArray())).ToDictionary(p => p.TransactionId);
+
+            Assert.AreEqual(actions.Count, retrievedCollection.Count);
+
             foreach (var balanceAction in actions)
             {
                 var retrieved = byTx[balanceAction.TransactionId];
 
                 Assert.AreEqual(balanceAction.AccountId, retrieved.Keys.Single());
                 Assert.AreEqual(balanceAction.Amount, retrieved.Values.Single());
+
+                var retriededFullTx = retrievedCollection[balanceAction.TransactionId];
+
+                Assert.AreEqual(retriededFullTx.ToJson(), balanceAction.ToJson());
             }
+
 
             var allAssets = await repo.GetBalancesAsync(bType, address, long.MaxValue);
 
             Assert.AreEqual(1, allAssets.Count);
 
             Assert.AreEqual(asset, allAssets.Keys.Single());
+        }
+
+        [Test]
+        public async Task CanFilter()
+        {
+            var address = BuildRandmomAddress();
+            var asset = BuildRandmomAsset(address: Guid.NewGuid().ToString());
+            var scale = new Random().Next(0, 15);
+            var bType = Guid.NewGuid().ToString();
+
+            var actions = new List<BalanceAction>();
+            var max = 99;
+            var ctr = 0;
+            
+            do
+            {
+                var act = BuildRandomBalanceAction(asset, address, scale);
+                actions.Add(act);
+                ctr++;
+            } while (ctr <= max);
+
+            var repo = new BalanceActionsRepository(ContextFactory.GetPosgresTestsConnStringProvider(),
+                BuildProviderMock(asset, bType, scale).Object);
+
+            await repo.AddIfNotExistsAsync(bType, actions);
+
+            var ordered = actions.OrderBy(p => p.TransactionId.ToString()).ToList();
+
+
+            var retrieved1 = await repo.GetTransactionsOfAddressAsync(bType, address, 99999, true, null, null);
+
+            Assert.AreEqual(actions.Count, retrieved1.Count);
+
+            var retrieved2 = await repo.GetTransactionsOfAddressAsync(bType, address, 15, true, null, null);
+
+            Assert.AreEqual(15, retrieved2.Count);
+
+            var retrieved3= await repo.GetTransactionsOfAddressAsync(bType, 
+                address,
+                99999, 
+                true,
+                ordered.Skip(5).First().TransactionId, 
+                ordered.Skip(10).First().TransactionId);
+
+
+
+            Assert.AreEqual(4, retrieved3.Count);
+
+
         }
 
         [Test]

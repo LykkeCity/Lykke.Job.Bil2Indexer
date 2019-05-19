@@ -1,4 +1,6 @@
-﻿using Lykke.Job.Bil2Indexer.Domain;
+﻿using Lykke.Bil2.SharedDomain;
+using Lykke.Job.Bil2Indexer.Contract;
+using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 
@@ -20,6 +22,16 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions.Mapp
                 Address = source.AccountId.Address,
                 ValueMoney = source.Amount
             };
+        }
+
+        public static BalanceAction ToDomain(this BalanceActionEntity source, string blockchainType)
+        {
+            return new BalanceAction(new AccountId(source.Address, 
+                new Asset(source.AssetId, source.AssetAddress)), 
+                MoneyHelper.BuildMoney(source.ValueString, source.ValueScale),
+                source.BlockNumber, 
+                source.BlockId, 
+                source.TransactionId);
         }
     }
 }

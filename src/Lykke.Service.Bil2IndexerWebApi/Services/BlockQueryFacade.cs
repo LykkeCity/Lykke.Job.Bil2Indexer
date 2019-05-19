@@ -23,7 +23,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
         public async Task<BlockModel> GetBlockByIdOrDefault(string blockchainType, BlockId id)
         {
             var getBlock = _blockHeadersRepository.GetOrDefaultAsync(blockchainType, id);
-            var getChainHead = GetChainHeadNumberAsync(blockchainType);
+            var getChainHead = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
 
             await Task.WhenAll(getBlock, getChainHead);
             if (getBlock.Result.Number <= getChainHead.Result)
@@ -37,7 +37,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
         public async Task<BlockModel> GetBlockByNumberOrDefault(string blockchainType, int number)
         {
             var getBlock = _blockHeadersRepository.GetOrDefaultAsync(blockchainType, number);
-            var getChainHead = GetChainHeadNumberAsync(blockchainType);
+            var getChainHead = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
 
             await Task.WhenAll(getBlock, getChainHead);
             if (getBlock.Result.Number <= getChainHead.Result)
@@ -51,8 +51,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
         public async Task<IReadOnlyCollection<BlockModel>> GetBlocks(string blockchainType, int limit, bool orderAsc, long? startingAfterNumber,
             long? endingBeforeNumber)
         {
-            var getChainHead = GetChainHeadNumberAsync(blockchainType);
-            var getBlocks = _blockHeadersRepository.GetAllAsync(blockchainType, limit, orderAsc, startingAfterNumber, endingBeforeNumber);
+            var getChainHead = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
+            var getBlocks = _blockHeadersRepository.GetCollectionAsync(blockchainType, limit, orderAsc, startingAfterNumber, endingBeforeNumber);
 
             await Task.WhenAll(getBlocks, getChainHead);
 
@@ -70,11 +70,6 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             var head = await _chainHeadsRepository.GetAsync(blockchainType);
 
             return (await _blockHeadersRepository.GetAsync(blockchainType, head.BlockId)).ToViewModel(head.BlockNumber ?? 0);
-        }
-
-        private async Task<long> GetChainHeadNumberAsync(string blockchainType)
-        {
-            return (await _chainHeadsRepository.GetAsync(blockchainType)).BlockNumber ?? 0;
         }
     }
 }

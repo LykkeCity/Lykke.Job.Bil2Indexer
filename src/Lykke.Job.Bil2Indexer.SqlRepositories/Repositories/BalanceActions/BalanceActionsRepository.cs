@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Dapper;
 using Lykke.Bil2.SharedDomain;
@@ -220,6 +221,63 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                         x => MoneyHelper.BuildMoney(x.ValueString, x.ValueScale)
                     );
                 });
+            }
+        }
+
+        public async Task<IReadOnlyCollection<BalanceAction>> GetCollectionAsync(string blockchainType, params TransactionId[] transactionIds)
+        {
+            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            {
+                var entities = await db.BalanceActions.Where(BalanceActionsPredicates.Build(transactionIds))
+                    .ToListAsync();
+
+                return entities.Select(p => p.ToDomain(blockchainType)).ToList();
+            }
+        }
+
+        public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfAddressAsync(string blockchainType, Address address, int limit, bool orderAsc,
+            string startingAfter, string endingBefore)
+        {
+            return GetTransactionIdsByPredicateAsync(blockchainType,
+                BalanceActionsPredicates.Build(address),
+                limit,
+                orderAsc,
+                startingAfter,
+                endingBefore);
+        }
+
+        public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfBlockAsync(string blockchainType, 
+            BlockId blockId, 
+            int limit,
+            bool orderAsc,
+            string startingAfter,
+            string endingBefore)
+        {
+            return GetTransactionIdsByPredicateAsync(blockchainType, 
+                BalanceActionsPredicates.Build(blockId), 
+                limit, 
+                orderAsc,
+                startingAfter, 
+                endingBefore);
+        }
+
+        private async Task<IReadOnlyCollection<TransactionId>> GetTransactionIdsByPredicateAsync(string blockchainType,
+            Expression<Func<BalanceActionEntity, bool>> predicate,
+            int limit,
+            bool orderAsc,
+            string startingAfter,
+            string endingBefore)
+        {
+            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            {
+                var query = db.BalanceActions
+                    .Where(BalanceActionsPredicates.BuildEnumerationPredicate(predicate, startingAfter, endingBefore))
+                    .Take(limit);
+
+                query = orderAsc ? query.OrderBy(p => p.TransactionId) : query.OrderByDescending(p => p.TransactionId);
+
+                return (await query.Select(p => p.TransactionId).Distinct().ToListAsync())
+                    .Select(p=> new TransactionId(p)).ToList();
             }
         }
     }

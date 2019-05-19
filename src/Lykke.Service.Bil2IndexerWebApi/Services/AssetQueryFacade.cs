@@ -24,7 +24,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
 
         public async Task<IReadOnlyCollection<AssetModel>> GetAssets(string blockchainType, int limit, bool orderAsc, string startingAfter = null, string endingBefore = null)
         {
-            return (await _assetInfosRepository.GetAllAsync(blockchainType, limit, orderAsc, startingAfter, endingBefore)).ToViewModel();
+            return (await _assetInfosRepository.GetCollectionAsync(blockchainType, limit, orderAsc, startingAfter, endingBefore)).ToViewModel();
         }
     }
 }

@@ -34,7 +34,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
             }
         }
 
-        public static IReadOnlyCollection<AddressBalanceModel> ToViewModel(this IReadOnlyDictionary<Asset, Money> source, Address address,)
+        public static IReadOnlyCollection<AddressBalanceModel> ToViewModel(this IReadOnlyDictionary<Asset, Money> source, Address address)
         {
             return source.Select(p => new AddressBalanceModel
             {

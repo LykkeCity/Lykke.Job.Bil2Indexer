@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Lykke.Bil2.SharedDomain;
@@ -72,6 +73,38 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
                 () => _impl.GetSomeOfBalancesAsync(blockchainType, transactionIds));
+        }
+
+        public Task<IReadOnlyCollection<BalanceAction>> GetCollectionAsync(string blockchainType, params TransactionId[] transactionIds)
+        {
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
+            var operationId = $"{blockchainType}-by-txId-{string.Join(", ", transactionIds.Select(p=>p.ToString()))}";
+
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
+                operationId,
+                () => _impl.GetCollectionAsync(blockchainType, transactionIds));
+        }
+
+        public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfAddressAsync(string blockchainType, Address address, int limit, bool orderAsc,
+            string startingAfter, string endingBefore)
+        {
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
+            var operationId = $"{blockchainType}-{address}-{limit}-{orderAsc}-{startingAfter}-{endingBefore}";
+
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
+                operationId,
+                () => _impl.GetTransactionsOfAddressAsync(blockchainType, address, limit, orderAsc, startingAfter, endingBefore));
+        }
+
+        public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfBlockAsync(string blockchainType, BlockId blockId, int limit, bool orderAsc, string startingAfter,
+            string endingBefore)
+        {
+            var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
+            var operationId = $"{blockchainType}-{blockId}-{limit}-{orderAsc}-{startingAfter}-{endingBefore}";
+
+            return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
+                operationId,
+                () => _impl.GetTransactionsOfBlockAsync(blockchainType, blockId, limit, orderAsc, startingAfter, endingBefore));
         }
     }
 }

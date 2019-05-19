@@ -61,7 +61,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 await repo.SaveAsync(blockHeader);
             }
 
-            var retrieved1 = await repo.GetAllAsync(bType, 999, orderAsc: true);
+            var retrieved1 = await repo.GetCollectionAsync(bType, 999, orderAsc: true);
 
             Assert.AreEqual(blocks.Length, retrieved1.Count);
 
@@ -73,7 +73,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 index++;
             }
 
-            var retrieved2 = await repo.GetAllAsync(bType, 999, orderAsc: false);
+            var retrieved2 = await repo.GetCollectionAsync(bType, 999, orderAsc: false);
             index = 0;
             foreach (var bl in retrieved2)
             {
@@ -82,11 +82,11 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 index++;
             }
 
-            var retrieved3 = await repo.GetAllAsync(bType, 2, orderAsc: false);
+            var retrieved3 = await repo.GetCollectionAsync(bType, 2, orderAsc: false);
             Assert.AreEqual(2, retrieved3.Count);
 
 
-            var retrieved4 = await repo.GetAllAsync(bType, 999, orderAsc: false, 
+            var retrieved4 = await repo.GetCollectionAsync(bType, 999, orderAsc: false, 
                 startingAfterNumber: 1, 
                 endingBeforeNumber: 6);
 

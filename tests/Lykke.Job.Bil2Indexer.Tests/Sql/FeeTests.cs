@@ -71,6 +71,18 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
                 AssertEquals(feeEnvelope, retrieved);
             }
+
+            var retrieved3 = (await repo.GetCollectionsAsync(btype, fees.Select(p => p.TransactionId).ToList())).ToDictionary(p=>p.TransactionId);
+
+            Assert.AreEqual(fees.Count, retrieved3.Count);
+
+            foreach (var feeEnvelope in fees)
+            {
+                var retrieved = retrieved3[feeEnvelope.TransactionId];
+
+                AssertEquals(feeEnvelope, retrieved);
+            }
+
         }
 
         public FeeEnvelope BuildRandmon(string blockchainType, int scale, string blockId, Asset asset)

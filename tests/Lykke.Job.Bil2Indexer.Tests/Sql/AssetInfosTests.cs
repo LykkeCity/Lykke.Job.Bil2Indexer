@@ -42,7 +42,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var retrieved3 = (await repo.GetSomeOfAsync(asset.BlockchainType, new []{ asset.Asset }))
                 .Single();
 
-            var retrieved4 = await repo.GetAllAsync(asset.BlockchainType, 3, true, null,
+            var retrieved4 = await repo.GetCollectionAsync(asset.BlockchainType, 3, true, null,
                 null);
             
             Assert.AreEqual(3, retrieved4.Count);
@@ -73,7 +73,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             await repo.AddIfNotExistsAsync(assets);
 
-            var retrieved1 = (await repo.GetAllAsync(bType, 9999, true, startingAfter: "bbb", endingBefore: "fff")).ToArray();
+            var retrieved1 = (await repo.GetCollectionAsync(bType, 9999, true, startingAfter: "bbb", endingBefore: "fff")).ToArray();
 
             Assert.AreEqual(3, retrieved1.Length);
 
@@ -85,7 +85,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 index++;
             }
 
-            var retrieved2 = (await repo.GetAllAsync(bType, 9999, false, startingAfter: "ccc", endingBefore: "xxx")).ToArray();
+            var retrieved2 = (await repo.GetCollectionAsync(bType, 9999, false, startingAfter: "ccc", endingBefore: "xxx")).ToArray();
             index = 0;
             foreach (var asset in assets.Skip(3).Take(3).OrderByDescending(p => p.Asset.Id.ToString()))
             {

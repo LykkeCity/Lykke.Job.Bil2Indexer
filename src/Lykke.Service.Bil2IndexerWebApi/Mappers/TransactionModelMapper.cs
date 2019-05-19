@@ -9,25 +9,21 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
     public static class TransactionModelMapper
     {
-        public static IReadOnlyCollection<TransactionModel> ToViewModel(this IReadOnlyCollection<Transaction> source, 
+        public static IReadOnlyCollection<TransactionModel> ToViewModel(this IReadOnlyCollection<TransactionId> transactionIds, 
             IReadOnlyCollection<FeeEnvelope> fees,
             IReadOnlyCollection<BalanceAction> balances,
-            int lastBlockNumber)
+            long lastBlockNumber)
         {
             var feesPerTx = fees.ToLookup(p => p.TransactionId);
             var balancesPerTx = balances.ToLookup(p => p.TransactionId);
 
-            return source.Select(p =>
-            {
-                var txId = p.TransactionId();
-
-                return p.ToViewModel(feesPerTx[txId].ToList(),
-                    balancesPerTx[txId].ToList(), lastBlockNumber);
-            }).ToList();
+            return transactionIds.Select(p => p.ToViewModel(feesPerTx[p].ToList(),
+                balancesPerTx[p].ToList(), lastBlockNumber)).ToList();
         }
 
-        public static TransactionModel ToViewModel(this Transaction source, IReadOnlyCollection<FeeEnvelope> fees,
-            IReadOnlyCollection<BalanceAction> balances,  int lastBlockNumber)
+        public static TransactionModel ToViewModel(this TransactionId transactionId, 
+            IReadOnlyCollection<FeeEnvelope> fees,
+            IReadOnlyCollection<BalanceAction> balances,  long lastBlockNumber)
         {
             var tx = balances.First();
             
@@ -60,53 +56,14 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
                     Address = p.AccountId.Address,
                     TransferId = p.TransactionId
                 }).ToArray(),
-                Number = source.TransactionNumber(),
+
+                //TODO
+                Number = -1,
                 //TODO
                 IsIrreversible = true,
                 //TODO
                 Links = null,
             };
-        }
-
-
-        private static int TransactionNumber(this Transaction source)
-        {
-            if (source.IsTransferAmount)
-            {
-                return source.AsTransferAmount().TransactionNumber;
-            }
-
-            if (source.IsTransferCoins)
-            {
-                return source.AsTransferCoins().TransactionNumber;
-            }
-
-            if (source.IsFailed)
-            {
-                return source.AsFailed().TransactionNumber;
-            }
-
-            throw new ArgumentException($"Unknown tx type {source.Type}");
-        }
-
-        private static TransactionId TransactionId(this Transaction source)
-        {
-            if (source.IsTransferAmount)
-            {
-                return source.AsTransferAmount().TransactionId;
-            }
-
-            if (source.IsTransferCoins)
-            {
-                return source.AsTransferCoins().TransactionId;
-            }
-
-            if (source.IsFailed)
-            {
-                return source.AsFailed().TransactionId;
-            }
-
-            throw new ArgumentException($"Unknown tx type {source.Type}");
         }
     }
 }
