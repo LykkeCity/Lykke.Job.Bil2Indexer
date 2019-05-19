@@ -13,7 +13,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
             return source.Select(p => new AddressUnspentOutputModel
             {
                 TransactionId = p.Id.TransactionId,
-                AddressBalanceModel = new AddressBalanceModel
+                AddressBalanceChangeModel = new AddressBalanceChangeModel
                 {
                     AssetId = new AssetIdModel
                     {
@@ -22,12 +22,11 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
                     },
                     Address = p.Address,
                     Amount = p.Value.ToString(),
-
+                    BlockId = p.BlockId,
+                    BlockNumber = p.BlockNumber,
+                    ConfirmationsCount = lastBlockNumber - p.BlockNumber,
                     //TODO
-                    BlockId = null,
-                    IsIrreversible =true,
-                    BlockNumber = -1,
-                    ConfirmationsCount = -1
+                    IsIrreversible = true
                 }
             }).ToList();
         }

@@ -2,7 +2,7 @@
 {
     public class AddressUnspentOutputModel
     {
-        public AddressBalanceModel AddressBalanceModel { get; set; }
+        public AddressBalanceChangeModel AddressBalanceChangeModel { get; set; }
         public string TransactionId { get; set; }
     }
 }
