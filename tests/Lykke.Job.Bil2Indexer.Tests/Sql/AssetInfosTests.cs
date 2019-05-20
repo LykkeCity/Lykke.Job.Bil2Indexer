@@ -5,6 +5,7 @@ using Common;
 using Dapper;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
+using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos;
 using Lykke.Job.Bil2Indexer.Tests.Sql.Mocks;
 using Npgsql;
@@ -51,6 +52,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             AssertEquals(retrieved2, asset);
             AssertEquals(retrieved3, asset);
         }
+
+
         [Test]
         public async Task CanFilter()
         {
@@ -64,16 +67,25 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             {
                 new AssetInfo(bType, new Asset(new AssetId("aaa")), 13),
                 new AssetInfo(bType, new Asset(new AssetId("bbb")), 12),
-                new AssetInfo(bType, new Asset(new AssetId("ccc")), 13),
+                new AssetInfo(bType, new Asset(new AssetId("ccc"), new AssetAddress("test")), 13),
                 new AssetInfo(bType, new Asset(new AssetId("ddd")), 14),
                 new AssetInfo(bType, new Asset(new AssetId("eee")), 14),
                 new AssetInfo(bType, new Asset(new AssetId("fff")), 14),
                 new AssetInfo(bType, new Asset(new AssetId("xxx")), 14),
             }.OrderBy(p => p.Asset.Id).ToList();
 
+
+            foreach (var assetInfo in assets)
+            {
+                var assetId = assetInfo.Asset;
+
+
+                Assert.AreEqual(assetId, AssetIdBuilder.BuildDomainOrDefault(assetInfo.Asset.BuildId()));
+            }
+
             await repo.AddIfNotExistsAsync(assets);
 
-            var retrieved1 = (await repo.GetCollectionAsync(bType, 9999, true, startingAfter: "bbb", endingBefore: "fff")).ToArray();
+            var retrieved1 = (await repo.GetCollectionAsync(bType, 9999, true, startingAfter: new Asset(new AssetId("bbb")), endingBefore: new Asset(new AssetId("fff")))).ToArray();
 
             Assert.AreEqual(3, retrieved1.Length);
 
@@ -85,7 +97,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 index++;
             }
 
-            var retrieved2 = (await repo.GetCollectionAsync(bType, 9999, false, startingAfter: "ccc", endingBefore: "xxx")).ToArray();
+            var retrieved2 = (await repo.GetCollectionAsync(bType, 9999, false, startingAfter: new Asset(new AssetId("ccc"), new AssetAddress("test")), endingBefore: new Asset(new AssetId("xxx")))).ToArray();
             index = 0;
             foreach (var asset in assets.Skip(3).Take(3).OrderByDescending(p => p.Asset.Id.ToString()))
             {

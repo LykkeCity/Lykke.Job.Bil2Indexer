@@ -79,7 +79,9 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             await Task.WhenAll(getLastBlockNumber, getBalanceActions, getFees);
 
             //TODO check with chain head
-            return transactionIds.ToViewModel(getFees.Result, getBalanceActions.Result, getLastBlockNumber.Result);
+            return transactionIds.ToViewModel(getFees.Result, 
+                getBalanceActions.Result,
+                getLastBlockNumber.Result);
         }
 
         public async Task<IReadOnlyCollection<TransactionModel>> GetTransactionsByBlockNumber(string blockchainType, 

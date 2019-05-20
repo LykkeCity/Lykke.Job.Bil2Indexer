@@ -34,6 +34,10 @@ create unique index coins_natural_key_index
 create index coins_transaction_id_index
 	on coins (transaction_id)  tablespace fast_space;
 
+create index coins_address_coin_id_index
+	on coins (address, coin_id)  tablespace fast_space where is_spent =false;
+
+
 create  trigger set_numeric_value_from_string_trigger before insert or update
      on coins for each row
      execute procedure set_numeric_value_from_string ();

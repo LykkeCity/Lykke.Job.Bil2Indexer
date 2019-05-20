@@ -15,21 +15,18 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
         Task<IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>> GetSomeOfBalancesAsync(
             string blockchainType,  
             ISet<TransactionId> transactionIds);
-
         Task<IReadOnlyCollection<BalanceAction>> GetCollectionAsync(string blockchainType, params TransactionId[] transactionIds);
-
         Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfAddressAsync(string blockchainType,
             Address address,
             int limit,
             bool orderAsc,
-            string startingAfter,
-            string endingBefore);
-
+            TransactionId startingAfter,
+            TransactionId endingBefore);
         Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfBlockAsync(string blockchainType,
             BlockId blockId,
             int limit,
             bool orderAsc,
-            string startingAfter,
-            string endingBefore);
+            TransactionId startingAfter,
+            TransactionId endingBefore);
     }
 }

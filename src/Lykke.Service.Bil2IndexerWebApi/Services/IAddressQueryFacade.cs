@@ -17,36 +17,20 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
 
         Task<IReadOnlyCollection<AddressBalanceModel>> GetBalances(
             string blockchainType, 
-            string address, 
-            int limit, 
-            bool orderAsc,
-            string startingAfter,
-            string endingBefore);
+            string address);
 
         Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesByBlockId(
             string blockchainType, 
             string address,
-            string blockId,
-            int limit, 
-            bool orderAsc,
-            string startingAfter,
-            string endingBefore);
+            string blockId);
 
         Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesByBlockNumber(
             string blockchainType, 
             string address,
-            int blockNumber,
-            int limit,
-            bool orderAsc,
-            string startingAfter,
-            string endingBefore);
-
+            long blockNumber);
+    
         Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesOnDate(string blockchainType,
             string address,
-            DateTime date,
-            int limit,
-            bool orderAsc,
-            string startingAfter,
-            string endingBefore);
+            DateTime date);
     }
 }

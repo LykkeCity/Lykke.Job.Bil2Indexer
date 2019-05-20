@@ -23,7 +23,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 
         public static TransactionModel ToViewModel(this TransactionId transactionId, 
             IReadOnlyCollection<FeeEnvelope> fees,
-            IReadOnlyCollection<BalanceAction> balances,  long lastBlockNumber)
+            IReadOnlyCollection<BalanceAction> balances,  
+            long lastBlockNumber)
         {
             var tx = balances.First();
             

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
@@ -64,7 +63,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 return await db.Transactions
-                    .Where(BuildPredicate(blockId))
+                    .Where(TransactionPredicates.Build(blockId))
                     .CountAsync();
             }
         }
@@ -81,7 +80,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entities = await db.Transactions
-                    .Where(BuildPredicate(blockId))
+                    .Where(TransactionPredicates.Build(blockId))
                     .Skip(skip)
                     .Take(limit)
                     .ToListAsync();
@@ -113,7 +112,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.Transactions
-                    .SingleOrDefaultAsync(BuildPredicate(transactionId));
+                    .SingleOrDefaultAsync(TransactionPredicates.Build(transactionId));
 
                 return entity?.MapToTransactionEnvelope(blockchainType);
             }
@@ -123,7 +122,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
         {
             using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
-                var entities = await db.Transactions.Where(BuildPredicate(ids)).ToListAsync();
+                var entities = await db.Transactions.Where(TransactionPredicates.Build(ids)).ToListAsync();
 
                 return entities.Select(p => p.MapToTransactionEnvelope(blockchainType)).ToList();
             }
@@ -134,7 +133,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
             using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 await db.Transactions
-                    .Where(BuildPredicate(blockId))
+                    .Where(TransactionPredicates.Build(blockId))
                     .DeleteAsync();
             }
         }
@@ -152,27 +151,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
                 return dbEntities.Where(entity => !existedIds.Contains(entity.TransactionId)).ToArray();
             }
-        }
-
-        private Expression<Func<TransactionEntity, bool>> BuildPredicate(BlockId blockId)
-        {
-            var stringBlockId = blockId.ToString();
-
-            return p => p.BlockId == stringBlockId;
-        }
-
-        private Expression<Func<TransactionEntity, bool>> BuildPredicate(TransactionId transactionId)
-        {
-            var stringTransactionId = transactionId.ToString();
-
-            return p => p.TransactionId == stringTransactionId;
-        }
-
-        private Expression<Func<TransactionEntity, bool>> BuildPredicate(IEnumerable<TransactionId> transactionIds)
-        {
-            var stringTransactionIds = transactionIds.Select(p => p.ToString());
-
-            return p => stringTransactionIds.Contains(p.TransactionId);
         }
     }
 }

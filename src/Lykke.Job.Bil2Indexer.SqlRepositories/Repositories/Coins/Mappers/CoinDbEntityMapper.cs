@@ -1,6 +1,7 @@
 ﻿using System;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
+using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 

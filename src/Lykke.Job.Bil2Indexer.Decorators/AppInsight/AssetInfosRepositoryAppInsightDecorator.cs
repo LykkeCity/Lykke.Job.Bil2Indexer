@@ -72,7 +72,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
                 () => _impl.GetPagedAsync(blockchainType, limit, continuation));
         }
 
-        public Task<IReadOnlyCollection<AssetInfo>> GetCollectionAsync(string blockchainType, int limit, bool orderAsc, string startingAfter, string endingBefore)
+        public Task<IReadOnlyCollection<AssetInfo>> GetCollectionAsync(string blockchainType, int limit, bool orderAsc, Asset startingAfter, Asset endingBefore)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = string.Join("-", blockchainType, limit.ToString(), orderAsc, startingAfter, endingBefore);

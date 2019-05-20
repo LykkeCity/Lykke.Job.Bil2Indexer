@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
@@ -20,82 +21,53 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet("/{address}/balances", Name = nameof(GetAddressBalances))]
-        public async Task<ActionResult<Paginated<AddressBalanceModel, string>>> GetAddressBalances(
+        public async Task<ActionResult<IReadOnlyCollection<AddressBalanceModel>>> GetAddressBalances(
             [FromRoute] string blockchainType,
             [FromRoute] string address,
             [FromQuery] string blockId, 
-            [FromQuery] int? blockNumber, 
-            [FromQuery] DateTimeOffset? datetime,
-            PaginationRequest<string> pagination)
+            [FromQuery] long? blockNumber, 
+            [FromQuery] DateTimeOffset? datetime)
         {
             // TODO: Validate parameters
 
-            Paginated<AddressBalanceModel, string> result;
+            IReadOnlyCollection<AddressBalanceModel> result;
             if (blockId != null)
             {
-                var balances = await _addressQueryFacade.GetBalancesByBlockId
+                result =  await _addressQueryFacade.GetBalancesByBlockId
                 (
                     blockchainType,
                     address,
-                    blockId,
-                    pagination.Limit,
-                    pagination.Order == PaginationOrder.Asc,
-                    pagination.StartingAfter,
-                    pagination.EndingBefore
+                    blockId
                 );
-
-                result = balances.Paginate(pagination);
-
-                return result;
             }
-
-            if (blockNumber != null)
+            else if (blockNumber != null)
             {
-                var balances = await _addressQueryFacade.GetBalancesByBlockNumber
+                result = await _addressQueryFacade.GetBalancesByBlockNumber
                 (
                     blockchainType,
                     address,
-                    blockNumber.Value,
-                    pagination.Limit,
-                    pagination.Order == PaginationOrder.Asc,
-                    pagination.StartingAfter,
-                    pagination.EndingBefore
+                    blockNumber.Value
                 );
-
-                result = balances.Paginate(pagination);
-
-                return result;
             }
-
-            if (datetime != null)
+            else if (datetime != null)
             {
-                var balances = await _addressQueryFacade.GetBalancesOnDate
+                result = await _addressQueryFacade.GetBalancesOnDate
                 (
                     blockchainType,
                     address,
-                    datetime.Value.UtcDateTime,
-                    pagination.Limit,
-                    pagination.Order == PaginationOrder.Asc,
-                    pagination.StartingAfter,
-                    pagination.EndingBefore
+                    datetime.Value.UtcDateTime
                 );
-
-                result = balances.Paginate(pagination);
-
-                return result;
             }
-            
-            result = (await _addressQueryFacade.GetBalances
-            (
-                blockchainType,
-                address,
-                pagination.Limit,
-                pagination.Order == PaginationOrder.Asc,
-                pagination.StartingAfter,
-                pagination.EndingBefore
-            )).Paginate(pagination);
+            else
+            {
+                result = (await _addressQueryFacade.GetBalances
+                (
+                    blockchainType,
+                    address
+                ));
+            }
 
-            return result;
+            return Ok(result);
         }
 
         [HttpGet("/{address}/unspent-outputs", Name = nameof(GetAddressUnspentOutputs))]

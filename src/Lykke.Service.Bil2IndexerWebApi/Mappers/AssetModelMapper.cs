@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Lykke.Job.Bil2Indexer.Domain;
+using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
@@ -20,7 +21,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
                 Id = new AssetIdModel
                 {
                     Address = source.Asset.Address,
-                    Ticker = source.Asset.Id
+                    Ticker = source.Asset.Id,
+                    Id = source.Asset.BuildId()
                 }
             };
         }

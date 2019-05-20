@@ -134,10 +134,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 ordered.Skip(10).First().TransactionId);
 
 
-
             Assert.AreEqual(4, retrieved3.Count);
-
-
         }
 
         [Test]

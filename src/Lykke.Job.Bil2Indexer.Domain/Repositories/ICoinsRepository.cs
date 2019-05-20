@@ -11,5 +11,11 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
         Task RevertSpendingAsync(string blockchainType, IReadOnlyCollection<CoinId> ids);
         Task<IReadOnlyCollection<Coin>> GetSomeOfAsync(string blockchainType, IReadOnlyCollection<CoinId> ids);
         Task RemoveIfExistAsync(string blockchainType, ISet<TransactionId> receivedInTransactionIds);
+        Task<IReadOnlyCollection<Coin>> GetUnspentAsync(string blockchainType,
+            Address address, 
+            int limit,
+            bool orderAsc,
+            CoinId startingAfter,
+            CoinId endingBefore);
     }
 }

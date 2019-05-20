@@ -59,19 +59,21 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
         public static Expression<Func<BalanceActionEntity, bool>> BuildEnumerationPredicate(
             Expression<Func<BalanceActionEntity, bool>> sourcePredicate,
-            string startingAfter,
-            string endingBefore)
+            TransactionId startingAfter,
+            TransactionId endingBefore)
         {
             var predicate = PredicateBuilder.New(sourcePredicate);
-            if (!string.IsNullOrEmpty(startingAfter))
+            if (startingAfter != null)
             {
+                var stringValue = startingAfter.ToString();
                 // ReSharper disable once StringCompareToIsCultureSpecific
-                predicate = predicate.And(p => p.TransactionId.CompareTo(startingAfter) > 0);
+                predicate = predicate.And(p => p.TransactionId.CompareTo(stringValue) > 0);
             }
-            if (!string.IsNullOrEmpty(endingBefore))
+            if (endingBefore != null)
             {
+                var stringValue = endingBefore.ToString();
                 // ReSharper disable once StringCompareToIsCultureSpecific
-                predicate = predicate.And(p => p.TransactionId.CompareTo(endingBefore) < 0);
+                predicate = predicate.And(p => p.TransactionId.CompareTo(stringValue) < 0);
             }
 
             return predicate;

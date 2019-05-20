@@ -4,5 +4,6 @@
     {
         public string Ticker { get; set; }
         public string Address { get; set; }
+        public string Id { get; set; }
     }
 }

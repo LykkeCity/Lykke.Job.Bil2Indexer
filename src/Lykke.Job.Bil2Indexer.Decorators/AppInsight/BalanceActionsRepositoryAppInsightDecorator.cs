@@ -85,8 +85,12 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
                 () => _impl.GetCollectionAsync(blockchainType, transactionIds));
         }
 
-        public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfAddressAsync(string blockchainType, Address address, int limit, bool orderAsc,
-            string startingAfter, string endingBefore)
+        public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfAddressAsync(string blockchainType, 
+            Address address,
+            int limit,
+            bool orderAsc,
+            TransactionId startingAfter,
+            TransactionId endingBefore)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{address}-{limit}-{orderAsc}-{startingAfter}-{endingBefore}";
@@ -96,8 +100,12 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
                 () => _impl.GetTransactionsOfAddressAsync(blockchainType, address, limit, orderAsc, startingAfter, endingBefore));
         }
 
-        public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfBlockAsync(string blockchainType, BlockId blockId, int limit, bool orderAsc, string startingAfter,
-            string endingBefore)
+        public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfBlockAsync(string blockchainType,
+            BlockId blockId, 
+            int limit, 
+            bool orderAsc, 
+            TransactionId startingAfter,
+            TransactionId endingBefore)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
             var operationId = $"{blockchainType}-{blockId}-{limit}-{orderAsc}-{startingAfter}-{endingBefore}";

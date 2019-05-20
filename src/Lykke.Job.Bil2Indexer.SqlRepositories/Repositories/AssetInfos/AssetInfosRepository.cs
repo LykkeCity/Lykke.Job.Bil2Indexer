@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
-using LinqKit;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos.Mappers;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -58,7 +55,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.AssetInfos
-                    .SingleOrDefaultAsync(BuildPredicate(asset));
+                    .SingleOrDefaultAsync(AssetInfosPredicates.Build(asset));
 
                 return entity?.ToDomain(blockchainType);
             }
@@ -69,7 +66,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.AssetInfos
-                    .SingleAsync(BuildPredicate(asset));
+                    .SingleAsync(AssetInfosPredicates.Build(asset));
 
                 return entity.ToDomain(blockchainType);
             }
@@ -77,7 +74,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
         public async Task<IReadOnlyCollection<AssetInfo>> GetSomeOfAsync(string blockchainType, IEnumerable<Asset> assets)
         {
-            var ids = assets.Select(AssetInfoMapper.BuildId).ToList();
+            var ids = assets.Select(AssetIdBuilder.BuildId).ToList();
 
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
@@ -110,12 +107,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
             }
         }
 
-        public async Task<IReadOnlyCollection<AssetInfo>> GetCollectionAsync(string blockchainType, int limit, bool orderAsc, string startingAfter = null, string endingBefore = null)
+        public async Task<IReadOnlyCollection<AssetInfo>> GetCollectionAsync(string blockchainType, int limit, bool orderAsc, Asset startingAfter = null, Asset endingBefore = null)
         {
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var query = db.AssetInfos
-                    .Where(BuildPredicate(startingAfter, endingBefore))
+                    .Where(AssetInfosPredicates.Build(startingAfter, endingBefore))
                     .Take(limit);
 
                 if (orderAsc)
@@ -126,36 +123,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
                 {
                     query = query.OrderByDescending(p => p.Id);
                 }
-
-                var entities = await query
-                    .ToListAsync();
-
-                return entities.Select(p => p.ToDomain(blockchainType)).ToList();
+                
+                return (await query.ToListAsync())
+                    .Select(p => p.ToDomain(blockchainType)).ToList();
             }
-        }
-
-        private Expression<Func<AssetInfoEntity, bool>> BuildPredicate(Asset asset)
-        {
-            var id = AssetInfoMapper.BuildId(asset);
-
-            return dbEntity => dbEntity.Id == id;
-        }
-
-        private Expression<Func<AssetInfoEntity, bool>> BuildPredicate(string startingAfter, string endingBefore)
-        {
-            var predicate = PredicateBuilder.New<AssetInfoEntity>(p => true);
-            if (!string.IsNullOrEmpty(startingAfter))
-            {
-                // ReSharper disable once StringCompareToIsCultureSpecific
-                predicate = predicate.And(p => p.Id.CompareTo(startingAfter) > 0);
-            }
-            if (!string.IsNullOrEmpty(endingBefore))
-            {
-                // ReSharper disable once StringCompareToIsCultureSpecific
-                predicate = predicate.And(p => p.Id.CompareTo(endingBefore) < 0);
-            }
-
-            return predicate;
         }
     }
 }

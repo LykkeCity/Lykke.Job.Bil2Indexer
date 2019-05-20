@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using Microsoft.EntityFrameworkCore.Internal;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess
 {

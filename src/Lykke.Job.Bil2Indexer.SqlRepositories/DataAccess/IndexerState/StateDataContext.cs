@@ -1,6 +1,4 @@
-﻿using System.Data.Common;
-using System.Diagnostics;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
+﻿using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 

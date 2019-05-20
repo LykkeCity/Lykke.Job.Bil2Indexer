@@ -4,6 +4,7 @@ using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads.Mappers;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +25,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
             {
                 var existed = await db.ChainHeads.SingleOrDefaultAsync(p => p.Id == blockchainType);
 
-                return existed != null ? Map(existed, blockchainType) : null;
+                return existed?.ToDomain(blockchainType);
             }
         }
 
@@ -39,13 +40,13 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
                     throw new InvalidOperationException($"ChainHead {blockchainType} is not found");
                 }
 
-                return Map(existed, blockchainType);
+                return existed?.ToDomain(blockchainType);
             }
         }
 
         public async Task SaveAsync(ChainHead head)
         {
-            var dbEntity = Map(head);
+            var dbEntity = head.ToDbEntity();
             var isExisted = head.Version != 0;
 
             using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(head.BlockchainType)))
@@ -78,34 +79,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
                 }
 
             }
-        }
-
-        private static ChainHead Map(ChainHeadEntity source, string blockchainType)
-        {
-            return new ChainHead
-            (
-                blockchainType,
-                source.FirstBlockNumber,
-                source.Version,
-                source.Sequence,
-                source.BlockNumber,
-                source.BlockId,
-                source.PreviousBlockId
-            );
-        }
-
-        private static ChainHeadEntity Map(ChainHead source)
-        {
-            return new ChainHeadEntity
-            {
-                Version = (uint) source.Version,
-                Sequence = source.Sequence,
-                Id = source.BlockchainType,
-                FirstBlockNumber = source.FirstBlockNumber,
-                BlockId = source.BlockId,
-                PreviousBlockId = source.PreviousBlockId,
-                BlockNumber = source.BlockNumber
-            };
         }
     }
 }

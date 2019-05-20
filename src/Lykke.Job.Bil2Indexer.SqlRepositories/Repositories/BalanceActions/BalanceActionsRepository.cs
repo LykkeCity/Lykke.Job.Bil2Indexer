@@ -235,8 +235,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             }
         }
 
-        public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfAddressAsync(string blockchainType, Address address, int limit, bool orderAsc,
-            string startingAfter, string endingBefore)
+        public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfAddressAsync(string blockchainType, 
+            Address address,
+            int limit,
+            bool orderAsc,
+            TransactionId startingAfter,
+            TransactionId endingBefore)
         {
             return GetTransactionIdsByPredicateAsync(blockchainType,
                 BalanceActionsPredicates.Build(address),
@@ -250,8 +254,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             BlockId blockId, 
             int limit,
             bool orderAsc,
-            string startingAfter,
-            string endingBefore)
+            TransactionId startingAfter,
+            TransactionId endingBefore)
         {
             return GetTransactionIdsByPredicateAsync(blockchainType, 
                 BalanceActionsPredicates.Build(blockId), 
@@ -265,8 +269,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             Expression<Func<BalanceActionEntity, bool>> predicate,
             int limit,
             bool orderAsc,
-            string startingAfter,
-            string endingBefore)
+            TransactionId startingAfter,
+            TransactionId endingBefore)
         {
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
@@ -276,7 +280,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
                 query = orderAsc ? query.OrderBy(p => p.TransactionId) : query.OrderByDescending(p => p.TransactionId);
 
-                return (await query.Select(p => p.TransactionId).Distinct().ToListAsync())
+                return (await query.Select(p => p.TransactionId)
+                        .Distinct()
+                        .ToListAsync())
                     .Select(p=> new TransactionId(p)).ToList();
             }
         }

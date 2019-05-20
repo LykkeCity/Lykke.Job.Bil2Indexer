@@ -42,7 +42,6 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             {
                 coins.Add(GenerateRandom(bType));
                 count++;
-
             } while (count <= max);
 
             await repo.AddIfNotExistsAsync(coins);
@@ -119,19 +118,20 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
             var bType = Guid.NewGuid().ToString();
 
+            var addr = Guid.NewGuid().ToString();
             var coins = new[]
             {
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
+                GenerateRandom(bType, addr),
+                GenerateRandom(bType, addr),
+                GenerateRandom(bType, addr),
+                GenerateRandom(bType, addr),
+                GenerateRandom(bType, addr),
 
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType)
+                GenerateRandom(bType, addr),
+                GenerateRandom(bType, addr),
+                GenerateRandom(bType, addr),
+                GenerateRandom(bType, addr),
+                GenerateRandom(bType, addr)
             };
 
             var ids = coins.Select(p => p.Id).ToList();
@@ -144,6 +144,12 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.AreEqual(coins.Length, retrieved.Count);
             Assert.True(retrieved.All(p => !p.IsSpent));
 
+
+            var retrieved1 = await repo.GetUnspentAsync(bType, new Address(addr), 999, true, null, null);
+
+
+            Assert.AreEqual(coins.Length, retrieved1.Count);
+
             var idsToSpend = coins.Take(4).Select(p => p.Id).ToList();
 
             await repo.SpendAsync(bType, idsToSpend);
@@ -155,11 +161,18 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.True(retrieved2.Where(p=>idsToSpend.Contains(p.Id)).All(p => p.IsSpent));
             Assert.True(retrieved2.Where(p => !idsToSpend.Contains(p.Id)).All(p => !p.IsSpent));
 
+            var retrieved3= await repo.GetUnspentAsync(bType, new Address(addr), 999, true, null, null);
+
+            Assert.AreEqual(coins.Length - idsToSpend.Count, retrieved3.Count);
 
             await repo.RemoveIfExistAsync(bType, coins.Select(p => new TransactionId(p.Id.TransactionId)).ToHashSet());
 
             Assert.ThrowsAsync<ArgumentException>(() =>
                 repo.SpendAsync(bType, coins.Skip(4).Take(3).Select(p => p.Id).ToList()));
+
+            var retrieved4 = await repo.GetUnspentAsync(bType, new Address(addr), 999, true, null, null);
+
+            Assert.AreEqual(0, retrieved4.Count);
         }
 
         private void AssertEquals(Coin a, Coin b)
@@ -169,7 +182,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.AreEqual(a.ToJson(), b.ToJson());
         }
 
-        private Coin GenerateRandom(string blockchainType)
+        private Coin GenerateRandom(string blockchainType, string address = null)
         {
             var rdm = new Random();
 
@@ -179,8 +192,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 new CoinId(Guid.NewGuid().ToString(), rdm.Next()),
                 new Asset(Guid.NewGuid().ToString("N"), Guid.NewGuid().ToString()),
                 new UMoney(new BigInteger(long.MaxValue - rdm.Next()), 0),
-                Guid.NewGuid().ToString(),
-                Guid.NewGuid().ToString(),
+                new Address(address ?? Guid.NewGuid().ToString()), 
+                new AddressTag(Guid.NewGuid().ToString()), 
                 AddressTagType.Number,
                 null,
                 false,

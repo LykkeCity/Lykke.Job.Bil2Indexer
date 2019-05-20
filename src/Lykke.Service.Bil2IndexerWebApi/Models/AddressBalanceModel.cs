@@ -1,4 +1,6 @@
-﻿namespace Lykke.Service.Bil2IndexerWebApi.Models
+﻿using System.Collections.Generic;
+
+namespace Lykke.Service.Bil2IndexerWebApi.Models
 {
     public class AddressBalanceModel
     {
@@ -6,6 +8,10 @@
         public AssetIdModel AssetId { get; set; }
         public string Amount { get; set; }
 
-        //TODO add block num/id irreversible factor
+        // by pass
+        public string BlockId { get; set; }
+
+        // by pass
+        public long? BlockNumber { get; set; }
     }
 }

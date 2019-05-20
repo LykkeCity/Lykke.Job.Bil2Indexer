@@ -159,5 +159,35 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                     .DeleteAsync();
             }
         }
+
+        public async Task<IReadOnlyCollection<Coin>> GetUnspentAsync(string blockchainType,
+            Address address, 
+            int limit, 
+            bool orderAsc,
+            CoinId startingAfter,
+            CoinId endingBefore)
+        {
+            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            {
+                var stringAddress = address.ToString();
+
+                var query = db.Coins
+                    .Where(CoinPredicates.Build(p => !p.IsSpent && p.Address == stringAddress, 
+                        startingAfter, endingBefore))
+                    .Take(limit);
+
+
+                if (orderAsc)
+                {
+                    query = query.OrderBy(p => p.CoinId);
+                }
+                else
+                {
+                    query = query.OrderByDescending(p => p.CoinId);
+                }
+                return (await query.ToListAsync())
+                    .Select(p => p.ToDomain(blockchainType)).ToList();
+            }
+        }
     }
 }
