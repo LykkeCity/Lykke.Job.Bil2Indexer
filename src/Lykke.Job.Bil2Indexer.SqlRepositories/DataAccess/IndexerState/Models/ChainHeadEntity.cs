@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Lykke.Job.Bil2Indexer.Domain;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
 {
@@ -22,6 +23,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
 
         [Column("sequence")]
         public long Sequence { get; set; }
+
+        [Column("crawler_sequence")]
+        public long CrawlerSequence { get; set; }
+
+        [Column("mode")]
+        public ChainHeadMode Mode { get; set; }
 
         public uint Version { get; set; }
     }

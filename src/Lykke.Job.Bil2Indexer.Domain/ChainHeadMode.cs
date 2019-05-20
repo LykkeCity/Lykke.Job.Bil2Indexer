@@ -2,7 +2,7 @@
 {
     public enum ChainHeadMode
     {
-        Independent,
-        FollowCrawler
+        CatchesCrawlerUp = 0,
+        FollowsCrawler = 1
     }
 }

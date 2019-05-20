@@ -96,7 +96,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             if (messageCorrelationId.IsPreviousOf(chainHeadCorrelationId))
             {
-                _log.Info("Chain head reduced", chainHead);
+                _log.Info("Chain head reduced", new
+                {
+                    Headers = headers,
+                    Message = command,
+                    ChainHead = chainHead
+                });
 
                 replyPublisher.Publish(new ChainHeadReducedEvent
                 {

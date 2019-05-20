@@ -14,6 +14,7 @@ using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Infrastructure;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.Infrastructure;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Numerics;
@@ -29,6 +30,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private readonly IBalanceActionsRepository _balanceActionsRepository;
         private readonly ICoinsRepository _coinsRepository;
         private readonly IReadOnlyDictionary<string, long> _blockNumbersToStartTransactionEventsPublication;
+        private readonly ICrawlersManager _crawlersManager;
         private readonly ILog _log;
 
         public ExtendChainHeadCommandsHandler(
@@ -38,7 +40,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             IFeeEnvelopesRepository feeEnvelopesRepository,
             IBalanceActionsRepository balanceActionsRepository,
             ICoinsRepository coinsRepository,
-            IReadOnlyDictionary<string, long> blockNumbersToStartTransactionEventsPublication)
+            IReadOnlyDictionary<string, long> blockNumbersToStartTransactionEventsPublication,
+            ICrawlersManager crawlersManager)
         {
             _chainHeadsRepository = chainHeadsRepository;
             _transactionsRepository = transactionsRepository;
@@ -46,13 +49,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             _balanceActionsRepository = balanceActionsRepository;
             _coinsRepository = coinsRepository;
             _blockNumbersToStartTransactionEventsPublication = blockNumbersToStartTransactionEventsPublication;
+            _crawlersManager = crawlersManager;
+
             _log = logFactory.CreateLog(this);
         }
 
         public async Task<MessageHandlingResult> HandleAsync(ExtendChainHeadCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
-            var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
+            var (chainHead, infiniteCrawler) = await TaskExecution.WhenAll
+            (
+                _chainHeadsRepository.GetAsync(command.BlockchainType),
+                _crawlersManager.GetInfiniteCrawlerAsync(command.BlockchainType)
+            );
             var chainHeadCorrelationId = chainHead.GetCorrelationId();
 
             if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId) &&
@@ -76,7 +85,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             if (messageCorrelationId.IsTheSameAs(chainHeadCorrelationId))
             {
-                chainHead.ExtendTo(command.ToBlockNumber, command.ToBlockId);
+                chainHead.ExtendTo(command.ToBlockNumber, command.ToBlockId, infiniteCrawler);
 
                 // TODO: Update balance snapshots
 
@@ -87,7 +96,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             if (messageCorrelationId.IsPreviousOf(chainHeadCorrelationId))
             {
-                _log.Info("Chain head extended", chainHead);
+                _log.Info("Chain head extended", new
+                {
+                    Headers = headers,
+                    Message = command,
+                    ChainHead = chainHead
+                });
 
                 var eventsPublisher = replyPublisher.ChangeCorrelationId(chainHeadCorrelationId.ToString());
 
@@ -185,7 +199,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             await transactions.ForEachAsync
             (
-                4,
+                8,
                 transaction => PublishTransferAmountTransactionAsync
                 (
                     blockchainType,
@@ -298,7 +312,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             await transactions.ForEachAsync
             (
-                4,
+                8,
                 transaction => PublishTransferCoinsTransactionAsync
                 (
                     blockchainType,
@@ -430,7 +444,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         {
             return transactions.ForEachAsync
             (
-                4,
+                8,
                 async transaction =>
                 {
                     var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);

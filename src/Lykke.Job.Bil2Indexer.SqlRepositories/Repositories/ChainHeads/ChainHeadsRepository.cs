@@ -88,9 +88,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
                 source.FirstBlockNumber,
                 source.Version,
                 source.Sequence,
+                source.CrawlerSequence,
                 source.BlockNumber,
                 source.BlockId,
-                source.PreviousBlockId
+                source.PreviousBlockId,
+                source.Mode
             );
         }
 
@@ -100,11 +102,13 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
             {
                 Version = (uint) source.Version,
                 Sequence = source.Sequence,
+                CrawlerSequence = source.CrawlerSequence,
                 Id = source.BlockchainType,
                 FirstBlockNumber = source.FirstBlockNumber,
                 BlockId = source.BlockId,
                 PreviousBlockId = source.PreviousBlockId,
-                BlockNumber = source.BlockNumber
+                BlockNumber = source.BlockNumber,
+                Mode = source.Mode
             };
         }
     }

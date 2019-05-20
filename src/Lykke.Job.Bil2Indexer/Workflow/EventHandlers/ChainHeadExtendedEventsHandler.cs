@@ -53,6 +53,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return MessageHandlingResult.TransientFailure();
             }
 
+            if (!chainHead.IsCatchCrawlerUp)
+            {
+                return MessageHandlingResult.Success();
+            }
+
             var settings = _settingsProvider.Get(evt.BlockchainType);
             var nextBlockNumber = evt.BlockNumber + 1;
             var nextBlock = await _blockHeadersRepository.GetOrDefaultAsync(evt.BlockchainType, nextBlockNumber);
@@ -87,9 +92,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     {
                         BlockchainType = evt.BlockchainType,
                         BlockId = nextBlock.Id,
-                        HaveToExecuteEntireBlock = true
+                        HaveToExecuteEntireBlock = true,
+                        TriggeredBy = BlockExecutionTrigger.ChainHead
                     });
-                } 
+                }
                 else if (nextBlock.IsExecuted)
                 {
                     // If the next block is executed already, we can just extend the chain head to it.

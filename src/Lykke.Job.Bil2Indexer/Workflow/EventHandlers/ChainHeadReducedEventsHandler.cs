@@ -6,6 +6,7 @@ using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.Infrastructure;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 
@@ -14,13 +15,16 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
     public class ChainHeadReducedEventsHandler : IMessageHandler<ChainHeadReducedEvent>
     {
         private readonly IChainHeadsRepository _chainHeadsRepository;
+        private readonly ICrawlersManager _crawlersManager;
         private readonly ILog _log;
 
         public ChainHeadReducedEventsHandler(
             ILogFactory logFactory,
-            IChainHeadsRepository chainHeadsRepository)
+            IChainHeadsRepository chainHeadsRepository,
+            ICrawlersManager crawlersManager)
         {
             _chainHeadsRepository = chainHeadsRepository;
+            _crawlersManager = crawlersManager;
             _log = logFactory.CreateLog(this);
         }
 
@@ -44,12 +48,24 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return MessageHandlingResult.TransientFailure();
             }
 
-            replyPublisher.Publish(new MoveCrawlerCommand
-            {
-                BlockchainType = evt.BlockchainType,
-                NextBlockNumber = evt.OutdatedBlockNumber
-                // TODO: Pass crawler correlation ID
-            });
+            var crawlerConfiguration = _crawlersManager.GetInfiniteCrawlerConfiguration(evt.BlockchainType);
+            var crawlerCorrelationId = new CrawlerCorrelationId
+            (
+                evt.BlockchainType,
+                crawlerConfiguration,
+                chainHead.CrawlerSequence
+            );
+
+            replyPublisher.Publish
+            (
+                new MoveCrawlerCommand
+                {
+                    BlockchainType = evt.BlockchainType,
+                    NextBlockNumber = evt.OutdatedBlockNumber
+
+                },
+                crawlerCorrelationId.ToString()
+            );
 
             return MessageHandlingResult.Success();
         }

@@ -147,11 +147,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task RemoveIfExistAsync(string blockchainType, BlockId blockId)
         {
-            if (!blockId.Any())
-            {
-                return;
-            }
-
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 await db.Coins

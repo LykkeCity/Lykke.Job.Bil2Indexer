@@ -80,7 +80,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
             }
         }
 
-        private Expression<Func<CrawlerEntity, bool>> BuildIdPredicate(long startBlock, long? stopAssemblingBlock)
+        private static Expression<Func<CrawlerEntity, bool>> BuildIdPredicate(long startBlock, long? stopAssemblingBlock)
         {
             var mappedStop = stopAssemblingBlock ?? StopAssemblingNullSqlMagicValue;
 

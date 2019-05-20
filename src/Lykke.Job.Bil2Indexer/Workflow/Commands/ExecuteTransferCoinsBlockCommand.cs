@@ -14,9 +14,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.Commands
         [DataMember(Order = 2)]
         public bool HaveToExecuteEntireBlock { get; set; }
 
+        [DataMember(Order = 3)]
+        public BlockExecutionTrigger TriggeredBy { get; set; }
+
         public override string ToString()
         {
-            return $"{BlockchainType}:{BlockId}";
+            return $"{BlockchainType}:{BlockId}:{TriggeredBy}";
         }
     }
 }

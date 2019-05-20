@@ -42,12 +42,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
         public async Task<MessageHandlingResult> HandleAsync(ExecuteTransferCoinsBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
-            // This message can be processed in both ChainHead and Crawler flows, but
-            // only within ChainHead flow it executes consistently with the ChainHead.
-            if (CorrelationIdType.Parse(headers.CorrelationId) == ChainHeadCorrelationId.Type)
+            var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
+            
+            if (command.TriggeredBy == BlockExecutionTrigger.Crawler && messageCorrelationId.Mode == ChainHeadMode.FollowsCrawler ||
+                command.TriggeredBy == BlockExecutionTrigger.ChainHead && messageCorrelationId.Mode == ChainHeadMode.CatchesCrawlerUp)
             {
-                var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
-                var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
+                var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);    
                 var chainHeadCorrelationId = chainHead.GetCorrelationId();
 
                 if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId))
@@ -99,7 +99,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 {
                     BlockchainType = command.BlockchainType,
                     BlockId = command.BlockId,
-                    BlockNumber = block.Number
+                    BlockNumber = block.Number,
+                    TriggeredBy = command.TriggeredBy
                 });
             }
             else if(!block.IsPartiallyExecuted)

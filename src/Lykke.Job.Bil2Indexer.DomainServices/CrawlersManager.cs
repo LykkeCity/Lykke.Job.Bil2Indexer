@@ -84,5 +84,18 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
 
             return crawler;
         }
+
+        public Task<Crawler> GetInfiniteCrawlerAsync(string blockchainType)
+        {
+            var configuration = GetInfiniteCrawlerConfiguration(blockchainType);
+            return GetCrawlerAsync(blockchainType, configuration);
+        }
+
+        public CrawlerConfiguration GetInfiniteCrawlerConfiguration(string blockchainType)
+        {
+            var crawlerConfigurations = _crawlerConfigurations[blockchainType];
+
+            return crawlerConfigurations.Single(x => x.StopAssemblingBlock.HasValue);
+        }
     }
 }

@@ -99,7 +99,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.AreEqual(source.BlockId, expected.BlockId);
         }
 
-        private ChainHead BuildRandom()
+        private static ChainHead BuildRandom()
         {
             var rnd = new Random();
 
@@ -109,9 +109,11 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 rnd.Next(),
                 0,
                 0,
+                0,
                 rnd.Next(),
                 Guid.NewGuid().ToString(),
-                Guid.NewGuid().ToString()
+                Guid.NewGuid().ToString(),
+                ChainHeadMode.CatchesCrawlerUp
             );
         }
     }

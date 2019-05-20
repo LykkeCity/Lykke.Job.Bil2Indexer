@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using Lykke.Job.Bil2Indexer.Workflow.Commands;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.Events
 {
@@ -14,9 +15,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.Events
         [DataMember(Order = 2)]
         public long BlockNumber { get; set; }
 
+        [DataMember(Order = 3)]
+        public BlockExecutionTrigger TriggeredBy { get; set; }
+
         public override string ToString()
         {
-            return $"{BlockchainType}:{BlockId}:({BlockNumber}";
+            return $"{BlockchainType}:{BlockId}:({BlockNumber}:{TriggeredBy}";
         }
     }
 }

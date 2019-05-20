@@ -70,5 +70,10 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
             return $"{BlockchainType}:{configuration}({Sequence}):{ExpectedBlockNumber}";
         }
+
+        public bool IsOnBlock(long blockNumber)
+        {
+            return ExpectedBlockNumber - 1 == blockNumber;
+        }
     }
 }

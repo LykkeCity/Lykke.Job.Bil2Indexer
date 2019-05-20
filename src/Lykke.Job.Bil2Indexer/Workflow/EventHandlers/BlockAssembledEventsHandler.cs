@@ -69,11 +69,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             switch (crawlingDirection)
             {
                 case CrawlingDirection.Forward:
-                    await MoveForwardAsync(evt, replyPublisher, crawler, newBlock);
+                    await MoveForwardAsync(evt, replyPublisher, crawler, crawlerCorrelationId, newBlock);
                     break;
 
                 case CrawlingDirection.Backward:
-                    await MoveBackwardAsync(evt, replyPublisher, newBlock, previousBlock);
+                    await MoveBackwardAsync(evt, replyPublisher, crawlerCorrelationId, newBlock, previousBlock, headers);
                     break;
 
                 default:
@@ -87,18 +87,16 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             BlockAssembledEvent evt, 
             IMessagePublisher replyPublisher, 
             Crawler crawler,
+            CrawlerCorrelationId crawlerCorrelationId,
             BlockHeader newBlock)
         {
             var settings = _settingsProvider.Get(evt.BlockchainType);
             var nextBlockNumber = crawler.EvaluateNextBlockToMoveForward(newBlock);
+            var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
 
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
-                var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
-
-                // TODO: Это условие должно проверяться только, когда чейн хед работает в первом режиме.
-                // Во втором режиме обработчик команд должен сам выстраивать команды в нужном порядке.
-                if (chainHead.CanExtendTo(newBlock.Number))
+                if (chainHead.IsFollowCrawler)
                 {
                     replyPublisher.Publish
                     (
@@ -108,29 +106,22 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                             ToBlockNumber = newBlock.Number,
                             ToBlockId = newBlock.Id,
                         },
-                        // TODO: У чейн хеда должно быть два режима работы
-                        // 1. когда он может уходить в свой цикл
-                        // 2. когда он идет следом за последним краулером
-                        // В режиме 1 чейн хед использует свой коррелейшн ИД
-                        // В режиме 2 чейн хед использует коррелейшн ИД последнейго краулера
-                        // В режиме 2 сообещения из режима 1 - устаревшие
-                        // В режиме 1 сообщения из режима 2 - преждевременные
-                        chainHead.GetCorrelationId().ToString()
+                        chainHead.GetCorrelationId(crawlerCorrelationId).ToString()
                     );
                 }
             }
             else if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
             {
-                var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
-
                 replyPublisher.Publish
                 (
                     new ExecuteTransferCoinsBlockCommand
                     {
                         BlockchainType = evt.BlockchainType,
                         BlockId = newBlock.Id,
-                        HaveToExecuteEntireBlock = chainHead.IsOnBlock(newBlock.Number - 1)
-                    }
+                        HaveToExecuteEntireBlock = chainHead.IsFollowCrawler,
+                        TriggeredBy = BlockExecutionTrigger.Crawler
+                    },
+                    chainHead.GetCorrelationId(crawlerCorrelationId).ToString()
                 );
             }
             else
@@ -147,42 +138,48 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             return MessageHandlingResult.Success();
         }
 
-        private async Task<MessageHandlingResult> MoveBackwardAsync(
-            BlockAssembledEvent evt, 
-            IMessagePublisher replyPublisher, 
+        private async Task<MessageHandlingResult> MoveBackwardAsync(BlockAssembledEvent evt,
+            IMessagePublisher replyPublisher,
+            CrawlerCorrelationId crawlerCorrelationId,
             BlockHeader newBlock,
-            BlockHeader previousBlock)
+            BlockHeader previousBlock, 
+            MessageHeaders headers)
         {
             var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
             var nextChainHeadBlockNumber = previousBlock.Number - 1;
 
-            // TODO: Выстраивать команды в правильном порядке должен обработчик команд
-            if (!chainHead.CanReduceTo(nextChainHeadBlockNumber))
+            if (chainHead.IsCatchCrawlerUp)
             {
+                // Chain head reduction is only possible if chain head follows the crawler
+                _log.Info("Backward movement is only possible if chain head follows the crawler", new
+                {
+                    Headers = headers,
+                    Message = evt,
+                    ChainHead = chainHead
+                });
+
                 return MessageHandlingResult.TransientFailure();
             }
 
+            if (!chainHead.IsFollowCrawler)
+            {
+                throw new InvalidOperationException("Chain head reduction requires that chain head follows the crawler");
+            }
+
             replyPublisher.Publish
-            (
-                new ReduceChainHeadCommand
-                {
-                    BlockchainType = evt.BlockchainType,
-                    ToBlockNumber = nextChainHeadBlockNumber,
-                    OutdatedBlockId = previousBlock.Id,
-                    // it's possible that previous block can't be processed by the crawler (because of crawler range bounds),
-                    // but we ignores this case since this is very unlikely that chain fork can intersect ranges of different crawlers.
-                    OutdatedBlockNumber = previousBlock.Number,
-                    TriggeredByBlockId = newBlock.Id
-                },
-                // TODO: У чейн хеда должно быть два режима работы
-                // 1. когда он может уходить в свой цикл
-                // 2. когда он идет следом за последним краулером
-                // В режиме 1 чейн хед использует свой коррелейшн ИД
-                // В режиме 2 чейн хед использует коррелейшн ИД последнейго краулера
-                // В режиме 2 сообещения из режима 1 - устаревшие
-                // В режиме 1 сообщения из режима 2 - преждевременные
-                chainHead.GetCorrelationId().ToString()
-            );
+                (
+                    new ReduceChainHeadCommand
+                    {
+                        BlockchainType = evt.BlockchainType,
+                        ToBlockNumber = nextChainHeadBlockNumber,
+                        OutdatedBlockId = previousBlock.Id,
+                        // it's possible that previous block can't be processed by the crawler (because of crawler range bounds),
+                        // but we ignores this case since this is very unlikely that chain fork can intersect ranges of different crawlers.
+                        OutdatedBlockNumber = previousBlock.Number,
+                        TriggeredByBlockId = newBlock.Id
+                    },
+                    chainHead.GetCorrelationId(crawlerCorrelationId).ToString()
+                );
 
             return MessageHandlingResult.Success();
         }
