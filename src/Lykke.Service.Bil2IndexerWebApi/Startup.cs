@@ -31,7 +31,7 @@ namespace Lykke.Service.Bil2IndexerWebApi
                 options.Logs = logs =>
                 {
                     logs.AzureTableName = "Bil2IndexerWebApiLog";
-                    logs.AzureTableConnectionStringResolver = settings => settings.Bil2IndexerService.Db.LogsConnString;
+                    logs.AzureTableConnectionStringResolver = settings => settings.Bil2WebApiService.Db.LogsConnString;
 
                     logs.Extended = extendedLogs =>
                     {
@@ -66,7 +66,7 @@ namespace Lykke.Service.Bil2IndexerWebApi
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+
 
             app.UseLykkeConfiguration(options =>
             {
