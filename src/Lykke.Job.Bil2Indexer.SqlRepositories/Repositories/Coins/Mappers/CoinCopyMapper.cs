@@ -21,6 +21,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
                 .MapNullable("address_tag_type", p => (int?) p.AddressTagType, NpgsqlDbType.Smallint)
                 .Map("address_nonce", p => p.AddressNonce, NpgsqlDbType.Numeric)
                 .Map("is_spent", p => p.IsSpent, NpgsqlDbType.Boolean)
+                .Map("block_id", p => p.BlockId, NpgsqlDbType.Varchar)
+                .Map("block_number", p => p.BlockNumber, NpgsqlDbType.Bigint)
                 .Map("coin_id", p => p.CoinId, NpgsqlDbType.Varchar);
         }
     }

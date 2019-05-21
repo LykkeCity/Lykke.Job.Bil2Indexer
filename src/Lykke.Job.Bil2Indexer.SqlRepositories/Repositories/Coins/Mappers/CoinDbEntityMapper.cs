@@ -23,8 +23,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
                 AssetId = source.Asset.Id,
                 ValueScale = source.Value.Scale,
                 ValueString = MoneyHelper.BuildPgString(source.Value),
-                CoinId = source.Id.BuildCoinId()
-                // TODO: Block ID, Block number
+                CoinId = source.Id.BuildCoinId(),
+                BlockId = source.BlockId,
+                BlockNumber = source.BlockNumber
             };
         }
 
@@ -41,9 +42,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins.Mappers
                 addressTag: source.AddressTag,
                 addressTagType: ToDomain(source.AddressTagType),
                 isSpent: source.IsSpent,
-                // TODO: Use real values:
-                blockId: "123",
-                blockNumber: 0
+                blockId: source.BlockId,
+                blockNumber: source.BlockNumber
             );
         }
 
