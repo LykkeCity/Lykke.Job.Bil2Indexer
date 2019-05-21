@@ -13,7 +13,7 @@ create table block_headers
 );
 
 create unique index block_headers_number_uindex
-    on block_headers (number)   tablespace fast_space;
+    on block_headers (mined_at)   tablespace fast_space;
 
     
 create index block_headers_mined_at_index
