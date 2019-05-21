@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,12 +11,14 @@ using Lykke.Common.Log;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
-using Lykke.Job.Bil2Indexer.Domain.Infrastructure;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.Infrastructure;
+using Lykke.Job.Bil2Indexer.Services;
+using Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations;
 using Lykke.Job.Bil2Indexer.Workflow.Commands;
 using Lykke.Numerics;
 using Lykke.Numerics.Linq;
+using FailedTransaction = Lykke.Job.Bil2Indexer.Contract.Events.FailedTransaction;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 {
@@ -29,6 +30,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private readonly IBalanceActionsRepository _balanceActionsRepository;
         private readonly ICoinsRepository _coinsRepository;
         private readonly IReadOnlyDictionary<string, long> _blockNumbersToStartTransactionEventsPublication;
+        private readonly IntegrationSettingsProvider _integrationSettingsProvider;
         private readonly ILog _log;
 
         public ExtendChainHeadCommandsHandler(
@@ -38,7 +40,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             IFeeEnvelopesRepository feeEnvelopesRepository,
             IBalanceActionsRepository balanceActionsRepository,
             ICoinsRepository coinsRepository,
-            IReadOnlyDictionary<string, long> blockNumbersToStartTransactionEventsPublication)
+            IReadOnlyDictionary<string, long> blockNumbersToStartTransactionEventsPublication,
+            IntegrationSettingsProvider integrationSettingsProvider)
         {
             _chainHeadsRepository = chainHeadsRepository;
             _transactionsRepository = transactionsRepository;
@@ -46,6 +49,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             _balanceActionsRepository = balanceActionsRepository;
             _coinsRepository = coinsRepository;
             _blockNumbersToStartTransactionEventsPublication = blockNumbersToStartTransactionEventsPublication;
+            _integrationSettingsProvider = integrationSettingsProvider;
             _log = logFactory.CreateLog(this);
         }
 
@@ -121,6 +125,9 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             IMessagePublisher publisher)
         {
             PaginatedItems<Transaction> transactions = null;
+            const int batchSize = 500;
+            var transactionsBatch = new List<Transaction>(batchSize);
+            var publishBatchTasks = new List<Task>();
 
             do
             {
@@ -128,81 +135,219 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 (
                     blockchainType,
                     blockId,
-                    500,
+                    1000,
                     transactions?.Continuation
                 );
 
-                var transferAmountTransactions = new ConcurrentBag<TransferAmountExecutedTransaction>();
-                var transferCoinsTransactions = new ConcurrentBag<TransferCoinsExecutedTransaction>();
-                var failedTransactions = new ConcurrentBag<FailedTransaction>();
+                foreach (var transaction in transactions.Items)
+                {
+                    transactionsBatch.Add(transaction);
 
-                await transactions.Items.ForEachAsync(
-                    8,
-                    transaction =>
+                    if (transactionsBatch.Count >= batchSize)
                     {
-                        if (transaction.IsTransferAmount)
-                        {
-                            transferAmountTransactions.Add(transaction.AsTransferAmount());
-                        } 
-                        else if (transaction.IsTransferCoins)
-                        {
-                            transferCoinsTransactions.Add(transaction.AsTransferCoins());
-                        }
-                        else if (transaction.IsFailed)
-                        {
-                            failedTransactions.Add(transaction.AsFailed());
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException("Unknown transaction type");
-                        }
+                        // TODO: Add max parallelism constraint
 
-                        return Task.CompletedTask;
-                    });
+                        var task = PublishTransactionsBatchAsync
+                        (
+                            blockchainType,
+                            blockId,
+                            blockNumber,
+                            transactionsBatch,
+                            publisher
+                        );
 
-                await Task.WhenAll
-                (
-                    PublishTransferAmountTransactionsAsync(blockchainType, blockId, blockNumber, transferAmountTransactions, publisher),
-                    PublishTransferCoinsTransactionsAsync(blockchainType, blockId, blockNumber, transferCoinsTransactions, publisher),
-                    PublishFailedTransactionsAsync(blockchainType, blockId, blockNumber, failedTransactions, publisher)
-                );
+                        publishBatchTasks.Add(task);
+
+                        transactionsBatch = new List<Transaction>(batchSize);
+                    }
+                }
 
             } while (transactions.Continuation != null);
-        }
 
-        private async Task PublishTransferAmountTransactionsAsync(
-            string blockchainType,
-            string blockId,
-            long blockNumber,
-            IReadOnlyCollection<TransferAmountExecutedTransaction> transactions,
-            IMessagePublisher publisher)
-        {
-            var transactionsAccountBalances = await _balanceActionsRepository.GetSomeOfBalancesAsync
-            (
-                blockchainType,
-                transactions.Select(x => x.TransactionId).ToHashSet()
-            );
-
-            await transactions.ForEachAsync
-            (
-                4,
-                transaction => PublishTransferAmountTransactionAsync
+            if (transactionsBatch.Any())
+            {
+                var task = PublishTransactionsBatchAsync
                 (
                     blockchainType,
                     blockId,
                     blockNumber,
-                    publisher,
-                    transactionsAccountBalances,
-                    transaction
-                )
-            );
+                    transactionsBatch,
+                    publisher
+                );
+                publishBatchTasks.Add(task);
+            }
+
+            await Task.WhenAll(publishBatchTasks);
         }
 
-        private async Task PublishTransferAmountTransactionAsync(
+        private Task PublishTransactionsBatchAsync(
             string blockchainType, 
-            string blockId, 
+            BlockId blockId, 
+            long blockNumber, 
+            IReadOnlyCollection<Transaction> transactionsBatch,
+            IMessagePublisher publisher)
+        {
+            var integrationSettings = _integrationSettingsProvider.Get(blockchainType);
+
+            switch (integrationSettings.Capabilities.TransferModel)
+            {
+                case BlockchainTransferModel.Amount:
+                    return PublishTransferAmountTransactionsBatchAsync(blockchainType, blockId, blockNumber, transactionsBatch, publisher);
+                case BlockchainTransferModel.Coins:
+                    return PublishTransferCoinsTransactionsBatchAsync(blockchainType, blockId, blockNumber, transactionsBatch, publisher);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(integrationSettings.Capabilities.TransferModel), integrationSettings.Capabilities.TransferModel, "Unknown transfer model");
+            }
+        }
+
+        private async Task PublishTransferAmountTransactionsBatchAsync(
+            string blockchainType,
+            string blockId,
             long blockNumber,
-            IMessagePublisher publisher, 
+            IReadOnlyCollection<Transaction> transactions,
+            IMessagePublisher publisher)
+        {
+            var executedTransactions = new List<TransferAmountExecutedTransaction>(transactions.Count);
+            var failedTransactions = new List<Bil2.Contract.BlocksReader.Events.FailedTransaction>(transactions.Count);
+
+            foreach (var transaction in transactions)
+            {
+                if (transaction.IsTransferAmount)
+                {
+                    executedTransactions.Add(transaction.AsTransferAmount());
+                }
+                else if (transaction.IsFailed)
+                {
+                    failedTransactions.Add(transaction.AsFailed());
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unexpected transaction type: {transaction.Type}");
+                }
+            }
+
+            var transactionsAccountBalances = await _balanceActionsRepository.GetSomeOfBalancesAsync
+            (
+                blockchainType,
+                executedTransactions.Select(x => x.TransactionId).ToHashSet()
+            );
+
+            var executedContractTransactions = executedTransactions
+                .Select
+                (
+                    transaction => GetExecutedTransferAmountTransactionAsync
+                    (
+                        blockchainType,
+                        transactionsAccountBalances,
+                        transaction
+                    ).ConfigureAwait(false).GetAwaiter().GetResult()
+                )
+                .ToArray();
+
+            var failedContractTransactions = failedTransactions
+                .Select
+                (
+                    transaction => GetFailedTransactionAsync(blockchainType, transaction).ConfigureAwait(false).GetAwaiter().GetResult()
+                )
+                .ToArray();
+
+            var evt = new TransactionsBatchEvent
+            (
+                blockchainType,
+                blockId,
+                blockNumber,
+                executedContractTransactions,
+                failedContractTransactions,
+                // TODO: Pass block irreversibility flag
+                false
+            );
+
+            publisher.Publish(evt);
+        }
+
+        private async Task PublishTransferCoinsTransactionsBatchAsync(string blockchainType,
+            string blockId,
+            long blockNumber,
+            IReadOnlyCollection<Transaction> transactions,
+            IMessagePublisher publisher)
+        {
+            var executedTransactions = new List<TransferCoinsExecutedTransaction>(transactions.Count);
+            var failedTransactions = new List<Bil2.Contract.BlocksReader.Events.FailedTransaction>(transactions.Count);
+
+            foreach (var transaction in transactions)
+            {
+                if (transaction.IsTransferAmount)
+                {
+                    executedTransactions.Add(transaction.AsTransferCoins());
+                }
+                else if (transaction.IsFailed)
+                {
+                    failedTransactions.Add(transaction.AsFailed());
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unexpected transaction type: {transaction.Type}");
+                }
+            }
+
+            var (transactionsAccountBalances, coinsSpentByTransactions) = await TaskExecution.WhenAll
+            (
+                _balanceActionsRepository.GetSomeOfBalancesAsync
+                (
+                    blockchainType,
+                    executedTransactions.Select(x => x.TransactionId).ToHashSet()
+                ),
+                _coinsRepository.GetSomeOfAsync
+                (
+                    blockchainType,
+                    executedTransactions.SelectMany(x => x.SpentCoins).ToArray()
+                )
+            );
+
+            var transactionsSpentCoins = coinsSpentByTransactions
+                .GroupBy(x => x.Id.TransactionId)
+                .ToDictionary
+                (
+                    g => g.Key,
+                    g => g.Select(x => x)
+                );
+
+            var executedContractTransactions = executedTransactions
+                .Select
+                (
+                    transaction => GetExecutedTransferCoinsTransactionAsync
+                    (
+                        blockchainType,
+                        transactionsAccountBalances,
+                        transaction,
+                        transactionsSpentCoins
+                    ).ConfigureAwait(false).GetAwaiter().GetResult()
+                )
+                .ToArray();
+
+            var failedContractTransactions = failedTransactions
+                .Select
+                (
+                    transaction => GetFailedTransactionAsync(blockchainType, transaction).ConfigureAwait(false).GetAwaiter().GetResult()
+                )
+                .ToArray();
+
+            var evt = new TransactionsBatchEvent
+            (
+                blockchainType,
+                blockId,
+                blockNumber,
+                executedContractTransactions,
+                failedContractTransactions,
+                // TODO: Pass block irreversibility flag
+                false
+            );
+
+            publisher.Publish(evt);
+        }
+
+        private async Task<ExecutedTransaction> GetExecutedTransferAmountTransactionAsync(
+            string blockchainType, 
             IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>> transactionsAccountBalances,
             TransferAmountExecutedTransaction transaction)
         {
@@ -254,75 +399,23 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             // TODO: Get batch of transactions
 
             var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
-            var evt = new TransactionExecutedEvent
+
+            return new ExecutedTransaction
             (
-                blockchainType,
-                blockId,
-                blockNumber,
                 transaction.TransactionNumber,
                 transaction.TransactionId,
                 balanceUpdates.ToArray(),
                 fees.Select(x => x.Fee).ToArray()
             );
-
-            publisher.Publish(evt);
         }
 
-        private async Task PublishTransferCoinsTransactionsAsync(string blockchainType,
-            string blockId,
-            long blockNumber,
-            IReadOnlyCollection<TransferCoinsExecutedTransaction> transactions,
-            IMessagePublisher publisher)
-        {
-            var (transactionsAccountBalances, coinsSpentByTransactions) = await TaskExecution.WhenAll
-            (
-                _balanceActionsRepository.GetSomeOfBalancesAsync
-                (
-                    blockchainType,
-                    transactions.Select(x => x.TransactionId).ToHashSet()
-                ),
-                _coinsRepository.GetSomeOfAsync
-                (
-                    blockchainType,
-                    transactions.SelectMany(x => x.SpentCoins).ToArray()
-                )
-            );
-
-            var transactionsSpentCoins = coinsSpentByTransactions
-                .GroupBy(x => x.Id.TransactionId)
-                .ToDictionary
-                (
-                    g => g.Key,
-                    g => g.Select(x => x)
-                );
-
-            await transactions.ForEachAsync
-            (
-                4,
-                transaction => PublishTransferCoinsTransactionAsync
-                (
-                    blockchainType,
-                    blockId,
-                    blockNumber,
-                    publisher,
-                    transactionsAccountBalances,
-                    transaction,
-                    transactionsSpentCoins
-                )
-            );
-        }
-
-        private async Task PublishTransferCoinsTransactionAsync(
+        private async Task<ExecutedTransaction> GetExecutedTransferCoinsTransactionAsync(
             string blockchainType, 
-            string blockId,
-            long blockNumber,
-            IMessagePublisher publisher, 
             IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>> transactionsAccountBalances,
             TransferCoinsExecutedTransaction transaction, 
-            Dictionary<TransactionId, IEnumerable<Coin>> transactionsSpentCoins)
+            IReadOnlyDictionary<TransactionId, IEnumerable<Coin>> transactionsSpentCoins)
         {
-            if (!transactionsAccountBalances.TryGetValue(transaction.TransactionId,
-                out var transactionAccountBalances))
+            if (!transactionsAccountBalances.TryGetValue(transaction.TransactionId, out var transactionAccountBalances))
             {
                 transactionAccountBalances = new Dictionary<AccountId, Money>();
             }
@@ -408,46 +501,28 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             // TODO: Get batch of transactions
 
             var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
-            var evt = new TransactionExecutedEvent
+            
+            return new ExecutedTransaction
             (
-                blockchainType,
-                blockId,
-                blockNumber,
                 transaction.TransactionNumber,
                 transaction.TransactionId,
                 balanceUpdates.ToArray(),
                 fees.Select(x => x.Fee).ToArray()
             );
-
-            publisher.Publish(evt);
         }
 
-        private Task PublishFailedTransactionsAsync(string blockchainType,
-            string blockId,
-            long blockNumber,
-            IEnumerable<FailedTransaction> transactions,
-            IMessagePublisher publisher)
+        private async Task<FailedTransaction> GetFailedTransactionAsync(
+            string blockchainType,
+            Bil2.Contract.BlocksReader.Events.FailedTransaction transaction)
         {
-            return transactions.ForEachAsync
+            var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
+            return new FailedTransaction
             (
-                4,
-                async transaction =>
-                {
-                    var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
-                    var evt = new TransactionFailedEvent
-                    (
-                        blockchainType,
-                        blockId,
-                        blockNumber,
-                        transaction.TransactionNumber,
-                        transaction.TransactionId,
-                        transaction.ErrorCode,
-                        transaction.ErrorMessage,
-                        fees.Select(x => x.Fee).ToArray()
-                    );
-
-                    publisher.Publish(evt);
-                }
+                transaction.TransactionNumber,
+                transaction.TransactionId,
+                transaction.ErrorCode,
+                transaction.ErrorMessage,
+                fees.Select(x => x.Fee).ToArray()
             );
         }
     }

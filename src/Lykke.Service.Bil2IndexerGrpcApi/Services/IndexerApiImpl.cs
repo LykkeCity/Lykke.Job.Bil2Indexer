@@ -273,59 +273,35 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Services
         #endregion
 
         #region Publishing
-        public void Publish(TransactionExecutedEvent evt)
+        public void Publish(TransactionsBatchEvent evt)
         {
-            var result = new TransactionExecuted
+            foreach (var transaction in evt.ExecutedTransactions)
             {
-                BlockchainType = evt.BlockchainType,
-                BlockId = evt.BlockId,
-                BlockNumber = evt.BlockNumber,
-                TransactionNumber = evt.TransactionNumber,
-                TransactionId = evt.TransactionId,
-                IsIrreversible = evt.IsIrreversible ?? true
-            };
-            result.BalanceUpdates.AddRange(evt.BalanceUpdates.Select(x => new BalanceUpdate
-            {
-                AccountId = new AccountId
+                var result = new TransactionExecuted
                 {
-                    Asset = new Asset
+                    BlockchainType = evt.BlockchainType,
+                    BlockId = evt.BlockId,
+                    BlockNumber = evt.BlockNumber,
+                    TransactionNumber = transaction.TransactionNumber,
+                    TransactionId = transaction.TransactionId,
+                    IsIrreversible = evt.IsIrreversible
+                };
+                result.BalanceUpdates.AddRange(transaction.BalanceUpdates.Select(x => new BalanceUpdate
+                {
+                    AccountId = new AccountId
                     {
-                        Id = x.AccountId.Asset.Id,
-                        Address = x.AccountId.Asset.Address
+                        Asset = new Asset
+                        {
+                            Id = x.AccountId.Asset.Id,
+                            Address = x.AccountId.Asset.Address
+                        },
+                        Address = x.AccountId.Address
                     },
-                    Address = x.AccountId.Address
-                },
-                NewBalance = x.NewBalance.ToString(),
-                OldBalance = x.OldBalance.ToString(),
+                    NewBalance = x.NewBalance.ToString(),
+                    OldBalance = x.OldBalance.ToString(),
 
-            }));
-            result.Fees.AddRange(evt.Fees.Select(x => new Fee
-            {
-                Amount = x.Amount.ToString(),
-                Asset = new Asset
-                {
-                    Address = x.Asset.Address,
-                    Id = x.Asset.Id
-                }
-            }));
-            _transactionExecutedEventsBuffer.Post(result);
-        }
-
-        public void Publish(TransactionFailedEvent evt)
-        {
-            var result = new TransactionFailed
-            {
-                BlockchainType = evt.BlockchainType,
-                BlockId = evt.BlockId,
-                BlockNumber = evt.BlockNumber,
-                TransactionNumber = evt.TransactionNumber,
-                TransactionId = evt.TransactionId,
-                ErrorCode = evt.ErrorCode.ToString(),
-                ErrorMessage = evt.ErrorMessage
-            };
-            if (evt.Fees != null)
-            {
-                result.Fees.AddRange(evt.Fees.Select(x => new Fee
+                }));
+                result.Fees.AddRange(transaction.Fees.Select(x => new Fee
                 {
                     Amount = x.Amount.ToString(),
                     Asset = new Asset
@@ -334,8 +310,35 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Services
                         Id = x.Asset.Id
                     }
                 }));
+                _transactionExecutedEventsBuffer.Post(result);
             }
-            _transactionFailedEventsBuffer.Post(result);
+
+            foreach (var transaction in evt.FailedTransactions)
+            {
+                var result = new TransactionFailed
+                {
+                    BlockchainType = evt.BlockchainType,
+                    BlockId = evt.BlockId,
+                    BlockNumber = evt.BlockNumber,
+                    TransactionNumber = transaction.TransactionNumber,
+                    TransactionId = transaction.TransactionId,
+                    ErrorCode = transaction.ErrorCode.ToString(),
+                    ErrorMessage = transaction.ErrorMessage
+                };
+                if (transaction.Fees != null)
+                {
+                    result.Fees.AddRange(transaction.Fees.Select(x => new Fee
+                    {
+                        Amount = x.Amount.ToString(),
+                        Asset = new Asset
+                        {
+                            Address = x.Asset.Address,
+                            Id = x.Asset.Id
+                        }
+                    }));
+                }
+                _transactionFailedEventsBuffer.Post(result);
+            }
         }
 
         public void Publish(LastIrreversibleBlockUpdatedEvent evt)
