@@ -23,6 +23,24 @@ namespace Lykke.Service.Bil2IndexerWebApi
         {
             return services.BuildServiceProvider<AppSettings>(options =>
             {
+//                options.Extend = (s, settings) =>
+//                {
+//                    services.AddHsts(hstsOptions =>
+//                    {
+//                        hstsOptions.IncludeSubDomains = true;
+//                        hstsOptions.MaxAge = TimeSpan.FromMinutes(10);
+//                    });
+
+//                    services.AddHttpsRedirection(redirectionOptions =>
+//                    {
+//#if DEBUG
+//                        redirectionOptions.HttpsPort = 5102;
+//#else
+//                        redirectionOptions.HttpsPort = 5001;
+//#endif
+//                    });
+//                };
+
                 options.DisableFluentValidation();
                 options.DisableValidationFilter();
 
@@ -64,9 +82,8 @@ namespace Lykke.Service.Bil2IndexerWebApi
             {
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
+                //app.UseHttpsRedirection();
             }
-
-
 
             app.UseLykkeConfiguration(options =>
             {

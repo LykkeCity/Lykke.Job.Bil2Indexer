@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 {
     [Route("api/blockchains/{blockchainType}/blocks")]
-    [ApiController]
     public class BlocksController : ControllerBase
     {
         private readonly IBlockQueryFacade _blockQueryFacade;

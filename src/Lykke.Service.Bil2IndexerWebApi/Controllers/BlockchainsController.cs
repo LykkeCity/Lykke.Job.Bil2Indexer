@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 {
     [Route("api/blockchains")]
-    [ApiController]
     public class BlockchainsController : ControllerBase
     {
         [HttpGet(Name = nameof(GetBlockchains))]

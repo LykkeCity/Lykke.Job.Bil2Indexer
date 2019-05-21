@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 {
     [Route("api/blockchains/{blockchainType}/addresses")]
-    [ApiController]
     public class AddressesController : ControllerBase
     {
         private readonly IAddressQueryFacade _addressQueryFacade;
@@ -73,13 +72,13 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         [HttpGet("/{address}/unspent-outputs", Name = nameof(GetAddressUnspentOutputs))]
         public async Task<ActionResult<Paginated<AddressUnspentOutputModel, string>>> GetAddressUnspentOutputs(
             [FromRoute] string blockchainType,
-            [FromRoute] string addresses,
-            PaginationRequest<string> pagination)
+            [FromRoute] string address,
+            [FromQuery] PaginationRequest<string> pagination)
         {
             var result = await _addressQueryFacade.GetUnspentOutputs
             (
                 blockchainType,
-                addresses,
+                address,
                 pagination.Limit,
                 pagination.Order == PaginationOrder.Asc,
                 pagination.StartingAfter,
