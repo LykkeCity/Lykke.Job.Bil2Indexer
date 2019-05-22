@@ -6,59 +6,36 @@ using Lykke.Bil2.SharedDomain;
 
 namespace Lykke.Job.Bil2Indexer.Contract.Events
 {
+    /// <summary>
+    /// Executed transaction.
+    /// </summary>
     [PublicAPI]
     [DataContract]
-    public class TransactionExecutedEvent
+    public class ExecutedTransaction
     {
-        /// <summary>
-        /// Type of the blockchain.
-        /// </summary>
-        [DataMember(Order = 0)]
-        public string BlockchainType { get; }
-
-        /// <summary>
-        /// ID of the block.
-        /// </summary>
-        [DataMember(Order = 1)]
-        public string BlockId { get; }
-
-        /// <summary>
-        /// Number of the block.
-        /// </summary>
-        [DataMember(Order = 2)]
-        public long BlockNumber { get; }
-
         /// <summary>
         /// Number of the transaction in the block.
         /// </summary>
-        [DataMember(Order = 3)]
+        [DataMember(Order = 0)]
         public int TransactionNumber { get; }
 
         /// <summary>
         /// ID of the transaction.
         /// </summary>
-        [DataMember(Order = 4)]
+        [DataMember(Order = 1)]
         public string TransactionId { get; }
 
         /// <summary>
         /// Balance updating operations.
         /// </summary>
-        [DataMember(Order = 5)]
+        [DataMember(Order = 2)]
         public IReadOnlyCollection<BalanceUpdate> BalanceUpdates { get; }
 
         /// <summary>
         /// Fees in the particular asset, that was spent for the transaction.
         /// </summary>
-        [DataMember(Order = 6)]
+        [DataMember(Order = 3)]
         public IReadOnlyCollection<Fee> Fees { get; }
-
-        /// <summary>
-        /// Optional.
-        /// Flag which indicates, if transaction is irreversible.
-        /// </summary>
-        [CanBeNull]
-        [DataMember(Order = 7)]
-        public bool? IsIrreversible { get; }
 
         /// <summary>
         /// "Transfer amount" transactions model.
@@ -66,50 +43,26 @@ namespace Lykke.Job.Bil2Indexer.Contract.Events
         /// integration uses “transfer amount” transactions model. Integration should either
         /// support “transfer coins” or “transfer amount” transactions model.
         /// </summary>
-        /// <param name="blockchainType">Type of the blockchain.</param>
-        /// <param name="blockId">ID of the block.</param>
-        /// <param name="blockNumber">Number of the block.</param>
         /// <param name="transactionNumber">Number of the transaction in the block.</param>
         /// <param name="transactionId">ID of the transaction.</param>
         /// <param name="balanceUpdates">Balance changing operations.</param>
         /// <param name="fees">Fees in the particular asset, that was spent for the transaction.</param>
-        /// <param name="isIrreversible">
-        /// Optional.
-        /// Flag which indicates, if transaction is irreversible.
-        /// </param>
-        public TransactionExecutedEvent(
-            string blockchainType, 
-            string blockId,
-            long blockNumber,
+        public ExecutedTransaction(
             int transactionNumber,
             string transactionId,
             IReadOnlyCollection<BalanceUpdate> balanceUpdates,
-            IReadOnlyCollection<Fee> fees,
-            bool? isIrreversible = null)
+            IReadOnlyCollection<Fee> fees)
         {
-            if (string.IsNullOrWhiteSpace(blockchainType))
-                throw new ArgumentException("Should be not empty string", nameof(blockchainType));
-
-            if (string.IsNullOrWhiteSpace(blockId))
-                throw new ArgumentException("Should be not empty string", nameof(blockId));
-
-            if (blockNumber < 0)
-                throw new ArgumentOutOfRangeException(nameof(blockNumber), blockNumber, "Should be zero or positive number");
-
             if (transactionNumber < 0)
                 throw new ArgumentOutOfRangeException(nameof(transactionNumber), transactionNumber, "Should be zero or positive number");
 
             if (string.IsNullOrWhiteSpace(transactionId))
                 throw new ArgumentException("Should be not empty string", nameof(transactionId));
 
-            BlockchainType = blockchainType;
-            BlockId = blockId;
-            BlockNumber = blockNumber;
             TransactionNumber = transactionNumber;
             TransactionId = transactionId;
             BalanceUpdates = balanceUpdates ?? throw new ArgumentNullException(nameof(balanceUpdates));
             Fees = fees ?? throw new ArgumentNullException(nameof(fees));
-            IsIrreversible = isIrreversible;
         }
     }
 }
