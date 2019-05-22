@@ -11,7 +11,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess
 
         public PgConnectionStringProvider(IReadOnlyDictionary<string, string> btypeConnStringStorage)
         {
-            if (btypeConnStringStorage.Values.Distinct().Count() > 1)
+            if (btypeConnStringStorage.Values.Distinct().Count() !=  btypeConnStringStorage.Values.Count())
             {
                 throw new ArgumentException("Separate databases should be used");
             }
