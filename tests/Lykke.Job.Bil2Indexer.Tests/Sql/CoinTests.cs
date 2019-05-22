@@ -66,22 +66,23 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnStringProvider(), EmptyLogFactory.Instance);
 
             var bType = Guid.NewGuid().ToString();
-            var blockId = Guid.NewGuid().ToString();
+            var blockId1 = Guid.NewGuid().ToString();
+            var blockId2 = Guid.NewGuid().ToString();
             var blockNumber = new Random().Next();
 
             var coins = new[]
             {
-                GenerateRandom(bType, blockId, blockNumber),
-                GenerateRandom(bType, blockId, blockNumber),
-                GenerateRandom(bType, blockId, blockNumber),
-                GenerateRandom(bType, blockId, blockNumber),
-                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId1, blockNumber),
+                GenerateRandom(bType, blockId1, blockNumber),
+                GenerateRandom(bType, blockId1, blockNumber),
+                GenerateRandom(bType, blockId1, blockNumber),
+                GenerateRandom(bType, blockId1, blockNumber),
 
-                GenerateRandom(bType, blockId, blockNumber),
-                GenerateRandom(bType, blockId, blockNumber),
-                GenerateRandom(bType, blockId, blockNumber),
-                GenerateRandom(bType, blockId, blockNumber),
-                GenerateRandom(bType, blockId, blockNumber)
+                GenerateRandom(bType, blockId2, blockNumber),
+                GenerateRandom(bType, blockId2, blockNumber),
+                GenerateRandom(bType, blockId2, blockNumber),
+                GenerateRandom(bType, blockId2, blockNumber),
+                GenerateRandom(bType, blockId2, blockNumber)
             };
 
             var ids = coins.Select(p => p.Id).ToList();
@@ -94,12 +95,12 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             
             var idsToDelete = coins.Take(5).Select(p => p.Id).ToList();
 
-            await repo.RemoveIfExistAsync(bType, blockId);
-            await repo.RemoveIfExistAsync(bType, blockId);
+            await repo.RemoveIfExistAsync(bType, blockId1);
+            await repo.RemoveIfExistAsync(bType, blockId1);
 
             var retrieved2 = await repo.GetSomeOfAsync(bType, ids);
             
-            Assert.AreEqual(retrieved2.Count, coins.Length - idsToDelete.Count);
+            Assert.AreEqual(retrieved2.Count, coins.Count(p => p.BlockId != blockId1));
             
             Assert.AreEqual(retrieved2.Count(p => idsToDelete.Contains(p.Id)), 0);
         }
