@@ -24,7 +24,7 @@ namespace Lykke.Job.Bil2Indexer.Contract.Events
         /// ID of the block.
         /// </summary>
         [DataMember(Order = 1)]
-        public string BlockId { get; }
+        public BlockId BlockId { get; }
 
         /// <summary>
         /// Number of the block.
@@ -78,7 +78,7 @@ namespace Lykke.Job.Bil2Indexer.Contract.Events
             if (blockNumber < 0)
                 throw new ArgumentOutOfRangeException(nameof(blockNumber), blockNumber, "Should be zero or positive number");
 
-            if (!ExecutedTransactions.Any() && !failedTransactions.Any())
+            if (!executedTransactions.Any() && !failedTransactions.Any())
                 throw new ArgumentException("At least one executed or failed transaction should be passed to the batch");
 
             BlockchainType = blockchainType;

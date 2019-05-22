@@ -95,7 +95,7 @@ namespace Lykke.Job.Bil2Indexer.DomainServices
         {
             var crawlerConfigurations = _crawlerConfigurations[blockchainType];
 
-            return crawlerConfigurations.Single(x => x.StopAssemblingBlock.HasValue);
+            return crawlerConfigurations.Single(x => !x.StopAssemblingBlock.HasValue);
         }
     }
 }
