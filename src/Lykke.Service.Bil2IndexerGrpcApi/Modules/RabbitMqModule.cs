@@ -43,8 +43,7 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Modules
             builder.RegisterType<ChainHeadReducedEventsHandler>().AsSelf();
             builder.RegisterType<ChainHeadExtendedEventsHandler>().AsSelf();
             builder.RegisterType<LastIrreversibleBlockUpdatedEventsHandler>().AsSelf();
-            builder.RegisterType<TransactionExecutedEventsHandler>().AsSelf();
-            builder.RegisterType<TransactionFailedEventsHandler>().AsSelf();
+            builder.RegisterType<TransactionsBatchEventsHandler>().AsSelf();
         }
     }
 }

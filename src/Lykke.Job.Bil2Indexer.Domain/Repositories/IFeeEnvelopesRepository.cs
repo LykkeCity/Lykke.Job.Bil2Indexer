@@ -9,7 +9,7 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
         Task AddIfNotExistsAsync(IReadOnlyCollection<FeeEnvelope> fees);
         Task<FeeEnvelope> GetOrDefaultAsync(string blockchainType, TransactionId transactionId, Asset asset);
         Task<FeeEnvelope> GetAsync(string blockchainType, TransactionId transactionId, Asset asset);
-        Task<IReadOnlyCollection<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, TransactionId transactionId);
+        Task<IReadOnlyCollection<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, IEnumerable<TransactionId> transactionIds);
         Task<PaginatedItems<FeeEnvelope>> GetBlockFeesAsync(string blockchainType, BlockId blockId, long limit, string continuation);
         Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId);
     }

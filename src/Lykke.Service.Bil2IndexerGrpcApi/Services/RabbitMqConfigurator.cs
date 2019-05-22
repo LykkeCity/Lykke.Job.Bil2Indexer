@@ -1,7 +1,7 @@
 ﻿using JetBrains.Annotations;
 using Lykke.Bil2.RabbitMq;
 using Lykke.Bil2.RabbitMq.Subscription;
-using Lykke.Common;
+using Lykke.Bil2.RabbitMq.Subscription.MessageFilters;
 using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Service.Bil2IndexerGrpcApi.EventHandlers;
@@ -31,8 +31,8 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Services
                 .Handle<ChainHeadExtendedEvent>(o => o.WithHandler<ChainHeadExtendedEventsHandler>())
                 .Handle<ChainHeadReducedEvent>(o => o.WithHandler<ChainHeadReducedEventsHandler>())
                 .Handle<LastIrreversibleBlockUpdatedEvent>(o => o.WithHandler<LastIrreversibleBlockUpdatedEventsHandler>())
-                .Handle<TransactionExecutedEvent>(o => o.WithHandler<TransactionExecutedEventsHandler>())
-                .Handle<TransactionFailedEvent>(o => o.WithHandler<TransactionFailedEventsHandler>());
+                .Handle<TransactionsBatchEvent>(o => o.WithHandler<TransactionsBatchEventsHandler>())
+                .AddFilter(new AppInsightTelemetryMessageFilter());
 
             _endpoint.Subscribe
             (

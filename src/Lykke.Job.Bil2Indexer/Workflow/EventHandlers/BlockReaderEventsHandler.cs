@@ -350,14 +350,20 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         x.TransactionId,
                         x.Fee
                     )
-                );
+                )
+                .ToList();
+
+            if (fees.Any())
+            {
+                throw new NotSupportedException();
+            }
 
             await Task.WhenAll
             (
                 saveTransactionsTask,
                 saveCoinsTask,
                 saveAssetInfosTask,
-                _feeEnvelopesRepository.AddIfNotExistsAsync(fees.ToList())
+                _feeEnvelopesRepository.AddIfNotExistsAsync(fees)
             );
 
             return MessageHandlingResult.Success();

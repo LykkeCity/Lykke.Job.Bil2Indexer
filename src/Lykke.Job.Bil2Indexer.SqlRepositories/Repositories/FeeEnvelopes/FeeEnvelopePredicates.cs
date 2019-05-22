@@ -16,14 +16,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
             return p => p.BlockId == stringBlockId;
         }
 
-        public static Expression<Func<FeeEnvelopeEntity, bool>> Build(TransactionId transactionId)
-        {
-            var stringTransactionId = transactionId.ToString();
-
-            return p => p.TransactionId == stringTransactionId && (p.AssetAddress == null || p.AssetAddress != null);
-
-        }
-
         public static Expression<Func<FeeEnvelopeEntity, bool>> Build(TransactionId transactionId, Asset asset)
         {
             var stringTransactionId = transactionId.ToString();
