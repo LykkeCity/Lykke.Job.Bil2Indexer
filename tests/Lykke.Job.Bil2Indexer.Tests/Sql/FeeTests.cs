@@ -72,7 +72,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 AssertEquals(feeEnvelope, retrieved);
             }
 
-            var retrieved3 = (await repo.GetCollectionsAsync(btype, fees.Select(p => p.TransactionId).ToList())).ToDictionary(p=>p.TransactionId);
+            var retrieved3 = (await repo.GetTransactionFeesAsync(btype, fees.Select(p => p.TransactionId).ToList())).ToDictionary(p=>p.TransactionId);
 
             Assert.AreEqual(fees.Count, retrieved3.Count);
 

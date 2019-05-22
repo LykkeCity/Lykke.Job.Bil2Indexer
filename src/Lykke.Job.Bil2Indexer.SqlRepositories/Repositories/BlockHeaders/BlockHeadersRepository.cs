@@ -82,7 +82,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
-            return (await GetOrDefaultAsync(blockchainType, blockId)) ?? throw new ArgumentException(nameof(blockId));
+            return (await GetOrDefaultAsync(blockchainType, blockId)) ?? throw new InvalidOperationException(nameof(blockId));
         }
 
         public async Task<BlockHeader> GetAsync(string blockchainType, DateTime dateTime)

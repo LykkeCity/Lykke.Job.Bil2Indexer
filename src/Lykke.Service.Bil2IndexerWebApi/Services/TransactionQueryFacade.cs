@@ -74,7 +74,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             var getBalanceActions = _balanceActionsRepository.GetCollectionAsync(blockchainType,
                 transactionIds.ToArray());
 
-            var getFees = _feeEnvelopesRepository.GetCollectionsAsync(blockchainType, transactionIds.ToList());
+            var getFees = _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transactionIds.ToList());
 
             await Task.WhenAll(getLastBlockNumber, getBalanceActions, getFees);
 
