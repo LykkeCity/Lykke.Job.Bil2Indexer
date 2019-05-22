@@ -226,28 +226,48 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 }
             }
 
-            var transactionsAccountBalances = await _balanceActionsRepository.GetSomeOfBalancesAsync
+            var batchTransactionIds = executedTransactions
+                .Select(x => x.TransactionId)
+                .Concat(failedTransactions.Select(x => x.TransactionId));
+
+            var (transactionsAccountBalances, transactionsFees) = await TaskExecution.WhenAll
             (
-                blockchainType,
-                executedTransactions.Select(x => x.TransactionId).ToHashSet()
+                _balanceActionsRepository.GetSomeOfBalancesAsync
+                (
+                    blockchainType,
+                    executedTransactions.Select(x => x.TransactionId).ToHashSet()
+                ),
+                GetTransactionsFeesAsync
+                (
+                    blockchainType,
+                    batchTransactionIds
+                )
             );
+
+            // TODO: Make it in parallel
 
             var executedContractTransactions = executedTransactions
                 .Select
                 (
-                    transaction => GetExecutedTransferAmountTransactionAsync
+                    transaction => GetExecutedTransferAmountTransaction
                     (
-                        blockchainType,
                         transactionsAccountBalances,
+                        transactionsFees,
                         transaction
-                    ).ConfigureAwait(false).GetAwaiter().GetResult()
+                    )
                 )
                 .ToArray();
+
+            // TODO: Make it in parallel
 
             var failedContractTransactions = failedTransactions
                 .Select
                 (
-                    transaction => GetFailedTransactionAsync(blockchainType, transaction).ConfigureAwait(false).GetAwaiter().GetResult()
+                    transaction => GetFailedTransaction
+                    (
+                        transactionsFees,
+                        transaction
+                    )
                 )
                 .ToArray();
 
@@ -290,7 +310,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 }
             }
 
-            var (transactionsAccountBalances, coinsSpentByTransactions) = await TaskExecution.WhenAll
+            var batchTransactionIds = executedTransactions
+                .Select(x => x.TransactionId)
+                .Concat(failedTransactions.Select(x => x.TransactionId));
+            
+            var (transactionsAccountBalances, coinsSpentByTransactions, transactionsFees) = await TaskExecution.WhenAll
             (
                 _balanceActionsRepository.GetSomeOfBalancesAsync
                 (
@@ -301,6 +325,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 (
                     blockchainType,
                     executedTransactions.SelectMany(x => x.SpentCoins).ToArray()
+                ),
+                GetTransactionsFeesAsync
+                (
+                    blockchainType,
+                    batchTransactionIds
                 )
             );
 
@@ -312,23 +341,31 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     g => g.Select(x => x)
                 );
 
+            // TODO: Make it in parallel
+
             var executedContractTransactions = executedTransactions
                 .Select
                 (
-                    transaction => GetExecutedTransferCoinsTransactionAsync
+                    transaction => GetExecutedTransferCoinsTransaction
                     (
-                        blockchainType,
                         transactionsAccountBalances,
-                        transaction,
-                        transactionsSpentCoins
-                    ).ConfigureAwait(false).GetAwaiter().GetResult()
+                        transactionsSpentCoins,
+                        transactionsFees,
+                        transaction
+                    )
                 )
                 .ToArray();
+
+            // TODO: Make it in parallel
 
             var failedContractTransactions = failedTransactions
                 .Select
                 (
-                    transaction => GetFailedTransactionAsync(blockchainType, transaction).ConfigureAwait(false).GetAwaiter().GetResult()
+                    transaction => GetFailedTransaction
+                    (
+                        transactionsFees,
+                        transaction
+                    )
                 )
                 .ToArray();
 
@@ -346,9 +383,9 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             publisher.Publish(evt);
         }
 
-        private async Task<ExecutedTransaction> GetExecutedTransferAmountTransactionAsync(
-            string blockchainType, 
+        private static ExecutedTransaction GetExecutedTransferAmountTransaction(
             IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>> transactionsAccountBalances,
+            IReadOnlyDictionary<TransactionId, IReadOnlyCollection<Fee>> transactionsFees,
             TransferAmountExecutedTransaction transaction)
         {
             if (!transactionsAccountBalances.TryGetValue(transaction.TransactionId, out var transactionAccountBalances))
@@ -396,24 +433,25 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     );
                 });
 
-            // TODO: Get batch of transactions
-
-            var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
+            if (!transactionsFees.TryGetValue(transaction.TransactionId, out var fees))
+            {
+                fees = Array.Empty<Fee>();
+            }
 
             return new ExecutedTransaction
             (
                 transaction.TransactionNumber,
                 transaction.TransactionId,
                 balanceUpdates.ToArray(),
-                fees.Select(x => x.Fee).ToArray()
+                fees
             );
         }
 
-        private async Task<ExecutedTransaction> GetExecutedTransferCoinsTransactionAsync(
-            string blockchainType, 
+        private static ExecutedTransaction GetExecutedTransferCoinsTransaction(
             IReadOnlyDictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>> transactionsAccountBalances,
-            TransferCoinsExecutedTransaction transaction, 
-            IReadOnlyDictionary<TransactionId, IEnumerable<Coin>> transactionsSpentCoins)
+            IReadOnlyDictionary<TransactionId, IEnumerable<Coin>> transactionsSpentCoins,
+            IReadOnlyDictionary<TransactionId, IReadOnlyCollection<Fee>> transactionsFees,
+            TransferCoinsExecutedTransaction transaction)
         {
             if (!transactionsAccountBalances.TryGetValue(transaction.TransactionId, out var transactionAccountBalances))
             {
@@ -498,32 +536,52 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     );
                 });
 
-            // TODO: Get batch of transactions
-
-            var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
+            if (!transactionsFees.TryGetValue(transaction.TransactionId, out var fees))
+            {
+                fees = Array.Empty<Fee>();
+            }
             
             return new ExecutedTransaction
             (
                 transaction.TransactionNumber,
                 transaction.TransactionId,
                 balanceUpdates.ToArray(),
-                fees.Select(x => x.Fee).ToArray()
+                fees
             );
         }
 
-        private async Task<FailedTransaction> GetFailedTransactionAsync(
-            string blockchainType,
+        private static FailedTransaction GetFailedTransaction(
+            IReadOnlyDictionary<TransactionId, IReadOnlyCollection<Fee>> transactionsFees,
             Bil2.Contract.BlocksReader.Events.FailedTransaction transaction)
         {
-            var fees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transaction.TransactionId);
+            if (!transactionsFees.TryGetValue(transaction.TransactionId, out var fees))
+            {
+                fees = Array.Empty<Fee>();
+            }
+
             return new FailedTransaction
             (
                 transaction.TransactionNumber,
                 transaction.TransactionId,
                 transaction.ErrorCode,
                 transaction.ErrorMessage,
-                fees.Select(x => x.Fee).ToArray()
+                fees
             );
+        }
+
+        private async Task<Dictionary<TransactionId, IReadOnlyCollection<Fee>>> GetTransactionsFeesAsync(
+            string blockchainType, 
+            IEnumerable<TransactionId> batchTransactionIds)
+        {
+            var batchFees = await _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, batchTransactionIds);
+            var transactionsFees = batchFees
+                .GroupBy(x => x.TransactionId)
+                .ToDictionary
+                (
+                    g => g.Key,
+                    g => (IReadOnlyCollection<Fee>) g.Select(x => x.Fee).ToArray()
+                );
+            return transactionsFees;
         }
     }
 }

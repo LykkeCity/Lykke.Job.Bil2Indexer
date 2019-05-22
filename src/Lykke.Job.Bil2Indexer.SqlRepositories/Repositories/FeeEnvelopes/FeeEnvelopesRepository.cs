@@ -137,9 +137,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
         }
 
 
-        public Task<IReadOnlyCollection<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, TransactionId transactionId)
+        public Task<IReadOnlyCollection<FeeEnvelope>> GetTransactionFeesAsync(string blockchainType, IEnumerable<TransactionId> transactionIds)
         {
-            return GetAllAsync(blockchainType, FeeEnvelopePredicates.Build(transactionId));
+            return GetAllAsync(blockchainType, FeeEnvelopePredicates.Build(transactionIds.Select(x => x.Value)));
         }
 
         public Task<PaginatedItems<FeeEnvelope>> GetBlockFeesAsync(string blockchainType, BlockId blockId, long limit, string continuation)
