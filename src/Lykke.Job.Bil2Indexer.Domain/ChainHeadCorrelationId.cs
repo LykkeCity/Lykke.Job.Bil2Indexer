@@ -97,7 +97,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.FollowsCrawler:
                     return Sequence + 1 == another.Sequence;
                 case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return false;
+                    return Sequence + 1 == another.Sequence;
                 case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.FollowsCrawler:
                     return CrawlerSequence + 1 == another.CrawlerSequence;
                 default:
@@ -117,9 +117,9 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.CatchesCrawlerUp:
                     return Sequence < another.Sequence;
                 case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.FollowsCrawler:
-                    return true;
+                    return Sequence < another.Sequence;
                 case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return false;
+                    return Sequence < another.Sequence;
                 case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.FollowsCrawler:
                     return CrawlerSequence < another.CrawlerSequence;
                 default:
@@ -139,9 +139,9 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.CatchesCrawlerUp:
                     return Sequence > another.Sequence;
                 case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.FollowsCrawler:
-                    return false;
+                    return Sequence > another.Sequence;
                 case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return true;
+                    return Sequence > another.Sequence;
                 case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.FollowsCrawler:
                     return CrawlerSequence > another.CrawlerSequence;
                 default:

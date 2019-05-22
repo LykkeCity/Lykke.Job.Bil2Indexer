@@ -82,7 +82,22 @@ namespace Lykke.Job.Bil2Indexer.Domain
                     break;
 
                 case ChainHeadMode.FollowsCrawler:
-                    ++CrawlerSequence;
+                    
+                    // In case when distance between crawler and chain head is too large
+                    // a lot of premature messages can be collected in the queue, making harder
+                    // and harder to find correct message in the queue. In this case
+                    // better to detach chain head from the crawler and let it catch up the crawler
+                    // again. All en-queued messages which are stick to the crawler will be
+                    // treated as obsolete after this.
+                    if (infiniteCrawler.ExpectedBlockNumber - BlockNumber > 100)
+                    {
+                        Mode = ChainHeadMode.CatchesCrawlerUp;
+                    }
+                    else
+                    {
+                        ++CrawlerSequence;
+                    }
+
                     break;
 
                 default:

@@ -25,9 +25,13 @@ namespace Lykke.Job.Bil2Indexer.Tests
         [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:0:100", ExpectedResult = false)]
         [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:0:101", ExpectedResult = true)]
         [TestCase("ch#Bitcoin:0:101", "ch#Bitcoin:0:100", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:1:100:200", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:0:100", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:1:101:200", ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:0:101", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:1:101:200", "ch#Bitcoin:0:100", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:0:101", ExpectedResult = true)]
         [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:101:201", ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:1:101:201", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
         public bool Test_is_legacy_relative_to(string checkedValue, string againstValue)
         {
             var checkedId = ChainHeadCorrelationId.Parse(checkedValue);
@@ -40,9 +44,13 @@ namespace Lykke.Job.Bil2Indexer.Tests
         [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:0:100", ExpectedResult = false)]
         [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:0:101", ExpectedResult = false)]
         [TestCase("ch#Bitcoin:0:101", "ch#Bitcoin:0:100", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:0:100", ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:1:101:200", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:0:101", "ch#Bitcoin:1:100:200", ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:1:101:200", "ch#Bitcoin:0:100", ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:0:101", ExpectedResult = false)]
         [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:101:201", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:1:101:201", "ch#Bitcoin:1:100:200", ExpectedResult = true)]
         public bool Test_is_premature_relative_to(string checkedValue, string againstValue)
         {
             var checkedId = ChainHeadCorrelationId.Parse(checkedValue);
@@ -53,25 +61,38 @@ namespace Lykke.Job.Bil2Indexer.Tests
 
         [Test]
         [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:0:100", ExpectedResult = false)]
+
         [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:0:101", ExpectedResult = true)]
         [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:0:102", ExpectedResult = false)]
+
         [TestCase("ch#Bitcoin:0:101", "ch#Bitcoin:0:100", ExpectedResult = false)]
         [TestCase("ch#Bitcoin:0:102", "ch#Bitcoin:0:100", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
+
         [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:1:101:200", ExpectedResult = true)]
         [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:1:102:200", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:0:100", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:0:101", ExpectedResult = false)]
+
+        [TestCase("ch#Bitcoin:1:101:200", "ch#Bitcoin:0:100", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:1:102:200", "ch#Bitcoin:0:100", ExpectedResult = false)]
+
+        [TestCase("ch#Bitcoin:1:101:200", "ch#Bitcoin:0:100", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:1:102:200", "ch#Bitcoin:0:100", ExpectedResult = false)]
+        
+        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:0:101", ExpectedResult = true)]
         [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:0:102", ExpectedResult = false)]
+
+        [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:1:101:200", ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:0:100", "ch#Bitcoin:1:102:200", ExpectedResult = false)]
+
+        [TestCase("ch#Bitcoin:0:101", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:0:102", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
+
         [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:100:201", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:100:202", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:101:200", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:102:200", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:1:100:201", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:1:100:202", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:1:101:200", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:1:102:200", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
+
+        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:101:201", ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:1:100:200", "ch#Bitcoin:1:101:202", ExpectedResult = false)]
+
+        [TestCase("ch#Bitcoin:1:101:201", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:1:101:202", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
         public bool Test_is_previous_of(string checkedValue, string againstValue)
         {
             var checkedId = ChainHeadCorrelationId.Parse(checkedValue);
