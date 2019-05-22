@@ -24,6 +24,8 @@ create table coins
     is_spent       boolean                         not null,
     address_tag_type smallint,
     address_nonce    numeric,
+    block_number     bigint    not null,
+    block_id         varchar(256)    not null,
     constraint coins_pk
         primary key (id)
 );

@@ -42,6 +42,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
         [Column("address_tag")]
         public string AddressTag { get; set; }
 
+        [Column("block_id")]
+        public string BlockId { get; set; }
+
+        [Column("block_number")]
+        public long BlockNumber { get; set; }
+
         [CanBeNull]
         [Column("address_tag_type")]
         public AddressTagTypeValues? AddressTagType { get; set; }
