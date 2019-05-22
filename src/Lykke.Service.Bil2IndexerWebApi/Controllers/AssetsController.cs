@@ -23,7 +23,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromRoute] string blockchainType,
             [FromQuery] string assetTicker,
             [FromQuery] string assetAddress,
-            PaginationRequest<string> pagination)
+            [FromQuery] PaginationRequest<string> pagination)
         {
             Paginated<AssetModel, string> result;
 

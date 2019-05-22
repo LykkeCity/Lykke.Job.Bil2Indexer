@@ -23,8 +23,8 @@ namespace Lykke.Service.Bil2IndexerWebApi
         {
             return services.BuildServiceProvider<AppSettings>(options =>
             {
-                options.DisableFluentValidation();
-                options.DisableValidationFilter();
+                //options.DisableFluentValidation();
+                //options.DisableValidationFilter();
 
                 options.SwaggerOptions = _swaggerOptions;
 
