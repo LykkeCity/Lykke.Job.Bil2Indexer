@@ -3,6 +3,7 @@ using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.Domain.Services.Infrastructure;
 using Lykke.Job.Bil2Indexer.DomainServices;
 using Lykke.Job.Bil2Indexer.DomainServices.Infrastructure;
+using Lykke.Service.Bil2IndexerWebApi.Services;
 using Lykke.Service.Bil2IndexerWebApi.Settings;
 using Lykke.SettingsReader;
 
@@ -27,6 +28,18 @@ namespace Lykke.Service.Bil2IndexerWebApi.Modules
                 .As<IAssetInfosProvider>()
                 .WithParameter(TypedParameter.From(_settings.Bil2WebApiService.AssetsCaching.LruCacheCapacity))
                 .SingleInstance();
+            
+            builder.RegisterType<AddressQueryFacade>()
+                .As<IAddressQueryFacade>();
+
+            builder.RegisterType<AssetQueryFacade>()
+                .As<IAssetQueryFacade>();
+            
+            builder.RegisterType<BlockQueryFacade>()
+                .As<IBlockQueryFacade>();
+            
+            builder.RegisterType<TransactionQueryFacade>()
+                .As<ITransactionQueryFacade>();
         }
     }
 }
