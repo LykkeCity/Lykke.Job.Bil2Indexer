@@ -67,50 +67,43 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
 
             var bType = Guid.NewGuid().ToString();
+            var blockId = Guid.NewGuid().ToString();
+            var blockNumber = new Random().Next();
 
             var coins = new[]
             {
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
 
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType)
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber)
             };
 
             var ids = coins.Select(p => p.Id).ToList();
 
             await repo.AddIfNotExistsAsync(coins);
-
-
+            
             var retrieved = await repo.GetSomeOfAsync(bType, ids);
-
-
+            
             Assert.AreEqual(coins.Length, retrieved.Count);
-
-
+            
             var idsToDelete = coins.Take(5).Select(p => p.Id).ToList();
 
-            await repo.RemoveIfExistAsync(bType, idsToDelete.Select(p => new TransactionId(p.TransactionId)).ToHashSet());
-            await repo.RemoveIfExistAsync(bType, idsToDelete.Select(p => new TransactionId(p.TransactionId)).ToHashSet());
+            await repo.RemoveIfExistAsync(bType, blockId);
+            await repo.RemoveIfExistAsync(bType, blockId);
 
             var retrieved2 = await repo.GetSomeOfAsync(bType, ids);
-
-
+            
             Assert.AreEqual(retrieved2.Count, coins.Length - idsToDelete.Count);
-
-
+            
             Assert.AreEqual(retrieved2.Count(p => idsToDelete.Contains(p.Id)), 0);
-
-
         }
-
-
 
         [Test]
         public async Task CanSpend()
@@ -118,20 +111,22 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var repo = new CoinsRepository(ContextFactory.GetPosgresTestsConnString(), EmptyLogFactory.Instance);
 
             var bType = Guid.NewGuid().ToString();
+            var blockId = Guid.NewGuid().ToString();
+            var blockNumber = new Random().Next();
 
             var coins = new[]
             {
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType),
-                GenerateRandom(bType)
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                                    
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber),
+                GenerateRandom(bType, blockId, blockNumber)
             };
 
             var ids = coins.Select(p => p.Id).ToList();
@@ -156,7 +151,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.True(retrieved2.Where(p => !idsToSpend.Contains(p.Id)).All(p => !p.IsSpent));
 
 
-            await repo.RemoveIfExistAsync(bType, coins.Select(p => new TransactionId(p.Id.TransactionId)).ToHashSet());
+            await repo.RemoveIfExistAsync(bType, blockId);
 
             Assert.ThrowsAsync<ArgumentException>(() =>
                 repo.SpendAsync(bType, coins.Skip(4).Take(3).Select(p => p.Id).ToList()));
@@ -167,7 +162,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.AreEqual(a.ToJson(), b.ToJson());
         }
 
-        private Coin GenerateRandom(string blockchainType)
+        private static Coin GenerateRandom(string blockchainType, BlockId blockId = null, long? blockNumber = null)
         {
             var rdm = new Random();
 
@@ -182,8 +177,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 AddressTagType.Number,
                 null,
                 false,
-                Guid.NewGuid().ToString(),
-                rdm.Next()
+                blockId ?? Guid.NewGuid().ToString(),
+                blockNumber ?? rdm.Next()
             );
         }
     }
