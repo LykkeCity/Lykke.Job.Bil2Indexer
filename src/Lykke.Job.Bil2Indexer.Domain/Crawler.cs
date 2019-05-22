@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 
 namespace Lykke.Job.Bil2Indexer.Domain
 {
@@ -50,56 +49,9 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 : CrawlingDirection.Backward;
         }
 
-        public async Task<long> EvaluateNextBlockToMoveForwardAsync(
-            BlockHeader newBlock,
-            Func<long, Task<BlockHeader>> getBlockHeader,
-            Action<BlockHeader> rollbackBlock)
+        public long EvaluateNextBlockToMoveForward(BlockHeader newBlock)
         {
-            var nextBlockNumber = newBlock.Number;
-            var currentBlock = newBlock;
-
-            while (true)
-            {
-                nextBlockNumber++;
-
-                if (!Configuration.CanProcess(nextBlockNumber))
-                {
-                    break;
-                }
-
-                var nextBlock = await getBlockHeader.Invoke(nextBlockNumber);
-
-                if (nextBlock == null)
-                {
-                    break;
-                }
-
-                // TODO: Log this as warn
-
-                // Removes already stored blocks, which belongs to another chain.
-                // For example, if chain was switched during the backward turn, thus
-                // already read on the backward turn blocks are belongs to the stale chain.
-
-                if (nextBlock.PreviousBlockId != currentBlock.Id)
-                {
-                    rollbackBlock.Invoke(nextBlock);
-                }
-
-                // TODO: BlockAssembledEvent should be generated again and unwrap this loop to independent messages?
-
-                currentBlock = nextBlock;
-            }
-
-            return nextBlockNumber;
-        }
-
-        public long EvaluateNextBlockToMoveBackward(BlockHeader newBlock, BlockHeader previousBlock, Action<BlockHeader> rollbackBlock)
-        {
-            rollbackBlock.Invoke(previousBlock);
-
-            // it's possible that previous block can't be processed by the crawler (because of crawler range bounds),
-            // but we ignores this case since this is very unlikely that chain fork can intersect ranges of different crawlers.
-            return newBlock.Number - 1;
+            return newBlock.Number + 1;
         }
 
         public void MoveTo(long nextBlockNumber)
@@ -118,6 +70,11 @@ namespace Lykke.Job.Bil2Indexer.Domain
             var configuration = Configuration.ToString();
 
             return $"{BlockchainType}:{configuration}({Sequence}):{ExpectedBlockNumber}";
+        }
+
+        public bool IsOnBlock(long blockNumber)
+        {
+            return ExpectedBlockNumber - 1 == blockNumber;
         }
     }
 }

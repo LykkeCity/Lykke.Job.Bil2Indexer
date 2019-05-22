@@ -67,11 +67,14 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 await _blockHeadersRepository.SaveAsync(block);
             }
 
-            replyPublisher.Publish(new BlockAssembledEvent
+            if (block.IsAssembled)
             {
-                BlockchainType = command.BlockchainType,
-                BlockId = command.BlockId
-            });
+                replyPublisher.Publish(new BlockAssembledEvent
+                {
+                    BlockchainType = command.BlockchainType,
+                    BlockId = command.BlockId
+                });
+            }
 
             return MessageHandlingResult.Success();
         }

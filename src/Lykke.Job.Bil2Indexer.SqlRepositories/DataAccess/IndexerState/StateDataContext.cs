@@ -20,7 +20,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseNpgsql(_connectionString)
-                .ConfigureWarnings(bulder => bulder.Throw(RelationalEventId.QueryClientEvaluationWarning));
+                .ConfigureWarnings(builder => builder.Throw(RelationalEventId.QueryClientEvaluationWarning));
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

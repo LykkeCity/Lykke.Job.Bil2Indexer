@@ -12,6 +12,7 @@ using Lykke.Job.Bil2Indexer.Contract;
 using Lykke.Job.Bil2Indexer.Contract.Events;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Job.Bil2Indexer.Domain.Services;
 using Lykke.Job.Bil2Indexer.Infrastructure;
 using Lykke.Job.Bil2Indexer.Services;
 using Lykke.Job.Bil2Indexer.Settings.BlockchainIntegrations;
@@ -31,6 +32,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         private readonly ICoinsRepository _coinsRepository;
         private readonly IReadOnlyDictionary<string, long> _blockNumbersToStartTransactionEventsPublication;
         private readonly IntegrationSettingsProvider _integrationSettingsProvider;
+        private readonly ICrawlersManager _crawlersManager;
         private readonly ILog _log;
 
         public ExtendChainHeadCommandsHandler(
@@ -41,7 +43,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             IBalanceActionsRepository balanceActionsRepository,
             ICoinsRepository coinsRepository,
             IReadOnlyDictionary<string, long> blockNumbersToStartTransactionEventsPublication,
-            IntegrationSettingsProvider integrationSettingsProvider)
+            IntegrationSettingsProvider integrationSettingsProvider,
+            ICrawlersManager crawlersManager)
         {
             _chainHeadsRepository = chainHeadsRepository;
             _transactionsRepository = transactionsRepository;
@@ -50,13 +53,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             _coinsRepository = coinsRepository;
             _blockNumbersToStartTransactionEventsPublication = blockNumbersToStartTransactionEventsPublication;
             _integrationSettingsProvider = integrationSettingsProvider;
+            _crawlersManager = crawlersManager;
+
             _log = logFactory.CreateLog(this);
         }
 
         public async Task<MessageHandlingResult> HandleAsync(ExtendChainHeadCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
-            var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
+            var (chainHead, infiniteCrawler) = await TaskExecution.WhenAll
+            (
+                _chainHeadsRepository.GetAsync(command.BlockchainType),
+                _crawlersManager.GetInfiniteCrawlerAsync(command.BlockchainType)
+            );
             var chainHeadCorrelationId = chainHead.GetCorrelationId();
 
             if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId) &&
@@ -80,7 +89,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             if (messageCorrelationId.IsTheSameAs(chainHeadCorrelationId))
             {
-                chainHead.ExtendTo(command.ToBlockNumber, command.ToBlockId);
+                chainHead.ExtendTo(command.ToBlockNumber, command.ToBlockId, infiniteCrawler);
 
                 // TODO: Update balance snapshots
 
@@ -91,7 +100,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             if (messageCorrelationId.IsPreviousOf(chainHeadCorrelationId))
             {
-                _log.Info("Chain head extended", chainHead);
+                _log.Info("Chain head extended", new
+                {
+                    Headers = headers,
+                    Message = command,
+                    ChainHead = chainHead
+                });
 
                 var eventsPublisher = replyPublisher.ChangeCorrelationId(chainHeadCorrelationId.ToString());
 

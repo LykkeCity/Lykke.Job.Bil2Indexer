@@ -24,7 +24,9 @@ create table chain_heads
     id                 varchar(128) not null,
     first_block_number bigint not null,
     block_number       bigint,
+    mode               integer not null,
     sequence           bigint not null,
+    crawler_sequence   bigint not null,
     block_id           varchar(256),
     prev_block_id      varchar(256),
     constraint chain_heads_natural_key_pk

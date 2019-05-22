@@ -46,5 +46,10 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
             return result;
         }
+
+        public static Expression<Func<CoinEntity, bool>> Build(BlockId blockId)
+        {
+            return dbCoin => dbCoin.BlockId == blockId;
+        }
     }
 }

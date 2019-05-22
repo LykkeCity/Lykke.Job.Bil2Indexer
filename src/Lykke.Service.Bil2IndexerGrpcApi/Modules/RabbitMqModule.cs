@@ -40,7 +40,7 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Modules
                 .WithParameter(TypedParameter.From(_settings.Bil2IndexerGrpcApi.RabbitMq))
                 .AsSelf();
            
-            builder.RegisterType<BlockRolledBackEventsHandler>().AsSelf();
+            builder.RegisterType<ChainHeadReducedEventsHandler>().AsSelf();
             builder.RegisterType<ChainHeadExtendedEventsHandler>().AsSelf();
             builder.RegisterType<LastIrreversibleBlockUpdatedEventsHandler>().AsSelf();
             builder.RegisterType<TransactionsBatchEventsHandler>().AsSelf();

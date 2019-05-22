@@ -12,6 +12,7 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Services
 {
     public class IndexerApiImpl : IndexerApi.IndexerApiBase
     {
+        // todo: unordered messages filtering
         // todo: concurrency
         // todo: subscription persistency: Redis cluster or persistent storage
         // todo: performance: change set into hashset
@@ -365,13 +366,13 @@ namespace Lykke.Service.Bil2IndexerGrpcApi.Services
             _chainHeadExtendedEventsBuffer.Post(result);
         }
 
-        public void Publish(BlockRolledBackEvent evt)
+        public void Publish(ChainHeadReducedEvent evt)
         {
             var result = new BlockRolledBack
             {
                 BlockchainType = evt.BlockchainType,
-                BlockNumber = evt.BlockNumber,
-                BlockId = evt.BlockId,
+                BlockNumber = evt.ToBlockNumber,
+                BlockId = evt.ToBlockId,
                 PreviousBlockId = evt.PreviousBlockId
             };
             _blockRolledBackEventsBuffer.Post(result);

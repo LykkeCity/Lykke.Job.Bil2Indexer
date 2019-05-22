@@ -6,6 +6,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
     {
         public long StartBlock { get; }
         public long? StopAssemblingBlock { get; }
+        public bool IsInfinite => !StopAssemblingBlock.HasValue;
 
         public CrawlerConfiguration(long startBlock, long? stopAssemblingBlock)
         {

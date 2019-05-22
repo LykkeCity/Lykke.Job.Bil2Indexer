@@ -78,6 +78,11 @@ namespace Lykke.Job.Bil2Indexer.InMemoryRepositories
             return Task.FromResult(block);
         }
 
+        public Task<BlockHeader> GetAsync(string blockchainType, long blockNumber)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
             var block = await GetOrDefaultAsync(blockchainType, blockId);

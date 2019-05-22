@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using Lykke.Bil2.SharedDomain;
 
 namespace Lykke.Job.Bil2Indexer.Workflow.Commands
 {
@@ -12,17 +13,17 @@ namespace Lykke.Job.Bil2Indexer.Workflow.Commands
         public long ToBlockNumber { get; set; }
         
         [DataMember(Order = 2)]
-        public string ToBlockId { get; set; }
-        
-        [DataMember(Order = 3)]
-        public string BlockIdToRollback { get; set; }
-        
-        [DataMember(Order = 4)]
-        public long ChainHeadVersion { get; set; }
+        public BlockId OutdatedBlockId { get; set; }
 
+        [DataMember(Order = 3)]
+        public long OutdatedBlockNumber { get; set; }
+
+        [DataMember(Order = 4)]
+        public BlockId TriggeredByBlockId { get; set; }
+        
         public override string ToString()
         {
-            return $"{BlockchainType}:{ToBlockNumber}({ChainHeadVersion})";
+            return $"{BlockchainType}:{ToBlockNumber}:{OutdatedBlockId}";
         }
     }
 }

@@ -64,82 +64,39 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return MessageHandlingResult.TransientFailure();
             }
 
-            long nextBlockNumber;
             var crawlingDirection = crawler.EvaluateDirection(previousBlock, newBlock);
-
+            
             switch (crawlingDirection)
             {
                 case CrawlingDirection.Forward:
-                    nextBlockNumber = await crawler.EvaluateNextBlockToMoveForwardAsync
-                    (
-                        newBlock,
-                        blockNumber => _blockHeadersRepository.GetOrDefaultAsync(evt.BlockchainType, blockNumber),
-                        blockToRollback => replyPublisher.Publish
-                        (
-                            // TODO: Fix it, should be ReduceChainHeadCommand
-                            new RollbackBlockCommand
-                            {
-                                BlockchainType = evt.BlockchainType,
-                                BlockId = blockToRollback.Id,
-                                BlockNumber = blockToRollback.Number,
-                                PreviousBlockId = blockToRollback.PreviousBlockId
-                            }
-                        )
-                    );
+                    await MoveForwardAsync(evt, replyPublisher, crawler, crawlerCorrelationId, newBlock);
                     break;
 
                 case CrawlingDirection.Backward:
-                    nextBlockNumber = crawler.EvaluateNextBlockToMoveBackward
-                    (
-                        newBlock,
-                        previousBlock,
-                        blockToRollback => replyPublisher.Publish
-                        (
-                            // TODO: Fix it, should be ReduceChainHeadCommand
-                            new RollbackBlockCommand
-                            {
-                                BlockchainType = evt.BlockchainType,
-                                BlockId = blockToRollback.Id,
-                                BlockNumber = blockToRollback.Number,
-                                PreviousBlockId = blockToRollback.PreviousBlockId
-                            }
-                        )
-                    );
+                    await MoveBackwardAsync(evt, replyPublisher, crawlerCorrelationId, newBlock, previousBlock, headers);
                     break;
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(crawlingDirection), crawlingDirection, "Unknown value");
             }
-            
-            replyPublisher.Publish(new MoveCrawlerCommand
-            {
-                BlockchainType = evt.BlockchainType,
-                NextBlockNumber = nextBlockNumber
-            });
 
-            // TODO: Should be published only on forward movement?
+            return MessageHandlingResult.Success();
+        }
 
+        private async Task<MessageHandlingResult> MoveForwardAsync(
+            BlockAssembledEvent evt, 
+            IMessagePublisher replyPublisher, 
+            Crawler crawler,
+            CrawlerCorrelationId crawlerCorrelationId,
+            BlockHeader newBlock)
+        {
             var settings = _settingsProvider.Get(evt.BlockchainType);
-            
-            if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
-            {
-                var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
+            var nextBlockNumber = crawler.EvaluateNextBlockToMoveForward(newBlock);
+            var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
 
-                replyPublisher.Publish
-                (
-                    new ExecuteTransferCoinsBlockCommand
-                    {
-                        BlockchainType = evt.BlockchainType,
-                        BlockId = newBlock.Id,
-                        HaveToExecuteEntireBlock = chainHead.IsOnBlock(newBlock.Number - 1)
-                    }
-                );
-            }
-            else if(settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
+            if (settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
-                var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
-                
-                if (chainHead.CanExtendTo(newBlock.Number))
+                if (chainHead.IsFollowCrawler)
                 {
                     replyPublisher.Publish
                     (
@@ -149,14 +106,80 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                             ToBlockNumber = newBlock.Number,
                             ToBlockId = newBlock.Id,
                         },
-                        chainHead.GetCorrelationId().ToString()
+                        chainHead.GetCorrelationId(crawlerCorrelationId).ToString()
                     );
                 }
+            }
+            else if (settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
+            {
+                replyPublisher.Publish
+                (
+                    new ExecuteTransferCoinsBlockCommand
+                    {
+                        BlockchainType = evt.BlockchainType,
+                        BlockId = newBlock.Id,
+                        HaveToExecuteEntireBlock = chainHead.IsFollowCrawler,
+                        TriggeredBy = BlockExecutionTrigger.Crawler
+                    },
+                    chainHead.GetCorrelationId(crawlerCorrelationId).ToString()
+                );
             }
             else
             {
                 throw new ArgumentOutOfRangeException(nameof(settings.Capabilities.TransferModel), settings.Capabilities.TransferModel, "Unknown transfer model");
             }
+
+            replyPublisher.Publish(new MoveCrawlerCommand
+            {
+                BlockchainType = evt.BlockchainType,
+                NextBlockNumber = nextBlockNumber
+            });
+
+            return MessageHandlingResult.Success();
+        }
+
+        private async Task<MessageHandlingResult> MoveBackwardAsync(BlockAssembledEvent evt,
+            IMessagePublisher replyPublisher,
+            CrawlerCorrelationId crawlerCorrelationId,
+            BlockHeader newBlock,
+            BlockHeader previousBlock, 
+            MessageHeaders headers)
+        {
+            var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
+            var nextChainHeadBlockNumber = previousBlock.Number - 1;
+
+            if (chainHead.IsCatchCrawlerUp)
+            {
+                // Chain head reduction is only possible if chain head follows the crawler
+                _log.Info("Backward movement is only possible if chain head follows the crawler", new
+                {
+                    Headers = headers,
+                    Message = evt,
+                    ChainHead = chainHead
+                });
+
+                return MessageHandlingResult.TransientFailure();
+            }
+
+            if (!chainHead.IsFollowCrawler)
+            {
+                throw new InvalidOperationException("Chain head reduction requires that chain head follows the crawler");
+            }
+
+            replyPublisher.Publish
+                (
+                    new ReduceChainHeadCommand
+                    {
+                        BlockchainType = evt.BlockchainType,
+                        ToBlockNumber = nextChainHeadBlockNumber,
+                        OutdatedBlockId = previousBlock.Id,
+                        // it's possible that previous block can't be processed by the crawler (because of crawler range bounds),
+                        // but we ignores this case since this is very unlikely that chain fork can intersect ranges of different crawlers.
+                        OutdatedBlockNumber = previousBlock.Number,
+                        TriggeredByBlockId = newBlock.Id
+                    },
+                    chainHead.GetCorrelationId(crawlerCorrelationId).ToString()
+                );
 
             return MessageHandlingResult.Success();
         }

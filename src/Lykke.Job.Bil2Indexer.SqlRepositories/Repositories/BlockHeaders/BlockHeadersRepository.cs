@@ -80,9 +80,28 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             }
         }
 
+        public async Task<BlockHeader> GetAsync(string blockchainType, long blockNumber)
+        {
+            var block = await GetOrDefaultAsync(blockchainType, blockNumber);
+
+            if (block == null)
+            {
+                throw new InvalidOperationException($"Block {blockchainType}:{blockNumber} is not found");
+            }
+
+            return block;
+        }
+
         public async Task<BlockHeader> GetAsync(string blockchainType, BlockId blockId)
         {
-            return (await GetOrDefaultAsync(blockchainType, blockId)) ?? throw new InvalidOperationException(nameof(blockId));
+            var block = await GetOrDefaultAsync(blockchainType, blockId);
+
+            if (block == null)
+            {
+                throw new InvalidOperationException($"Block {blockchainType}:{blockId} is not found");
+            }
+
+            return block;
         }
 
         public async Task<BlockHeader> GetAsync(string blockchainType, DateTime dateTime)
@@ -94,11 +113,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
                 return existed?.ToDomain(blockchainType);
             }
-        }
-
-        public async  Task<BlockHeader> GetAsync(string blockchainType, long blockNumber)
-        {
-            return (await GetOrDefaultAsync(blockchainType, blockNumber)) ?? throw new ArgumentException(nameof(blockNumber));
         }
 
         public async Task<IReadOnlyCollection<BlockHeader>> GetCollectionAsync(string blockchainType, int limit, bool orderAsc, long? startingAfterNumber = null,
