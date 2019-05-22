@@ -33,8 +33,8 @@ create table coins
 create unique index coins_natural_key_index
     on coins (coin_id)  tablespace fast_space;
 
-create index coins_transaction_id_index
-	on coins (transaction_id)  tablespace fast_space;
+create index coins_block_id_index
+	on coins (block_id)  tablespace fast_space;
 
 create index coins_address_coin_id_index
 	on coins (address, coin_id)  tablespace fast_space where is_spent =false;

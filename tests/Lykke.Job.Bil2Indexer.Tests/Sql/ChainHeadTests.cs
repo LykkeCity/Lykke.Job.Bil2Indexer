@@ -115,7 +115,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 rnd.Next(),
                 Guid.NewGuid().ToString(),
                 Guid.NewGuid().ToString(),
-                ChainHeadMode.CatchesCrawlerUp
+                ChainHeadMode.FollowsCrawler
             );
         }
     }
