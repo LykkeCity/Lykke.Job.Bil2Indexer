@@ -22,7 +22,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         public async Task<ActionResult<Paginated<BlockModel, long>>> GetBlocks(
             [FromRoute] string blockchainType,
             [FromQuery] int? number,
-            PaginationRequest<long> pagination)
+            [FromQuery] PaginationRequest<long> pagination)
         {
             // TODO: Validate parameters
 
