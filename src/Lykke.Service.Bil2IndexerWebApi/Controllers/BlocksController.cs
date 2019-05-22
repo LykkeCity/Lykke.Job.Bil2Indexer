@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 {
-    [Route("api/blockchains/{blockchainType}/blocks")]
     public class BlocksController : ControllerBase
     {
+        private const string RoutePrefix = "api/blockchains/{blockchainType}/blocks";
         private readonly IBlockQueryFacade _blockQueryFacade;
 
         public BlocksController(IBlockQueryFacade blockQueryFacade)
@@ -18,7 +18,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             _blockQueryFacade = blockQueryFacade;
         }
 
-        [HttpGet(Name = nameof(GetBlocks))]
+        [HttpGet(RoutePrefix, Name = nameof(GetBlocks))]
         public async Task<ActionResult<Paginated<BlockModel, long>>> GetBlocks(
             [FromRoute] string blockchainType,
             [FromQuery] int? number,
@@ -46,7 +46,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             return blocks.Paginate(pagination);
         }
 
-        [HttpGet("/{id}", Name = nameof(GetBlockById))]
+        [HttpGet(RoutePrefix + "/{id}", Name = nameof(GetBlockById))]
         public async Task<ActionResult<BlockModel>> GetBlockById(
             [FromRoute] string blockchainType,
             [FromRoute] string id)
@@ -61,7 +61,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             return block;
         }
 
-        [HttpGet("/last-irreversible", Name = nameof(GetIrreversibleBlock))]
+        [HttpGet(RoutePrefix + "/last-irreversible", Name = nameof(GetIrreversibleBlock))]
         public async Task<ActionResult<BlockModel>> GetIrreversibleBlock([FromRoute] string blockchainType)
         {
             var block = await _blockQueryFacade.GetLastIrreversibleBlockAsync(blockchainType);
@@ -74,7 +74,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             return block;
         }
 
-        [HttpGet("/last", Name = nameof(GetLastBlock))]
+        [HttpGet(RoutePrefix + "/last", Name = nameof(GetLastBlock))]
         public async Task<ActionResult<BlockModel>> GetLastBlock([FromRoute] string blockchainType)
         {
             var block = await _blockQueryFacade.GetLastBlockAsync(blockchainType);
@@ -87,7 +87,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             return block;
         }
 
-        [HttpGet("/{id}/raw", Name = nameof(GetRawBlock))]
+        [HttpGet(RoutePrefix+ "/{id}/raw", Name = nameof(GetRawBlock))]
         public IActionResult GetRawBlock(
             [FromRoute] string blockchainType,
             [FromRoute] string id)

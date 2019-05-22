@@ -8,17 +8,17 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 {
-    [Route("api/blockchains/{blockchainType}/assets")]
     public class AssetsController : ControllerBase
     {
         private readonly IAssetQueryFacade _assetQueryFacade;
+        private const string RoutePrefix = "api/blockchains/{blockchainType}/assets";
 
         public AssetsController(IAssetQueryFacade assetQueryFacade)
         {
             _assetQueryFacade = assetQueryFacade;
         }
 
-        [HttpGet(Name = nameof(GetAssets))]
+        [HttpGet(RoutePrefix, Name = nameof(GetAssets))]
         public async Task<ActionResult<Paginated<AssetModel, string>>> GetAssets(
             [FromRoute] string blockchainType,
             [FromQuery] string assetTicker,
@@ -45,7 +45,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             return Ok(result);
         }
 
-        [HttpGet("/{assetTicker}/without-address", Name = nameof(GetAssetWithoutAddress))]
+        [HttpGet(RoutePrefix + "/{assetTicker}/without-address", Name = nameof(GetAssetWithoutAddress))]
         public async Task<ActionResult<AssetModel>> GetAssetWithoutAddress(
             [FromRoute] string blockchainType,
             [FromRoute] string assetTicker)
@@ -53,7 +53,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             throw new NotImplementedException();
         }
 
-        [HttpGet("/{assetTicker}/addresses/{assetAddress}", Name = nameof(GetAssetWithAddress))]
+        [HttpGet(RoutePrefix + "/{assetTicker}/addresses/{assetAddress}", Name = nameof(GetAssetWithAddress))]
         public async Task<ActionResult<AssetModel>> GetAssetWithAddress(
             [FromRoute] string blockchainType,
             [FromRoute] string assetTicker,

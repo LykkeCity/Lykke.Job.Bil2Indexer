@@ -8,22 +8,23 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 {
-    [Route("api/blockchains/{blockchainType}/transactions")]
     public class TransactionsController : ControllerBase
     {
+        private const string RoutePrefix = "api/blockchains/{blockchainType}/transactions";
+
         private readonly ITransactionQueryFacade _transactionQueryFacade;
         public TransactionsController(ITransactionQueryFacade transactionQueryFacade)
         {
             _transactionQueryFacade = transactionQueryFacade;
         }
 
-        [HttpGet(Name = nameof(GetTransactions))]
+        [HttpGet(RoutePrefix, Name = nameof(GetTransactions))]
         public async Task<ActionResult<Paginated<TransactionModel, string>>> GetTransactions(
             [FromRoute] string blockchainType,
             [FromQuery] string blockId,
             [FromQuery] int? blockNumber, 
             [FromQuery] string address,
-            PaginationRequest<string> pagination)
+            [FromQuery] PaginationRequest<string> pagination)
         {
             IReadOnlyCollection<TransactionModel> transactions;
 
@@ -65,7 +66,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             return transactions.Paginate(pagination);
         }
 
-        [HttpGet("{id}", Name = nameof(GetTransactionById))]
+        [HttpGet(RoutePrefix + "{id}", Name = nameof(GetTransactionById))]
         public async Task<ActionResult<TransactionModel>> GetTransactionById(
             [FromRoute] string blockchainType,
             [FromRoute] string id)

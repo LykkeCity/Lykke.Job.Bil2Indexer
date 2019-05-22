@@ -9,9 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 {
-    [Route("api/blockchains/{blockchainType}/addresses")]
     public class AddressesController : ControllerBase
     {
+        private const string RoutePrefix = "api/blockchains/{blockchainType}/addresses";
         private readonly IAddressQueryFacade _addressQueryFacade;
 
         public AddressesController(IAddressQueryFacade addressQueryFacade)
@@ -19,7 +19,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             _addressQueryFacade = addressQueryFacade;
         }
 
-        [HttpGet("/{address}/balances", Name = nameof(GetAddressBalances))]
+        [HttpGet(RoutePrefix + "/{address}/balances", Name = nameof(GetAddressBalances))]
         public async Task<ActionResult<IReadOnlyCollection<AddressBalanceModel>>> GetAddressBalances(
             [FromRoute] string blockchainType,
             [FromRoute] string address,
@@ -69,7 +69,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             return Ok(result);
         }
 
-        [HttpGet("/{address}/unspent-outputs", Name = nameof(GetAddressUnspentOutputs))]
+        [HttpGet(RoutePrefix + "/{address}/unspent-outputs", Name = nameof(GetAddressUnspentOutputs))]
         public async Task<ActionResult<Paginated<AddressUnspentOutputModel, string>>> GetAddressUnspentOutputs(
             [FromRoute] string blockchainType,
             [FromRoute] string address,
