@@ -1,6 +1,5 @@
 ﻿using JetBrains.Annotations;
 using Lykke.Sdk.Settings;
-using Lykke.Service.Bil2IndexerWebApi.Settings.ApiSettings;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Settings
 {

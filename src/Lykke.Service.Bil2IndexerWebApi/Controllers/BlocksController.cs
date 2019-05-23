@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
+using Lykke.Service.Bil2IndexerWebApi.Models.Requests;
 using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,30 +21,28 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 
         [HttpGet(RoutePrefix, Name = nameof(GetBlocks))]
         public async Task<ActionResult<Paginated<BlockModel, long>>> GetBlocks(
-            [FromRoute] string blockchainType,
-            [FromQuery] int? number,
-            [FromQuery] PaginationRequest<long> pagination)
+            [FromRoute][FromQuery] BlocksRequest request)
         {
             // TODO: Validate parameters
 
-            if (number != null)
+            if (request.Number != null)
             {
-                var block = await _blockQueryFacade.GetBlockByNumberOrDefault(blockchainType, number.Value);
+                var block = await _blockQueryFacade.GetBlockByNumberOrDefault(request.BlockchainType, request.Number.Value);
 
                 if (block == null)
                 {
                     return NotFound();
                 }
 
-                return block.PaginateSingle(pagination);
+                return block.PaginateSingle(request.Pagination);
             }
 
-            var blocks = await _blockQueryFacade.GetBlocks(blockchainType, pagination.Limit, 
-                pagination.Order == PaginationOrder.Asc,
-                pagination.StartingAfter,
-                pagination.EndingBefore);
+            var blocks = await _blockQueryFacade.GetBlocks(request.BlockchainType, request.Pagination.Limit,
+                request.Pagination.Order == PaginationOrder.Asc,
+                request.Pagination.StartingAfter,
+                request.Pagination.EndingBefore);
 
-            return blocks.Paginate(pagination);
+            return blocks.Paginate(request.Pagination);
         }
 
         [HttpGet(RoutePrefix + "/{id}", Name = nameof(GetBlockById))]

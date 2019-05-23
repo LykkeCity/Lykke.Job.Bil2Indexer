@@ -34,7 +34,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             return null;
         }
 
-        public async Task<BlockModel> GetBlockByNumberOrDefault(string blockchainType, int number)
+        public async Task<BlockModel> GetBlockByNumberOrDefault(string blockchainType, long number)
         {
             var getBlock = _blockHeadersRepository.GetOrDefaultAsync(blockchainType, number);
             var getChainHead = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);

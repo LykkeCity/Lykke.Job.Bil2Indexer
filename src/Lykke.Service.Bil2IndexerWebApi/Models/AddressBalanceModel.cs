@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Lykke.Service.Bil2IndexerWebApi.Models
+﻿namespace Lykke.Service.Bil2IndexerWebApi.Models
 {
     public class AddressBalanceModel
     {

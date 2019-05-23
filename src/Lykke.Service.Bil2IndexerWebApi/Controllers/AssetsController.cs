@@ -1,8 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
+using Lykke.Service.Bil2IndexerWebApi.Models.Requests;
 using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,29 +20,26 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 
         [HttpGet(RoutePrefix, Name = nameof(GetAssets))]
         public async Task<ActionResult<Paginated<AssetModel, string>>> GetAssets(
-            [FromRoute] string blockchainType,
-            [FromQuery] string assetTicker,
-            [FromQuery] string assetAddress,
-            [FromQuery] PaginationRequest<string> pagination)
+            [FromQuery][FromRoute] AssetsRequest request)
         {
             Paginated<AssetModel, string> result;
 
-            if (assetTicker != null && assetAddress != null)
+            if (request.AssetTicker != null && request.AssetAddress != null)
             {
-                var asset = await _assetQueryFacade.GetAsset(blockchainType, assetAddress, assetTicker);
+                var asset = await _assetQueryFacade.GetAsset(request.BlockchainType, request.AssetAddress, request.AssetTicker);
 
-                result = asset.PaginateSingle(pagination);
+                result = asset.PaginateSingle(request.Pagination);
             }
             else
             {
-                result = (await _assetQueryFacade.GetAssets(blockchainType, 
-                    pagination.Limit, 
-                    pagination.Order == PaginationOrder.Asc, 
-                    pagination.StartingAfter,
-                    pagination.EndingBefore)).Paginate(pagination);
+                result = (await _assetQueryFacade.GetAssets(request.BlockchainType,
+                    request.Pagination.Limit,
+                    request.Pagination.Order == PaginationOrder.Asc,
+                    request.Pagination.StartingAfter,
+                    request.Pagination.EndingBefore)).Paginate(request.Pagination);
             }
 
-            return Ok(result);
+            return result;
         }
 
         [HttpGet(RoutePrefix + "/{assetTicker}/without-address", Name = nameof(GetAssetWithoutAddress))]
@@ -50,7 +47,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromRoute] string blockchainType,
             [FromRoute] string assetTicker)
         {
-            throw new NotImplementedException();
+            return await _assetQueryFacade.GetAsset(blockchainType, assetTicker);
         }
 
         [HttpGet(RoutePrefix + "/{assetTicker}/addresses/{assetAddress}", Name = nameof(GetAssetWithAddress))]
@@ -59,7 +56,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromRoute] string assetTicker,
             [FromRoute] string assetAddress)
         {
-            throw new NotImplementedException();
+            return await _assetQueryFacade.GetAsset(blockchainType, assetTicker, assetAddress);
         }
     }
 }

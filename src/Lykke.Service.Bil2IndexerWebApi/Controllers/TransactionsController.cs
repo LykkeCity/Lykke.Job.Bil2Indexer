@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
+using Lykke.Service.Bil2IndexerWebApi.Models.Requests;
 using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,51 +21,45 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(RoutePrefix, Name = nameof(GetTransactions))]
-        public async Task<ActionResult<Paginated<TransactionModel, string>>> GetTransactions(
-            [FromRoute] string blockchainType,
-            [FromQuery] string blockId,
-            [FromQuery] int? blockNumber, 
-            [FromQuery] string address,
-            [FromQuery] PaginationRequest<string> pagination)
+        public async Task<ActionResult<Paginated<TransactionModel, string>>> GetTransactions([FromRoute][FromQuery] TransactionsRequest request)
         {
             IReadOnlyCollection<TransactionModel> transactions;
 
             // TODO: Validate parameters
 
-            if (blockId != null)
+            if (request.BlockId != null)
             {
-                transactions = await _transactionQueryFacade.GetTransactionsByBlockId(blockchainType, 
-                    blockId,
-                    pagination.Limit,
-                    pagination.Order == PaginationOrder.Asc,
-                    pagination.StartingAfter,
-                    pagination.EndingBefore);
+                transactions = await _transactionQueryFacade.GetTransactionsByBlockId(request.BlockchainType,
+                    request.BlockId,
+                    request.Pagination.Limit,
+                    request.Pagination.Order == PaginationOrder.Asc,
+                    request.Pagination.StartingAfter,
+                    request.Pagination.EndingBefore);
             } 
-            else if (blockNumber != null)
+            else if (request.BlockNumber != null)
             {
-                transactions = await _transactionQueryFacade.GetTransactionsByBlockNumber(blockchainType, 
-                    blockNumber.Value,
-                    pagination.Limit,
-                    pagination.Order == PaginationOrder.Asc,
-                    pagination.StartingAfter,
-                    pagination.EndingBefore);
+                transactions = await _transactionQueryFacade.GetTransactionsByBlockNumber(request.BlockchainType,
+                    request.BlockNumber.Value,
+                    request.Pagination.Limit,
+                    request.Pagination.Order == PaginationOrder.Asc,
+                    request.Pagination.StartingAfter,
+                    request.Pagination.EndingBefore);
             }
-            else if (address != null)
+            else if (request.Address != null)
             {
-                transactions = await _transactionQueryFacade.GetTransactionsByAddress(blockchainType, 
-                    address,
-                    pagination.Limit,
-                    pagination.Order == PaginationOrder.Asc,
-                    pagination.StartingAfter,
-                    pagination.EndingBefore);
+                transactions = await _transactionQueryFacade.GetTransactionsByAddress(request.BlockchainType,
+                    request.Address,
+                    request.Pagination.Limit,
+                    request.Pagination.Order == PaginationOrder.Asc,
+                    request.Pagination.StartingAfter,
+                    request.Pagination.EndingBefore);
             }
             else
             {
-                // TODO: Describe why request is failed
-                return BadRequest();
+                throw new ArgumentException("This should not happen due validation logic");
             }
 
-            return transactions.Paginate(pagination);
+            return transactions.Paginate(request.Pagination);
         }
 
         [HttpGet(RoutePrefix + "{id}", Name = nameof(GetTransactionById))]

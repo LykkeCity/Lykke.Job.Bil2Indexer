@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
+using Lykke.Service.Bil2IndexerWebApi.Models.Requests;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {

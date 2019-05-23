@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
+using Lykke.Service.Bil2IndexerWebApi.Models.Requests;
 using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,48 +21,42 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 
         [HttpGet(RoutePrefix + "/{address}/balances", Name = nameof(GetAddressBalances))]
         public async Task<ActionResult<IReadOnlyCollection<AddressBalanceModel>>> GetAddressBalances(
-            [FromRoute] string blockchainType,
-            [FromRoute] string address,
-            [FromQuery] string blockId, 
-            [FromQuery] long? blockNumber, 
-            [FromQuery] DateTimeOffset? datetime)
+            [FromRoute][FromQuery] AddressBalancesRequest request)
         {
-            // TODO: Validate parameters
-
             IReadOnlyCollection<AddressBalanceModel> result;
-            if (blockId != null)
+            if (request.BlockId != null)
             {
                 result =  await _addressQueryFacade.GetBalancesByBlockId
                 (
-                    blockchainType,
-                    address,
-                    blockId
+                    request.BlockchainType,
+                    request.Address,
+                    request.BlockId
                 );
             }
-            else if (blockNumber != null)
+            else if (request.BlockNumber != null)
             {
                 result = await _addressQueryFacade.GetBalancesByBlockNumber
                 (
-                    blockchainType,
-                    address,
-                    blockNumber.Value
+                    request.BlockchainType,
+                    request.Address,
+                    request.BlockNumber.Value
                 );
             }
-            else if (datetime != null)
+            else if (request.DateTime != null)
             {
                 result = await _addressQueryFacade.GetBalancesOnDate
                 (
-                    blockchainType,
-                    address,
-                    datetime.Value.UtcDateTime
+                    request.BlockchainType,
+                    request.Address,
+                    request.DateTime.Value.UtcDateTime
                 );
             }
             else
             {
                 result = (await _addressQueryFacade.GetBalances
                 (
-                    blockchainType,
-                    address
+                    request.BlockchainType,
+                    request.Address
                 ));
             }
 

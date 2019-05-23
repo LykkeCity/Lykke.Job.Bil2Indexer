@@ -30,4 +30,7 @@
     <ProjectReference Include="..\Lykke.Job.Bil2Indexer.Domain\Lykke.Job.Bil2Indexer.Domain.csproj" />
     <ProjectReference Include="..\Lykke.Job.Bil2Indexer.SqlRepositories\Lykke.Job.Bil2Indexer.SqlRepositories.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Validators\" />
+  </ItemGroup>
 </Project>
