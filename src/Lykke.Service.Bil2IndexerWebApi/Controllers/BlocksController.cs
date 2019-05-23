@@ -21,16 +21,16 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(RoutePrefix, Name = nameof(GetBlocks))]
-        public async Task<ActionResult<Paginated<BlockResponce, long>>> GetBlocks(
+        public async Task<ActionResult<Paginated<BlockResponce, long?>>> GetBlocks(
             [FromRoute][FromQuery] BlocksRequest request)
         {
-            var blocks = await _blockQueryFacade.GetBlocks(request.BlockchainType, request.Pagination.Limit,
-                request.Pagination.Order == PaginationOrder.Asc,
-                request.Pagination.StartingAfter,
-                request.Pagination.EndingBefore, 
+            var blocks = await _blockQueryFacade.GetBlocks(request.BlockchainType, request.Limit,
+                request.Order == PaginationOrder.Asc,
+                request.StartingAfter,
+                request.EndingBefore, 
                 Url);
 
-            return blocks.Paginate(request.Pagination, Url, p => p.Number);
+            return blocks.Paginate(request, Url, p =>p.Number);
         }
 
         [HttpGet(RoutePrefix + "/{id}", Name = nameof(GetBlockById))]

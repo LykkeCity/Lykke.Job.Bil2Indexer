@@ -57,14 +57,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             long? endingBeforeNumber,
             IUrlHelper url)
         {
-            var getChainHead = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
-            var getBlocks = _blockHeadersRepository.GetCollectionAsync(blockchainType, limit, orderAsc, startingAfterNumber, endingBeforeNumber);
+            var chainHead = await _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
 
-            await Task.WhenAll(getBlocks, getChainHead);
+            var result =await _blockHeadersRepository
+                .GetCollectionAsync(blockchainType, chainHead, limit, orderAsc, startingAfterNumber, endingBeforeNumber);
 
-            return getBlocks.Result
-                .Where(p => p.Number <= getChainHead.Result).ToList()
-                .ToViewModel(getChainHead.Result, url, blockchainType);
+            return result.ToViewModel(chainHead, url, blockchainType);
         }
 
         public Task<BlockResponce> GetLastIrreversibleBlockAsync(string blockchainType, IUrlHelper url)

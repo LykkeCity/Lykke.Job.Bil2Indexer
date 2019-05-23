@@ -20,11 +20,10 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
             string blockchainType)
         {
             var feesPerTx = fees.ToLookup(p => p.TransactionId);
-            var balancesPerTx = balances.Where(p =>p.BlockNumber <= lastBlockNumber).ToLookup(p => p.TransactionId);
+            var balancesPerTx = balances.ToLookup(p => p.TransactionId);
 
             return transactionIds
                 .Select(p => p.ToViewModel(feesPerTx[p].ToList(),balancesPerTx[p].ToList(), lastBlockNumber, url, blockchainType))
-                .Where(p => p.Transfers.Any())
                 .ToList();
         }
 

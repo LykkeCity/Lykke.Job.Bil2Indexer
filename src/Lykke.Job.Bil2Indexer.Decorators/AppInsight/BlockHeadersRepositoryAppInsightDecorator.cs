@@ -82,7 +82,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
                 () => _impl.GetAsync(blockchainType, dateTime));
         }
 
-        public Task<IReadOnlyCollection<BlockHeader>> GetCollectionAsync(string blockchainType, int limit, bool orderAsc, long? startingAfter = null,
+        public Task<IReadOnlyCollection<BlockHeader>> GetCollectionAsync(string blockchainType, long maxBlockNumber, int limit, bool orderAsc, long? startingAfter = null,
             long? endingBefore = null)
         {
             var operationName = _appInsightTelemetryProvider.FormatOperationName(_impl);
@@ -90,7 +90,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                () => _impl.GetCollectionAsync(blockchainType, limit, orderAsc, startingAfter, endingBefore));
+                () => _impl.GetCollectionAsync(blockchainType, maxBlockNumber, limit, orderAsc, startingAfter, endingBefore));
         }
 
         public Task TryRemoveAsync(string blockchainType, BlockId blockId)

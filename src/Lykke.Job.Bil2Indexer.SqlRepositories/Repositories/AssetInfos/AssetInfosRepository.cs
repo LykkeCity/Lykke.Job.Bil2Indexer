@@ -112,8 +112,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var query = db.AssetInfos
-                    .Where(AssetInfosPredicates.Build(startingAfter, endingBefore))
-                    .Take(limit);
+                    .Where(AssetInfosPredicates.BuildEnumeration(startingAfter, endingBefore, orderAsc));
 
                 if (orderAsc)
                 {
@@ -124,7 +123,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
                     query = query.OrderByDescending(p => p.Id);
                 }
                 
-                return (await query.ToListAsync())
+                return (await query.Take(limit).ToListAsync())
                     .Select(p => p.ToDomain(blockchainType)).ToList();
             }
         }

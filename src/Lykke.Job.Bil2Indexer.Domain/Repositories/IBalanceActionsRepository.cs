@@ -18,6 +18,7 @@ namespace Lykke.Job.Bil2Indexer.Domain.Repositories
         Task<IReadOnlyCollection<BalanceAction>> GetCollectionAsync(string blockchainType, params TransactionId[] transactionIds);
         Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfAddressAsync(string blockchainType,
             Address address,
+            long maxBlockNumber,
             int limit,
             bool orderAsc,
             TransactionId startingAfter,

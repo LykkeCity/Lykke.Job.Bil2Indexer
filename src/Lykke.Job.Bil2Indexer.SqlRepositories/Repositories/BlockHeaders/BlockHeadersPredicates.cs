@@ -27,18 +27,49 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             return p => p.Number == blockNumber;
         }
 
-        public static Expression<Func<BlockHeaderEntity, bool>> Build(long? startingAfterNumber, long? endingBeforeNumber)
+        public static Expression<Func<BlockHeaderEntity, bool>> BuildEnumeration(long maxBlockNumber, 
+            long? startingAfterNumber, 
+            long? endingBeforeNumber, 
+            bool orderAsc)
         {
-            var predicate = PredicateBuilder.New<BlockHeaderEntity>(p => true);
-            if (startingAfterNumber != null)
-            {
-                // ReSharper disable once StringCompareToIsCultureSpecific
-                predicate = predicate.And(p => p.Number > startingAfterNumber);
-            }
+            return orderAsc
+                ? BuildEnumerationAsc(maxBlockNumber, startingAfterNumber, endingBeforeNumber)
+                : BuildEnumerationDesc(maxBlockNumber, startingAfterNumber, endingBeforeNumber);
+        }
+
+        private static Expression<Func<BlockHeaderEntity, bool>> BuildEnumerationAsc(long maxBlockNumber,
+            long? startingAfterNumber, 
+            long? endingBeforeNumber)
+        {
+
+            var predicate = PredicateBuilder.New<BlockHeaderEntity>(p=>p.Number <= maxBlockNumber);
+
             if (endingBeforeNumber != null)
             {
-                // ReSharper disable once StringCompareToIsCultureSpecific
                 predicate = predicate.And(p => p.Number < endingBeforeNumber);
+            }
+            if (startingAfterNumber != null)
+            {
+                predicate = predicate.And(p => p.Number > startingAfterNumber);
+            }
+
+            return predicate;
+        }
+
+        private static Expression<Func<BlockHeaderEntity, bool>> BuildEnumerationDesc(long maxBlockNumber,
+            long? startingAfterNumber,
+            long? endingBeforeNumber)
+        {
+            var predicate = PredicateBuilder.New<BlockHeaderEntity>(p => p.Number <= maxBlockNumber);
+
+            if (startingAfterNumber != null)
+            {
+                predicate = predicate.And(p => p.Number < startingAfterNumber);
+            }
+
+            if (endingBeforeNumber != null)
+            {
+                predicate = predicate.And(p => p.Number > endingBeforeNumber);
             }
 
             return predicate;
