@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 {
     [Table("fees")]
-    public class FeeEnvelopeEntity
+    internal class FeeEnvelopeEntity
     {
         [Column("id")]
         [Key]

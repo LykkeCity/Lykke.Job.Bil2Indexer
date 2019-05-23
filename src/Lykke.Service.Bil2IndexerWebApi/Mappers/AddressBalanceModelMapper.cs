@@ -7,7 +7,7 @@ using Lykke.Service.Bil2IndexerWebApi.Models;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
-    public static class AddressBalanceModelMapper
+    internal static class AddressBalanceModelMapper
     {
         public static IReadOnlyCollection<AddressBalanceResponce> ToViewModel(this IReadOnlyDictionary<Address, IReadOnlyDictionary<Asset, Money>> source, 
             BlockHeader blockHeader)

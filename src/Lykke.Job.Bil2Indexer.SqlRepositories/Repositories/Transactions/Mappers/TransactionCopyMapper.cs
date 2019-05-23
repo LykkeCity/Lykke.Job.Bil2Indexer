@@ -1,4 +1,4 @@
-﻿using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
+﻿using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using NpgsqlTypes;
 using PostgreSQLCopyHelper;
 

@@ -3,8 +3,8 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,7 +29,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
                 throw new ArgumentNullException(nameof(configuration));
             }
 
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.Crawlers.SingleOrDefaultAsync(BuildIdPredicate(configuration.StartBlock,
                     configuration.StopAssemblingBlock));
@@ -48,7 +48,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
             var dbEntity = Map(crawler);
             var isExisted = crawler.Version != 0;
 
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(crawler.BlockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(crawler.BlockchainType)))
             {
                 if (isExisted)
                 {

@@ -7,7 +7,7 @@ using Lykke.Service.Bil2IndexerWebApi.Models;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
-    public class AssetQueryFacade: IAssetQueryFacade
+    internal class AssetQueryFacade: IAssetQueryFacade
     {
         private readonly IAssetInfosRepository _assetInfosRepository;
 

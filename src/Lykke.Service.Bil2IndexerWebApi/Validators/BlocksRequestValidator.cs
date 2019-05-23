@@ -4,7 +4,7 @@ using Lykke.Service.Bil2IndexerWebApi.Validators.Common;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Validators
 {
-    public class BlocksRequestValidator : AbstractValidator<BlocksRequest>
+    internal class BlocksRequestValidator : AbstractValidator<BlocksRequest>
     {
         public BlocksRequestValidator()
         {

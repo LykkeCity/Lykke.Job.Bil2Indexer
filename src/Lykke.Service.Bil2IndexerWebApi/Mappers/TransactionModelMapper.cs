@@ -6,11 +6,10 @@ using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Service.Bil2IndexerWebApi.Extensions;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
-    public static class TransactionModelMapper
+    internal static class TransactionModelMapper
     {
         public static IReadOnlyCollection<TransactionResponce> ToViewModel(this IReadOnlyCollection<TransactionId> transactionIds, 
             IReadOnlyCollection<FeeEnvelope> fees,

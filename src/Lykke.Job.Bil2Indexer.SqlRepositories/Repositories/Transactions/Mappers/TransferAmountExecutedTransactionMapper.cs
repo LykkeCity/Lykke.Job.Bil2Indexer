@@ -3,9 +3,9 @@ using System.Linq;
 using Common;
 using Lykke.Bil2.Contract.BlocksReader.Events;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props.Payloads;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models.Props;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models.Props.Payloads;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
 {

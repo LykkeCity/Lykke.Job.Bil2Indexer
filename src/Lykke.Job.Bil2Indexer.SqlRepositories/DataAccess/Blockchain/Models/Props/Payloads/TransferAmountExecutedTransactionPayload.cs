@@ -3,9 +3,9 @@ using JetBrains.Annotations;
 using Lykke.Bil2.SharedDomain;
 using Newtonsoft.Json;
 
-namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props.Payloads
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models.Props.Payloads
 {
-    public class TransferAmountExecutedTransactionPayload
+    internal class TransferAmountExecutedTransactionPayload
     {
         [JsonProperty("balanceChanges")]
         public IEnumerable<BalanceChangeEntity> BalanceChanges { get; set; }

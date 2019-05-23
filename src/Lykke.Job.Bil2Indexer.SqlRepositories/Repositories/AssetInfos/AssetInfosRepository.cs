@@ -30,7 +30,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
             foreach (var asset in assets)
             {
                 using (var db =
-                    new BlockchainDataContext(
+                    new DataContext(
                         _connectionStringProvider.GetConnectionString(assets.First().BlockchainType)))
                 {
                     var dbEntity = asset.ToDbEntity();
@@ -52,7 +52,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
         public async Task<AssetInfo> GetOrDefaultAsync(string blockchainType, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.AssetInfos
                     .SingleOrDefaultAsync(AssetInfosPredicates.Build(asset));
@@ -63,7 +63,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
         public async Task<AssetInfo> GetAsync(string blockchainType, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.AssetInfos
                     .SingleAsync(AssetInfosPredicates.Build(asset));
@@ -76,7 +76,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
         {
             var ids = assets.Select(AssetIdBuilder.BuildId).ToList();
 
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entities = await db.AssetInfos
                     .Where(p => ids.Contains(p.Id))
@@ -88,7 +88,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
         public async Task<PaginatedItems<AssetInfo>> GetPagedAsync(string blockchainType, int limit, string continuation)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 int skip = 0;
                 if (!string.IsNullOrEmpty(continuation))
@@ -109,7 +109,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.AssetInfos
 
         public async Task<IReadOnlyCollection<AssetInfo>> GetCollectionAsync(string blockchainType, int limit, bool orderAsc, Asset startingAfter = null, Asset endingBefore = null)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var query = db.AssetInfos
                     .Where(AssetInfosPredicates.BuildEnumeration(startingAfter, endingBefore, orderAsc));

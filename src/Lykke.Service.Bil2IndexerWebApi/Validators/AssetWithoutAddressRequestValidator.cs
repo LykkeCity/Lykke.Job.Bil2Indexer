@@ -4,7 +4,7 @@ using Lykke.Service.Bil2IndexerWebApi.Validators.Common;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Validators
 {
-    public class AssetWithoutAddressRequestValidator : AbstractValidator<AssetWithoutAddressRequest>
+    internal class AssetWithoutAddressRequestValidator : AbstractValidator<AssetWithoutAddressRequest>
     {
         public AssetWithoutAddressRequestValidator()
         {

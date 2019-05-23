@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 {
     [Table("transactions")]
     internal class TransactionEntity

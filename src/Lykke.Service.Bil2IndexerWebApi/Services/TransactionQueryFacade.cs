@@ -6,11 +6,10 @@ using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
-    public class TransactionQueryFacade: ITransactionQueryFacade
+    internal class TransactionQueryFacade: ITransactionQueryFacade
     {
         private readonly IFeeEnvelopesRepository _feeEnvelopesRepository;
         private readonly IBalanceActionsRepository _balanceActionsRepository;

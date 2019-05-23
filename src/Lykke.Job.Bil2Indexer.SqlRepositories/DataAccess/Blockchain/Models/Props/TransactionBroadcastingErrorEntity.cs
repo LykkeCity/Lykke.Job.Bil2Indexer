@@ -1,8 +1,8 @@
 ﻿using System.Runtime.Serialization;
 
-namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models.Props
 {
-    public enum TransactionBroadcastingErrorEntity
+    internal enum TransactionBroadcastingErrorEntity
     {
         [EnumMember(Value = "notEnoughBalance")] NotEnoughBalance = 0,
         [EnumMember(Value = "feeTooLow")] FeeTooLow = 1,

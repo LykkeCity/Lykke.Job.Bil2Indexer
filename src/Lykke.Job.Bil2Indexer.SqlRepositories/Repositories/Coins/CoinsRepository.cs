@@ -76,7 +76,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
         {
             var ids = dbEntities.Select(p => new CoinId(p.TransactionId, p.CoinNumber)).ToList();
             
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existedNaturalIds = (await db.Coins.Where(CoinPredicates.Build(ids))
                         .Select(p => new { p.TransactionId, p.CoinNumber })
@@ -97,7 +97,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                 return;
             }
 
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var foundCount = await db.Coins.Where(CoinPredicates.Build(ids))
                     .UpdateAsync(p => new CoinEntity { IsSpent = true });
@@ -116,7 +116,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                 return;
             }
 
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var foundCount = await db.Coins
                     .Where(CoinPredicates.Build(ids))
@@ -136,7 +136,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
                 return Array.Empty<Coin>();
             }
 
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 return (await db.Coins.Where(CoinPredicates.Build(ids))
                         .ToListAsync())
@@ -147,7 +147,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
 
         public async Task RemoveIfExistAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 await db.Coins
                         .Where(CoinPredicates.Build(blockId))
@@ -162,7 +162,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Coins
             CoinId startingAfter,
             CoinId endingBefore)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var stringAddress = address.ToString();
 

@@ -9,7 +9,7 @@ using Lykke.SettingsReader;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Modules
 {
-    public class ServiceModule : Module
+    internal class ServiceModule : Module
     {
         private readonly AppSettings _settings;
 

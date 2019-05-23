@@ -7,14 +7,6 @@ namespace Lykke.Service.Bil2IndexerWebApi.Settings.BlockchainIntegrations
     {
         [UsedImplicitly(ImplicitUseKindFlags.Assign)]
         public string Type { get; set; }
-
-        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
-        public string PgBlockchainDataConnString { get; set; }
-
-        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
-        public string PgStateDataConnString { get; set; }
-
-        [UsedImplicitly(ImplicitUseKindFlags.Assign)]
-        public string PgTransactionsDataConnString { get; set; }
+        public string PgConnectionString { get; set; }
     }
 }
