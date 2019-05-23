@@ -25,6 +25,12 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public BlockId PreviousBlockId { get; }
         public BlockState State { get; private set; }
 
+        public bool IsNotAssembledYet => State == BlockState.Assembling;
+
+        public bool IsNotExecutedYet =>
+            State == BlockState.Assembling ||
+            State == BlockState.Assembled;
+
         public bool IsAssembled => State == BlockState.Assembled;
 
         public bool IsAlreadyAssembled =>
@@ -39,6 +45,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public bool CanBeExecuted => State == BlockState.Assembled || State == BlockState.PartiallyExecuted;
 
         public bool ExecutionCanBeReverted => State == BlockState.Executed || State == BlockState.PartiallyExecuted;
+        
 
         public BlockHeader(
             BlockId id, 

@@ -21,6 +21,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly IntegrationSettingsProvider _settingsProvider;
         private readonly IChainHeadsRepository _chainHeadsRepository;
+        private readonly IntegrationSettingsProvider _integrationSettingsProvider;
         private readonly ILog _log;
 
         public BlockAssembledEventsHandler(
@@ -28,13 +29,15 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             ICrawlersManager crawlersManager,
             IBlockHeadersRepository blockHeadersRepository,
             IntegrationSettingsProvider settingsProvider,
-            IChainHeadsRepository chainHeadsRepository)
+            IChainHeadsRepository chainHeadsRepository,
+            IntegrationSettingsProvider integrationSettingsProvider)
         {
             _log = logFactory.CreateLog(this);
             _crawlersManager = crawlersManager;
             _blockHeadersRepository = blockHeadersRepository;
             _settingsProvider = settingsProvider;
             _chainHeadsRepository = chainHeadsRepository;
+            _integrationSettingsProvider = integrationSettingsProvider;
         }
 
         public async Task<MessageHandlingResult> HandleAsync(BlockAssembledEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
@@ -96,7 +99,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
-                if (chainHead.IsFollowCrawler)
+                if (chainHead.IsFollowCrawler || newBlock.Number == _integrationSettingsProvider.Get(evt.BlockchainType).Capabilities.FirstBlockNumber)
                 {
                     replyPublisher.Publish
                     (
@@ -118,7 +121,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     {
                         BlockchainType = evt.BlockchainType,
                         BlockId = newBlock.Id,
-                        HaveToExecuteEntireBlock = chainHead.IsFollowCrawler,
+                        HaveToExecuteEntireBlock = chainHead.IsFollowCrawler || chainHead.BlockNumber + 1 == newBlock.Number,
                         TriggeredBy = BlockExecutionTrigger.Crawler
                     },
                     chainHead.GetCorrelationId(crawlerCorrelationId).ToString()

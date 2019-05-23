@@ -64,13 +64,18 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
 
             if (nextBlock == null)
             {
-                // If the next block header is not even received yet, the chain head will be extended once block
-                // is assembled. This will be triggered by BlockAssembledEvent.
-                return MessageHandlingResult.Success();
+                // Chain head need to wait for the next block to be received.
+                return MessageHandlingResult.TransientFailure();
             }
 
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
+                if (nextBlock.IsNotAssembledYet)
+                {
+                    // Chain head need to wait for the next block to be assembled.
+                    return MessageHandlingResult.TransientFailure();
+                }
+
                 if (nextBlock.IsAssembled)
                 {
                     // If the next block is assembled already, we should extend the chain head bypassing BlockAssembledEvent.
@@ -84,6 +89,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             }
             else if(settings.Capabilities.TransferModel == BlockchainTransferModel.Coins)
             {
+                if (nextBlock.IsNotExecutedYet)
+                {
+                    // Chain head need to wait for the next block to be executed or partially executed.
+                    return MessageHandlingResult.TransientFailure();
+                }
+
                 if (nextBlock.IsPartiallyExecuted)
                 {
                     // If the next block is partially executed, we should execute it again
