@@ -22,24 +22,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         public async Task<ActionResult<Paginated<AssetModel, string>>> GetAssets(
             [FromQuery][FromRoute] AssetsRequest request)
         {
-            Paginated<AssetModel, string> result;
-
-            if (request.AssetTicker != null)
-            {
-                var asset = await _assetQueryFacade.GetAsset(request.BlockchainType, request.AssetTicker, request.AssetAddress);
-
-                result = asset.PaginateSingle(request.Pagination);
-            }
-            else
-            {
-                result = (await _assetQueryFacade.GetAssets(request.BlockchainType,
-                    request.Pagination.Limit,
-                    request.Pagination.Order == PaginationOrder.Asc,
-                    request.Pagination.StartingAfter,
-                    request.Pagination.EndingBefore)).Paginate(request.Pagination);
-            }
-
-            return result;
+            return  (await _assetQueryFacade.GetAssets(request.BlockchainType,
+                        request.Pagination.Limit,
+                        request.Pagination.Order == PaginationOrder.Asc,
+                        request.Pagination.StartingAfter,
+                        request.Pagination.EndingBefore))
+                .Paginate(request.Pagination);
         }
 
         [HttpGet(RoutePrefix + "/{assetTicker}/without-address", Name = nameof(GetAssetWithoutAddress))]
