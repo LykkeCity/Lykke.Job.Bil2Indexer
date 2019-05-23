@@ -1,42 +1,67 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
 using Lykke.Service.Bil2IndexerWebApi.Models.Requests;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
     public static class PaginationMapper
     {
-        //TODO pass build url func
-        public static Paginated<TItem, TId> Paginate<TItem, TId>(this IReadOnlyCollection<TItem> source, PaginationRequest<TId> pagination)
+        //rewrite ugly way
+        public static Paginated<TItem, TId> Paginate<TItem, TId>(this IReadOnlyCollection<TItem> source, 
+            PaginationRequest<TId> request, 
+            IUrlHelper url,
+            Func<TItem, TId> idProjection)
         {
-            return new Paginated<TItem, TId>()
+
+            return new Paginated<TItem, TId>
             {
                 Items = source,
-                Pagination = MapPaginationModel(pagination, source.Count)
+                Pagination = MapPaginationModel(request, 
+                    url, 
+                    source, 
+                    idProjection)
             };
         }
 
-        //TODO pass build url func
-        public static Paginated<TItem, TId> PaginateSingle<TItem, TId>(this TItem source, PaginationRequest<TId> pagination)
+        private static PaginationModel<TId> MapPaginationModel<TId, TItem>(PaginationRequest<TId> request,
+            IUrlHelper url,
+            IReadOnlyCollection<TItem> items,
+            Func<TItem, TId> idProjection)
         {
-            var items = source != null ? new[] { source } : new TItem[0];
-
-            return items.Paginate(pagination);
-        }
-
-        private static PaginationModel<T> MapPaginationModel<T>(PaginationRequest<T> source, int count)
-        {
-            return new PaginationModel<T>
+            var result = new PaginationModel<TId>
             {
-                Count = count,
-                Order = source.Order,
-                EndingBefore = source.EndingBefore,
-                StartingAfter = source.StartingAfter,
-                //TODO
-                NextUrl = null,
-                //TODO
-                PrevUrl = null
+                Count = items.Count,
+                Order = request.Order,
+                EndingBefore = request.EndingBefore,
+                StartingAfter = request.StartingAfter,
             };
+
+            if (items.Any() && result.StartingAfter != null)
+            {
+                request.EndingBefore = idProjection(items.First());
+                request.StartingAfter = default;
+                result.PrevUrl = BuildUrl(url, request);
+            }
+
+            if (items.Any() && items.Count == request.Limit)
+            {
+                request.StartingAfter = idProjection(items.Last());
+                request.EndingBefore = default;
+                result.NextUrl = BuildUrl(url, request);
+            }
+
+            return result;
+        }
+
+        private static string BuildUrl<T>(IUrlHelper url, PaginationRequest<T> request)
+        {
+            var controller = url.ActionContext.RouteData.Values["controller"].ToString();
+            var action = url.ActionContext.RouteData.Values["action"].ToString();
+
+            return url.Action(action, controller, request);
         }
     }
 }

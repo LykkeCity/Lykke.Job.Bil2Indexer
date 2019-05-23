@@ -27,6 +27,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Validators
             RuleFor(p => p.Address)
                 .NotEmpty().When(p => p.BlockId == null && p.BlockNumber == null)
                 .WithMessage("either blockId, blockNumber or address should be set");
+
+            RuleFor(p => p.Limit).GreaterThan(0);
         }
     }
 }

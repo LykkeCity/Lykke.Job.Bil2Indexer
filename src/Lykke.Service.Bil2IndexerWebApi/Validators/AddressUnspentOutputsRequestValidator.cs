@@ -9,6 +9,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Validators
         public AddressUnspentOutputsRequestValidator()
         {
             this.ValidateBlockchain(p => p.BlockchainType);
+
+            RuleFor(p => p.Limit).GreaterThan(0);
         }
     }
 }

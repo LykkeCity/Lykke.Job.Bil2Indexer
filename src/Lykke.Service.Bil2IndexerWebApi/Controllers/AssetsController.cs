@@ -23,11 +23,11 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             [FromQuery][FromRoute] AssetsRequest request)
         {
             return  (await _assetQueryFacade.GetAssets(request.BlockchainType,
-                        request.Pagination.Limit,
-                        request.Pagination.Order == PaginationOrder.Asc,
-                        request.Pagination.StartingAfter,
-                        request.Pagination.EndingBefore))
-                .Paginate(request.Pagination);
+                        request.Limit,
+                        request.Order == PaginationOrder.Asc,
+                        request.StartingAfter,
+                        request.EndingBefore))
+                .Paginate(request, Url, p => p.AssetId.Id);
         }
 
         [HttpGet(RoutePrefix + "/{assetTicker}/without-address", Name = nameof(GetAssetWithoutAddress))]

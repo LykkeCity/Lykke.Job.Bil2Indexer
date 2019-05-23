@@ -3,7 +3,10 @@ using System.Linq;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
+using Lykke.Service.Bil2IndexerWebApi.Extensions;
 using Lykke.Service.Bil2IndexerWebApi.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
@@ -12,20 +15,25 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
         public static IReadOnlyCollection<TransactionResponce> ToViewModel(this IReadOnlyCollection<TransactionId> transactionIds, 
             IReadOnlyCollection<FeeEnvelope> fees,
             IReadOnlyCollection<BalanceAction> balances,
-            long lastBlockNumber)
+            long lastBlockNumber,
+            IUrlHelper url,
+            string blockchainType)
         {
             var feesPerTx = fees.ToLookup(p => p.TransactionId);
             var balancesPerTx = balances.Where(p =>p.BlockNumber <= lastBlockNumber).ToLookup(p => p.TransactionId);
 
-            return transactionIds.Select(p => p.ToViewModel(feesPerTx[p].ToList(),
-                balancesPerTx[p].ToList(), lastBlockNumber))
-                .Where(p=>p.Transfers.Any()).ToList();
+            return transactionIds
+                .Select(p => p.ToViewModel(feesPerTx[p].ToList(),balancesPerTx[p].ToList(), lastBlockNumber, url, blockchainType))
+                .Where(p => p.Transfers.Any())
+                .ToList();
         }
 
         public static TransactionResponce ToViewModel(this TransactionId transactionId, 
             IReadOnlyCollection<FeeEnvelope> fees,
             IReadOnlyCollection<BalanceAction> balances,  
-            long lastBlockNumber)
+            long lastBlockNumber,
+            IUrlHelper url,
+            string blockchainType)
         {
             var tx = balances.First();
 
@@ -67,7 +75,11 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
                 //TODO
                 IsIrreversible = true,
                 //TODO
-                Links = null,
+                Links = new TransactionLinks
+                {
+                    BlockUrl = url.BlockUrl(blockchainType, tx.BlockId),
+                    RawUrl = url.RawTransactionUrl(blockchainType, tx.TransactionId),
+                },
             };
         }
     }

@@ -22,7 +22,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(RoutePrefix, Name = nameof(GetTransactions))]
-        public async Task<ActionResult<Paginated<TransactionResponce, string>>> GetTransactions([FromRoute][FromQuery] TransactionsRequest request)
+        public async Task<ActionResult<Paginated<TransactionResponce, string>>> GetTransactions(
+            [FromRoute][FromQuery] TransactionsRequest request)
         {
             IReadOnlyCollection<TransactionResponce> transactions;
             
@@ -30,42 +31,52 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             {
                 transactions = await _transactionQueryFacade.GetTransactionsByBlockId(request.BlockchainType,
                     request.BlockId,
-                    request.Pagination.Limit,
-                    request.Pagination.Order == PaginationOrder.Asc,
-                    request.Pagination.StartingAfter,
-                    request.Pagination.EndingBefore);
+                    request.Limit,
+                    request.Order == PaginationOrder.Asc,
+                    request.StartingAfter,
+                    request.EndingBefore, 
+                    Url);
             } 
             else if (request.BlockNumber != null)
             {
                 transactions = await _transactionQueryFacade.GetTransactionsByBlockNumber(request.BlockchainType,
                     request.BlockNumber.Value,
-                    request.Pagination.Limit,
-                    request.Pagination.Order == PaginationOrder.Asc,
-                    request.Pagination.StartingAfter,
-                    request.Pagination.EndingBefore);
+                    request.Limit,
+                    request.Order == PaginationOrder.Asc,
+                    request.StartingAfter,
+                    request.EndingBefore, 
+                    Url);
             }
             else if (request.Address != null)
             {
                 transactions = await _transactionQueryFacade.GetTransactionsByAddress(request.BlockchainType,
                     request.Address,
-                    request.Pagination.Limit,
-                    request.Pagination.Order == PaginationOrder.Asc,
-                    request.Pagination.StartingAfter,
-                    request.Pagination.EndingBefore);
+                    request.Limit,
+                    request.Order == PaginationOrder.Asc,
+                    request.StartingAfter,
+                    request.EndingBefore,
+                    Url);
             }
             else
             {
                 throw new ArgumentException("This should not happen due validation logic");
             }
 
-            return transactions.Paginate(request.Pagination);
+            return transactions.Paginate(request, Url, p => p.Id);
         }
 
-        [HttpGet(RoutePrefix + "{id}", Name = nameof(GetTransactionById))]
+        [HttpGet(RoutePrefix + "/{id}", Name = nameof(GetTransactionById))]
         public async Task<ActionResult<TransactionResponce>> GetTransactionById(
             [FromRoute] ByIdRequest request)
         {
-            return await _transactionQueryFacade.GetTransactionById(request.BlockchainType, request.Id);
+            return await _transactionQueryFacade.GetTransactionById(request.BlockchainType, request.Id, Url);
+        }
+
+        [HttpGet(RoutePrefix + "/{id}/raw", Name = nameof(GetTransactionRawById))]
+        public Task<ActionResult<TransactionResponce>> GetTransactionRawById(
+            [FromRoute] ByIdRequest request)
+        {
+            throw new NotImplementedException();
         }
     }
 }

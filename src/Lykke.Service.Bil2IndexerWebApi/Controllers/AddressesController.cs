@@ -71,13 +71,13 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             (
                 request.BlockchainType,
                 request.Address,
-                request.Pagination.Limit,
-                request.Pagination.Order == PaginationOrder.Asc,
-                request.Pagination.StartingAfter,
-                request.Pagination.EndingBefore
+                request.Limit,
+                request.Order == PaginationOrder.Asc,
+                request.StartingAfter,
+                request.EndingBefore
             );
 
-            return result.Paginate(request.Pagination);
+            return result.Paginate(request, Url, p => p.Id);
         }
     }
 }

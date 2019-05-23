@@ -5,6 +5,7 @@ using Lykke.Sdk;
 using Lykke.Service.Bil2IndexerWebApi.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Serialization;
 
@@ -26,7 +27,6 @@ namespace Lykke.Service.Bil2IndexerWebApi
             {
                 //options.DisableFluentValidation();
                 //options.DisableValidationFilter();
-                
                 options.SwaggerOptions = _swaggerOptions;
                 
                 options.Logs = logs =>
@@ -57,6 +57,12 @@ namespace Lykke.Service.Bil2IndexerWebApi
                     builder.AddJsonOptions(json =>
                     {
                         json.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                    });
+
+                    builder.Services.Configure<RouteOptions>(route =>
+                    {
+                        route.LowercaseQueryStrings = true;
+                        route.LowercaseUrls = true;
                     });
                 };
             });

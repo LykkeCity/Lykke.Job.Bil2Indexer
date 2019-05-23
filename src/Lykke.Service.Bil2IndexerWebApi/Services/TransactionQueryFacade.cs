@@ -5,6 +5,8 @@ using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
@@ -26,9 +28,13 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             _blockHeadersRepository = blockHeadersRepository;
         }
 
-        public async Task<TransactionResponce> GetTransactionById(string blockchainType, string id)
+        public async Task<TransactionResponce> GetTransactionById(string blockchainType, 
+            string id,
+            IUrlHelper url)
         {
-            return (await GetTransactions(blockchainType, new List<TransactionId> {new TransactionId(id)}))
+            return (await GetTransactions(blockchainType, 
+                    new List<TransactionId> {new TransactionId(id)}, 
+                    url))
                 .SingleOrDefault();
         }
 
@@ -37,7 +43,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             int limit, 
             bool orderAsc,
             string startingAfter,
-            string endingBefore)
+            string endingBefore,
+            IUrlHelper url)
         {
             var transactionIds = await _balanceActionsRepository.GetTransactionsOfBlockAsync(blockchainType,
                 new BlockId(blockId),
@@ -46,7 +53,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
                 startingAfter, 
                 endingBefore);
 
-            return await GetTransactions(blockchainType, transactionIds);
+            return await GetTransactions(blockchainType, transactionIds, url);
         }
 
         public async Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByAddress(string blockchainType, 
@@ -54,7 +61,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             int limit,
             bool orderAsc,
             string startingAfter,
-            string endingBefore)
+            string endingBefore,
+            IUrlHelper url)
         {
             var transactionIds = await _balanceActionsRepository.GetTransactionsOfAddressAsync(blockchainType,
                 new Address(address), 
@@ -63,11 +71,11 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
                 startingAfter,
                 endingBefore);
 
-            return await GetTransactions(blockchainType, transactionIds);
+            return await GetTransactions(blockchainType, transactionIds, url);
         }
 
         private async Task<IReadOnlyCollection<TransactionResponce>> GetTransactions(string blockchainType,
-            IReadOnlyCollection<TransactionId> transactionIds)
+            IReadOnlyCollection<TransactionId> transactionIds, IUrlHelper url)
         {
             var getLastBlockNumber = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
 
@@ -81,7 +89,9 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             //checked with chain head inside mapper
             return transactionIds.ToViewModel(getFees.Result, 
                 getBalanceActions.Result,
-                getLastBlockNumber.Result);
+                getLastBlockNumber.Result,
+                url,
+                blockchainType);
         }
 
         public async Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByBlockNumber(string blockchainType, 
@@ -89,7 +99,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             int limit,
             bool orderAsc,
             string startingAfter,
-            string endingBefore)
+            string endingBefore,
+            IUrlHelper url)
         {
             var block = await _blockHeadersRepository.GetOrDefaultAsync(blockchainType, blockNumberValue);
 
@@ -103,7 +114,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
                 limit,
                 orderAsc,
                 startingAfter,
-                endingBefore);
+                endingBefore,
+                url);
         }
     }
 }

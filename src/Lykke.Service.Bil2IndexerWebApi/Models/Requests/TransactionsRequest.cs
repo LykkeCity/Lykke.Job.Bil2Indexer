@@ -2,13 +2,8 @@
 
 namespace Lykke.Service.Bil2IndexerWebApi.Models.Requests
 {
-    public class TransactionsRequest
+    public class TransactionsRequest: PaginationRequest<string>
     {
-        public TransactionsRequest()
-        {
-            Pagination = new PaginationRequest<string>();
-        }
-
         [FromRoute(Name = "blockchainType")]
         public string BlockchainType { get; set; }
 
@@ -20,8 +15,5 @@ namespace Lykke.Service.Bil2IndexerWebApi.Models.Requests
 
         [FromQuery(Name = "address")]
         public string Address { get; set; }
-
-        [FromQuery(Name = "")]
-        public PaginationRequest<string> Pagination { get; set; }
     }
 }

@@ -5,7 +5,6 @@ namespace Lykke.Service.Bil2IndexerWebApi.Models.Requests
 {
     public class PaginationRequest<T>
     {
-        
         [FromQuery(Name = "order")]
         public PaginationOrder Order { get; set; }
 
