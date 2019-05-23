@@ -2,6 +2,7 @@
 using System.Linq;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
+using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
@@ -14,10 +15,11 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
             long lastBlockNumber)
         {
             var feesPerTx = fees.ToLookup(p => p.TransactionId);
-            var balancesPerTx = balances.ToLookup(p => p.TransactionId);
+            var balancesPerTx = balances.Where(p =>p.BlockNumber <= lastBlockNumber).ToLookup(p => p.TransactionId);
 
             return transactionIds.Select(p => p.ToViewModel(feesPerTx[p].ToList(),
-                balancesPerTx[p].ToList(), lastBlockNumber)).ToList();
+                balancesPerTx[p].ToList(), lastBlockNumber))
+                .Where(p=>p.Transfers.Any()).ToList();
         }
 
         public static TransactionResponce ToViewModel(this TransactionId transactionId, 
@@ -26,6 +28,11 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
             long lastBlockNumber)
         {
             var tx = balances.First();
+
+            if (tx.BlockNumber >= lastBlockNumber)
+            {
+                return null;
+            }
             
             return new TransactionResponce
             {
@@ -50,15 +57,13 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
                     AssetId = new AssetIdResponce
                     {
                         Address = p.AccountId.Asset.Address,
-                        Ticker = p.AccountId.Asset.Id
+                        Ticker = p.AccountId.Asset.Id,
+                        Id = p.AccountId.Asset.BuildId()
                     },
                     Amount = p.Amount.ToString(),
                     Address = p.AccountId.Address,
                     TransferId = p.TransactionId
                 }).ToArray(),
-
-                //TODO
-                Number = -1,
                 //TODO
                 IsIrreversible = true,
                 //TODO

@@ -77,8 +77,8 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             var getFees = _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transactionIds.ToList());
 
             await Task.WhenAll(getLastBlockNumber, getBalanceActions, getFees);
-
-            //TODO check with chain head
+            
+            //checked with chain head inside mapper
             return transactionIds.ToViewModel(getFees.Result, 
                 getBalanceActions.Result,
                 getLastBlockNumber.Result);
