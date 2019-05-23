@@ -16,7 +16,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess
                 throw new ArgumentException("Separate databases should be used");
             }
 
-            _btypeConnStringStorage = btypeConnStringStorage;
+            _btypeConnStringStorage = new Dictionary<string, string>(btypeConnStringStorage, StringComparer.InvariantCultureIgnoreCase);
         }
 
         public string GetConnectionString(string blockchainType)
