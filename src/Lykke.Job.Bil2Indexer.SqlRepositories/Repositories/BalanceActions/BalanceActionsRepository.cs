@@ -276,12 +276,12 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             {
                 var query = db.BalanceActions
                     .Where(BalanceActionsPredicates.BuildEnumerationPredicate(predicate, startingAfter, endingBefore))
+                    .Distinct()
                     .Take(limit);
 
                 query = orderAsc ? query.OrderBy(p => p.TransactionId) : query.OrderByDescending(p => p.TransactionId);
 
                 return (await query.Select(p => p.TransactionId)
-                        .Distinct()
                         .ToListAsync())
                     .Select(p=> new TransactionId(p)).ToList();
             }

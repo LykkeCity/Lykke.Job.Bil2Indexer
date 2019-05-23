@@ -25,8 +25,6 @@ namespace Lykke.Service.Bil2IndexerWebApi
         {
             return services.BuildServiceProvider<AppSettings>(options =>
             {
-                //options.DisableFluentValidation();
-                //options.DisableValidationFilter();
                 options.SwaggerOptions = _swaggerOptions;
                 
                 options.Logs = logs =>
@@ -59,11 +57,12 @@ namespace Lykke.Service.Bil2IndexerWebApi
                         json.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
                     });
 
-                    builder.Services.Configure<RouteOptions>(route =>
-                    {
-                        route.LowercaseQueryStrings = true;
-                        route.LowercaseUrls = true;
-                    });
+                    //temporaly disable
+                    //builder.Services.Configure<RouteOptions>(route =>
+                    //{
+                    //    route.LowercaseQueryStrings = true;
+                    //    route.LowercaseUrls = true;
+                    //});
                 };
             });
         }
@@ -78,9 +77,6 @@ namespace Lykke.Service.Bil2IndexerWebApi
 
             app.UseLykkeConfiguration(options =>
             {
-                //options.DisableUnhandledExceptionLoggingMiddleware();
-                //options.DisableValidationExceptionMiddleware();
-                // TODO: Add option to specify empty RoutePrefix for swagger to the Lykke.Sdk
                 options.SwaggerOptions = _swaggerOptions;
             });
         }
