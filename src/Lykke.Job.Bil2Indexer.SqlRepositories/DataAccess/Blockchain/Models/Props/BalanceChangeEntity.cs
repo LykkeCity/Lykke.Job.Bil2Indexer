@@ -3,30 +3,30 @@ using JetBrains.Annotations;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Numerics;
 
-namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models.Props
 {
     [DataContract]
-    public class ReceivedCoinEntity
+    internal class BalanceChangeEntity
     {
         [DataMember(Order = 0)]
-        public int CoinNumber { get; set; }
+        public string TransferId { get; set; }
 
         [DataMember(Order = 1)]
         public Asset Asset { get; set; }
-        
-        [DataMember(Order = 2)]
-        public UMoney Value { get; set; }
 
-        [CanBeNull, DataMember(Order = 3)]
+        [DataMember(Order = 2)]
+        public Money Value { get; set; }
+
+        [DataMember(Order = 3)]
         public Address Address { get; set; }
 
         [CanBeNull, DataMember(Order = 4)]
-        public AddressTag AddressTag { get; set; }
+        public AddressTag Tag { get; set; }
 
         [CanBeNull, DataMember(Order = 5)]
-        public AddressTagType? AddressTagType { get; set; }
+        public AddressTagType? TagType { get; set; }
 
         [CanBeNull, DataMember(Order = 6)]
-        public long? AddressNonce { get; set; }
+        public long? Nonce { get; set; }
     }
 }

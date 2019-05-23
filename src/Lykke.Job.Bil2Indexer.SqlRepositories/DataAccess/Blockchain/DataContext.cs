@@ -1,33 +1,49 @@
-﻿using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
+﻿using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain
 {
-    public class StateDataContext : DbContext
+    internal class DataContext: DbContext
     {
         private readonly string _connectionString;
 
-        public StateDataContext(string connectionString)
+        public DataContext(string connectionString)
         {
             _connectionString = connectionString;
         }
 
+        public DbSet<CoinEntity> Coins { get; set; }
+
+        public DbSet<FeeEnvelopeEntity> FeeEnvelopes { get; set; }
+
+        public DbSet<BalanceActionEntity> BalanceActions { get; set; }
+
+        public DbSet<AssetInfoEntity> AssetInfos { get; set; }
+
         public DbSet<CrawlerEntity> Crawlers { get; set; }
         public DbSet<BlockHeaderEntity> BlockHeaders { get; set; }
+
         public DbSet<ChainHeadEntity> ChainHeads { get; set; }
+
+
+        public DbSet<TransactionEntity> Transactions { get; set; }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseNpgsql(_connectionString)
-                .ConfigureWarnings(builder => builder.Throw(RelationalEventId.QueryClientEvaluationWarning));
+                .ConfigureWarnings(bulder => bulder.Throw(RelationalEventId.QueryClientEvaluationWarning));
         }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<AssetInfoEntity>()
+                .HasKey(o => o.Id);
             modelBuilder.Entity<CrawlerEntity>()
-                .HasKey(o => new {o.StartBlock, o.StopAssemblingBlock });
-            
+                .HasKey(o => new { o.StartBlock, o.StopAssemblingBlock });
+
             modelBuilder.Entity<CrawlerEntity>()
                 .Property(p => p.Version)
                 .HasColumnName("xmin")

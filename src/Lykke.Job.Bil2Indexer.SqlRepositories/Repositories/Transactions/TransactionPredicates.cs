@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 {

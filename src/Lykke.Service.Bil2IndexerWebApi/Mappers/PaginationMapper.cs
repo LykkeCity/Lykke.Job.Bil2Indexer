@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
-    public static class PaginationMapper
+    internal static class PaginationMapper
     {
         //rewrite ugly way
         public static Paginated<TItem, TId> Paginate<TItem, TId>(this IReadOnlyCollection<TItem> source, 

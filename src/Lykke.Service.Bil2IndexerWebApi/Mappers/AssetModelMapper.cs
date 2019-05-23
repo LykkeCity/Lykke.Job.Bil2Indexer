@@ -6,7 +6,7 @@ using Lykke.Service.Bil2IndexerWebApi.Models;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
-    public static class AssetModelMapper
+    internal static class AssetModelMapper
     {
         public static IReadOnlyCollection<AssetModel> ToViewModel(this IReadOnlyCollection<AssetInfo> source)
         {

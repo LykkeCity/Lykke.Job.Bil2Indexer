@@ -6,7 +6,7 @@ using Lykke.Service.Bil2IndexerWebApi.Services;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Validators.Common
 {
-    public class BlockchainTypeValidator: PropertyValidator
+    internal class BlockchainTypeValidator: PropertyValidator
     {
         protected override bool IsValid(PropertyValidatorContext context)
         {

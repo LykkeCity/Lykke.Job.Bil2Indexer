@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
-    public static class BlockModelMapper
+    internal static class BlockModelMapper
     {
         public static BlockResponce ToViewModel(this BlockHeader source, long lastBlockNumber, IUrlHelper url, string blockchainType)
         {

@@ -9,7 +9,7 @@ using Lykke.Service.Bil2IndexerWebApi.Models;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
-    public class AddressQueryFacade: IAddressQueryFacade
+    internal class AddressQueryFacade: IAddressQueryFacade
     {
         private readonly ICoinsRepository _coinsRepository;
         private readonly IChainHeadsRepository _chainHeadsRepository;

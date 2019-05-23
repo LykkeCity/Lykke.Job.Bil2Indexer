@@ -4,7 +4,7 @@ using Lykke.Service.Bil2IndexerWebApi.Validators.Common;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Validators
 {
-    public class ByBlockchainRequestValidator:AbstractValidator<ByBlockchainRequest>
+    internal class ByBlockchainRequestValidator:AbstractValidator<ByBlockchainRequest>
     {
         public ByBlockchainRequestValidator()
         {

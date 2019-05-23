@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using Z.EntityFramework.Plus;
 using PostgreSQLCopyHelper;
+using Z.EntityFramework.Plus;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 {
@@ -60,7 +60,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
         public async Task<int> CountInBlockAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 return await db.Transactions
                     .Where(TransactionPredicates.Build(blockId))
@@ -77,7 +77,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
                 skip = int.Parse(continuation);
             }
 
-            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entities = await db.Transactions
                     .Where(TransactionPredicates.Build(blockId))
@@ -109,7 +109,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
         public async Task<Transaction> GetOrDefaultAsync(string blockchainType, TransactionId transactionId)
         {
-            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.Transactions
                     .SingleOrDefaultAsync(TransactionPredicates.Build(transactionId));
@@ -120,7 +120,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
         public async Task<IReadOnlyCollection<Transaction>> GetSomeOfAsync(string blockchainType, IEnumerable<TransactionId> ids)
         {
-            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entities = await db.Transactions.Where(TransactionPredicates.Build(ids)).ToListAsync();
 
@@ -130,7 +130,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
 
         public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 await db.Transactions
                     .Where(TransactionPredicates.Build(blockId))
@@ -142,7 +142,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions
         {
             var ids = dbEntities.Select(t => t.TransactionId);
 
-            using (var db = new TransactionsDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existedIds = (await db.Transactions.FilterByIds(ids)
                         .Select(t => t.TransactionId)

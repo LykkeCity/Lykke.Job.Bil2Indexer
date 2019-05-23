@@ -2,7 +2,7 @@
 using System.Linq.Expressions;
 using LinqKit;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 {
