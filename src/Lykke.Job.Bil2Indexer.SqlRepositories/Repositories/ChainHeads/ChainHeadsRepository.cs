@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads.Mappers;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +20,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
 
         public async Task<ChainHead> GetOrDefaultAsync(string blockchainType)
         {
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.ChainHeads.SingleOrDefaultAsync();
 
@@ -30,7 +30,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
 
         public async Task<ChainHead> GetAsync(string blockchainType)
         {
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.ChainHeads.SingleOrDefaultAsync();
 
@@ -48,7 +48,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads
             var dbEntity = head.ToDbEntity();
             var isExisted = head.Version != 0;
 
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(head.BlockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(head.BlockchainType)))
             {
                 if (isExisted)
                 {

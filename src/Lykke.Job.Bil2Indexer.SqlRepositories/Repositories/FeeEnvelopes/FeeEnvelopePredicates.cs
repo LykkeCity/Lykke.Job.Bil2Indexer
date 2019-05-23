@@ -7,7 +7,7 @@ using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 {
-    public static class FeeEnvelopePredicates
+    internal static class FeeEnvelopePredicates
     {
         public static Expression<Func<FeeEnvelopeEntity, bool>> Build(BlockId blockId)
         {

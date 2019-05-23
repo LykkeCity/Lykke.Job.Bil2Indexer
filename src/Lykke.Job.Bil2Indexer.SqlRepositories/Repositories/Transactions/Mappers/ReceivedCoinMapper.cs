@@ -1,5 +1,5 @@
 ﻿using Lykke.Bil2.Contract.BlocksReader.Events;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models.Props;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
 {

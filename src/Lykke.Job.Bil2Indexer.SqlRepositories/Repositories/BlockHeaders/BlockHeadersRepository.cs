@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders.Mappers;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +27,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             var dbEntity = block.ToDbEntity();
             var isExisted = block.Version != 0;
 
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(block.BlockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(block.BlockchainType)))
             {
                 if (isExisted)
                 {
@@ -60,7 +60,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, long blockNumber)
         {
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.BlockHeaders
                     .SingleOrDefaultAsync(BlockHeadersPredicates.Build(blockNumber));
@@ -71,7 +71,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task<BlockHeader> GetOrDefaultAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.BlockHeaders
                     .SingleOrDefaultAsync(BlockHeadersPredicates.Build(blockId));
@@ -106,7 +106,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task<BlockHeader> GetAsync(string blockchainType, DateTime dateTime)
         {
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.BlockHeaders
                     .FirstOrDefaultAsync(BlockHeadersPredicates.Build(dateTime));
@@ -118,7 +118,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
         public async Task<IReadOnlyCollection<BlockHeader>> GetCollectionAsync(string blockchainType,  long maxBlockNumber, int limit, bool orderAsc, long? startingAfterNumber = null,
             long? endingBeforeNumber = null)
         {
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var query = db.BlockHeaders
                     .Where(BlockHeadersPredicates.BuildEnumeration(maxBlockNumber, startingAfterNumber, endingBeforeNumber, orderAsc));
@@ -142,7 +142,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
 
         public async Task TryRemoveAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var existed = await db.BlockHeaders
                     .SingleOrDefaultAsync(BlockHeadersPredicates.Build(blockId));

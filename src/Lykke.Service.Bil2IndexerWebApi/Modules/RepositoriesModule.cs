@@ -18,7 +18,7 @@ using Lykke.SettingsReader;
 namespace Lykke.Service.Bil2IndexerWebApi.Modules
 {
     [UsedImplicitly]
-    public class RepositoriesModule : Module
+    internal class RepositoriesModule : Module
     {
         private readonly AppSettings _settings;
 
@@ -29,56 +29,43 @@ namespace Lykke.Service.Bil2IndexerWebApi.Modules
 
         protected override void Load(ContainerBuilder builder)
         {
-            IPgConnectionStringProvider blockchainConnStringProvider = new PgConnectionStringProvider(
-                _settings.Bil2WebApiService.BlockchainIntegrations.ToDictionary(p => p.Type,
-                    p => p.PgBlockchainDataConnString));
+            builder.RegisterInstance(new PgConnectionStringProvider(
+                    _settings.Bil2WebApiService.BlockchainIntegrations.ToDictionary(p => p.Type,
+                        p => p.PgConnectionString)))
+                .As<IPgConnectionStringProvider>()
+                .SingleInstance();
 
-            IPgConnectionStringProvider stateConnStringProvider = new PgConnectionStringProvider(
-                _settings.Bil2WebApiService.BlockchainIntegrations.ToDictionary(p => p.Type,
-                    p => p.PgStateDataConnString));
-
-            IPgConnectionStringProvider transactionConnStringProvider = new PgConnectionStringProvider(
-                _settings.Bil2WebApiService.BlockchainIntegrations.ToDictionary(p => p.Type,
-                    p => p.PgTransactionsDataConnString));
 
             builder.RegisterType<BalanceActionsRepository>()
                 .As<IBalanceActionsRepository>()
-                .WithParameter(TypedParameter.From(blockchainConnStringProvider))
                 .SingleInstance();
 
             builder.RegisterType<BlockHeadersRepository>()
                 .As<IBlockHeadersRepository>()
-                .WithParameter(TypedParameter.From(stateConnStringProvider))
                 .SingleInstance();
 
             builder.RegisterType<CoinsRepository>()
                 .As<ICoinsRepository>()
-                .WithParameter(TypedParameter.From(blockchainConnStringProvider))
                 .SingleInstance();
 
             builder.RegisterType<CrawlersRepository>()
                 .As<ICrawlersRepository>()
-                .WithParameter(TypedParameter.From(stateConnStringProvider))
                 .SingleInstance();
 
             builder.RegisterType<TransactionsRepository>()
                 .As<ITransactionsRepository>()
-                .WithParameter(TypedParameter.From(transactionConnStringProvider))
                 .SingleInstance();
 
             builder.RegisterType<ChainHeadsRepository>()
                 .As<IChainHeadsRepository>()
-                .WithParameter(TypedParameter.From(stateConnStringProvider))
                 .SingleInstance();
 
             builder.RegisterType<FeeEnvelopesRepository>()
                 .As<IFeeEnvelopesRepository>()
-                .WithParameter(TypedParameter.From(blockchainConnStringProvider))
                 .SingleInstance();
 
             builder.RegisterType<AssetInfosRepository>()
                 .As<IAssetInfosRepository>()
-                .WithParameter(TypedParameter.From(blockchainConnStringProvider))
                 .SingleInstance();
 
             #region Decorators

@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Lykke.Job.Bil2Indexer.Domain;
 
-namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 {
     [Table("chain_heads")]
-    public class ChainHeadEntity
+    internal class ChainHeadEntity
     {
         [Column("id")]
         public string Id { get; set; }

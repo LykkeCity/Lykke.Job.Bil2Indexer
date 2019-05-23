@@ -6,7 +6,7 @@ using Lykke.Service.Bil2IndexerWebApi.Models;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
-    public static class AddressUnspentOutputModelMapper
+    internal static class AddressUnspentOutputModelMapper
     {
         public static IReadOnlyCollection<AddressUnspentOutputResponce> ToViewModel(this IReadOnlyCollection<Coin> source, long lastBlockNumber)
         {

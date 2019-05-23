@@ -88,7 +88,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 .Where(p => p.AssetAddress == null)
                 .Select(p => p.TransactionId);
             
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var getNaturalIds1 = db.BalanceActions
                     .Where(BalanceActionsPredicates.Build(txIdsWithAssetAddress, isAssetAddressNull: false))
@@ -114,7 +114,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
         public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 await db.BalanceActions
                     .Where(BalanceActionsPredicates.Build(blockId))
@@ -189,7 +189,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 return new Dictionary<TransactionId, IReadOnlyDictionary<AccountId, Money>>();
             }
 
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var queryRes = await db.BalanceActions.Where(BalanceActionsPredicates.Build(transactionIds))
                     .Select(p => new
@@ -226,7 +226,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
         public async Task<IReadOnlyCollection<BalanceAction>> GetCollectionAsync(string blockchainType, params TransactionId[] transactionIds)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entities = await db.BalanceActions.Where(BalanceActionsPredicates.Build(transactionIds))
                     .ToListAsync();
@@ -273,7 +273,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             TransactionId startingAfter,
             TransactionId endingBefore)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var query = db.BalanceActions
                     .Where(BalanceActionsPredicates.BuildEnumeration(predicate, startingAfter, endingBefore, orderAsc))

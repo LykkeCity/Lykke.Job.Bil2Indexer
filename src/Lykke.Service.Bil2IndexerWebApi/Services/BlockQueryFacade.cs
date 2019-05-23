@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -9,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
-    public class BlockQueryFacade : IBlockQueryFacade
+    internal class BlockQueryFacade : IBlockQueryFacade
     {
         private readonly IBlockHeadersRepository _blockHeadersRepository;
         private readonly IChainHeadsRepository _chainHeadsRepository;

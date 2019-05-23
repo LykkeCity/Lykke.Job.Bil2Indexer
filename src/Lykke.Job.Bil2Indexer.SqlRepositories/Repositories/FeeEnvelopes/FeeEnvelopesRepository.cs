@@ -73,7 +73,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
                 return $"{transactionId}_{assetId}_{assetAddress}";
             }
 
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var txIdsWithAssetAddress = dbEntities
                     .Where(p => p.AssetAddress != null)
@@ -111,7 +111,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         public async Task<FeeEnvelope> GetOrDefaultAsync(string blockchainType, TransactionId transactionId, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.FeeEnvelopes
                     .Where(FeeEnvelopePredicates.Build(transactionId, asset))
@@ -123,7 +123,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         public async Task<FeeEnvelope> GetAsync(string blockchainType, TransactionId transactionId, Asset asset)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entity = await db.FeeEnvelopes
                     .Where(FeeEnvelopePredicates.Build(transactionId, asset))
@@ -158,7 +158,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
 
         public async Task TryRemoveAllOfBlockAsync(string blockchainType, BlockId blockId)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 await db.FeeEnvelopes
                     .Where(FeeEnvelopePredicates.Build(blockId))
@@ -169,7 +169,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
         private async Task<PaginatedItems<FeeEnvelope>> GetPagedAsync(string blockchainType, Expression<Func<FeeEnvelopeEntity, bool>> predicate,
             long limit, string continuation)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 int skip = 0;
                 if (!string.IsNullOrEmpty(continuation))
@@ -190,7 +190,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.FeeEnvelopes
         
         private async Task<IReadOnlyCollection<FeeEnvelope>> GetAllAsync(string blockchainType, Expression<Func<FeeEnvelopeEntity, bool>> predicate)
         {
-            using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
+            using (var db = new DataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var entities = await db.FeeEnvelopes.Where(predicate)
                     .ToListAsync();

@@ -43,5 +43,33 @@ namespace Lykke.Service.Bil2IndexerWebApi.Extensions
                 ControllerHelper.GetShortName<BlocksController>(),
                 new ByIdRequest { BlockchainType = blockchainType, Id = id });
         }
+
+        public static string AddressesUrl(this IUrlHelper url, string blockchainType, Address address)
+        {
+            return url.Action(nameof(AddressesController.GetAddressBalances),
+                ControllerHelper.GetShortName<AddressesController>(),
+                new AddressBalancesRequest { BlockchainType = blockchainType, Address = address });
+        }
+
+        public static string AssetsUrl(this IUrlHelper url, string blockchainType)
+        {
+            return url.Action(nameof(AssetsController.GetAssets),
+                ControllerHelper.GetShortName<AssetsController>(),
+                new AssetsRequest { BlockchainType = blockchainType });
+        }
+
+        public static string BlocksUrl(this IUrlHelper url, string blockchainType)
+        {
+            return url.Action(nameof(BlocksController.GetBlocks),
+                ControllerHelper.GetShortName<BlocksController>(),
+                new BlocksRequest { BlockchainType = blockchainType });
+        }
+
+        public static string TransactionsUrl(this IUrlHelper url, string blockchainType, Address address)
+        {
+            return url.Action(nameof(TransactionsController.GetTransactions),
+                ControllerHelper.GetShortName<TransactionsController>(),
+                new TransactionsRequest { BlockchainType = blockchainType, Address = address });
+        }
     }
 }

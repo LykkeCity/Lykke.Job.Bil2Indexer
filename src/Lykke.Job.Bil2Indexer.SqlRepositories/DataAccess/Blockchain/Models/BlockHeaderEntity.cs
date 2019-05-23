@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.IndexerState.Models
+namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 {
     [Table("block_headers")]
     public class BlockHeaderEntity

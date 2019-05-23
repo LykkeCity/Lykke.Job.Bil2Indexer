@@ -1,6 +1,6 @@
 ﻿using System;
 using Lykke.Bil2.SharedDomain;
-using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Transactions.Models.Props;
+using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models.Props;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
 {

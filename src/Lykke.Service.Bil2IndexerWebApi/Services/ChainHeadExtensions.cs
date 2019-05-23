@@ -3,7 +3,7 @@ using Lykke.Job.Bil2Indexer.Domain.Repositories;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
-    public static class ChainHeadExtensions
+    internal static class ChainHeadExtensions
     {
         public static async Task<long> GetChainHeadNumberAsync(this IChainHeadsRepository chainHeadsRepository, 
             string blockchainType)

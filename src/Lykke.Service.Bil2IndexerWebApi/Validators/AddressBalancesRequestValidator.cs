@@ -4,7 +4,7 @@ using Lykke.Service.Bil2IndexerWebApi.Validators.Common;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Validators
 {
-    public class AddressBalancesRequestValidator:AbstractValidator<AddressBalancesRequest>
+    internal class AddressBalancesRequestValidator:AbstractValidator<AddressBalancesRequest>
     {
         public AddressBalancesRequestValidator()
         {

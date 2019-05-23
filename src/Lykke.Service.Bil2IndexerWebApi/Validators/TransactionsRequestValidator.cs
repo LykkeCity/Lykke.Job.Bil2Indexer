@@ -4,7 +4,7 @@ using Lykke.Service.Bil2IndexerWebApi.Validators.Common;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Validators
 {
-    public class TransactionsRequestValidator:AbstractValidator<TransactionsRequest>
+    internal class TransactionsRequestValidator:AbstractValidator<TransactionsRequest>
     {
         public TransactionsRequestValidator()
         {
