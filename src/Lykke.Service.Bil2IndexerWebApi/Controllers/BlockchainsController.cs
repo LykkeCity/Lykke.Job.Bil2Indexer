@@ -1,4 +1,6 @@
-﻿using Lykke.Service.Bil2IndexerWebApi.Models;
+﻿using System.Linq;
+using Lykke.Service.Bil2IndexerWebApi.Models;
+using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Controllers
@@ -7,13 +9,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
     public class BlockchainsController : ControllerBase
     {
         [HttpGet(Name = nameof(GetBlockchains))]
-        public ActionResult<BlockchainModel[]> GetBlockchains()
+        public ActionResult<BlockchainResponce[]> GetBlockchains()
         {
-            return Ok(new[]
+            return Ok(SupportedBlockchains.List.Select(blockchainType=> new BlockchainResponce
             {
-                new BlockchainModel {BlockchainType = "Bitcoin"},
-                new BlockchainModel {BlockchainType = "Ripple"}
-            });
+                BlockchainType = blockchainType
+            }).ToList());
         }
     }
 }

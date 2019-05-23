@@ -5,6 +5,8 @@ using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
@@ -26,84 +28,114 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             _blockHeadersRepository = blockHeadersRepository;
         }
 
-        public async Task<TransactionModel> GetTransactionById(string blockchainType, string id)
+        public async Task<TransactionResponce> GetTransactionById(string blockchainType, 
+            string id,
+            IUrlHelper url)
         {
-            return (await GetTransactions(blockchainType, new List<TransactionId> {new TransactionId(id)}))
+            return (await GetTransactions(blockchainType, 
+                    new List<TransactionId> {new TransactionId(id)}, 
+                    url))
                 .SingleOrDefault();
         }
 
-        public async Task<IReadOnlyCollection<TransactionModel>> GetTransactionsByBlockId(string blockchainType, 
+        public async Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByBlockId(string blockchainType, 
             string blockId,
             int limit, 
             bool orderAsc,
             string startingAfter,
-            string endingBefore)
+            string endingBefore,
+            IUrlHelper url)
         {
-            var transactionIds = await _balanceActionsRepository.GetTransactionsOfBlockAsync(blockchainType,
+            var getTransactionIds = _balanceActionsRepository.GetTransactionsOfBlockAsync(blockchainType,
                 new BlockId(blockId),
                 limit,
                 orderAsc, 
                 startingAfter, 
                 endingBefore);
 
-            return await GetTransactions(blockchainType, transactionIds);
+            var getChainHeadNumber = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
+            var getBlockHeader = _blockHeadersRepository.GetOrDefaultAsync(blockchainType, blockId);
+
+            await Task.WhenAll(getTransactionIds, getChainHeadNumber, getBlockHeader);
+
+            if (getChainHeadNumber.Result >= (getBlockHeader.Result?.Number ?? long.MaxValue))
+            {
+                return await GetTransactions(blockchainType, getTransactionIds.Result, url);
+
+            }
+
+            //chain head not moved to block yet
+            return Enumerable.Empty<TransactionResponce>().ToList();
         }
 
-        public async Task<IReadOnlyCollection<TransactionModel>> GetTransactionsByAddress(string blockchainType, 
+        public async Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByAddress(string blockchainType, 
             string address,
             int limit,
             bool orderAsc,
             string startingAfter,
-            string endingBefore)
+            string endingBefore,
+            IUrlHelper url)
         {
+            var chainHeadNumber = await _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
             var transactionIds = await _balanceActionsRepository.GetTransactionsOfAddressAsync(blockchainType,
                 new Address(address), 
+                chainHeadNumber,
                 limit,
                 orderAsc,
                 startingAfter,
                 endingBefore);
 
-            return await GetTransactions(blockchainType, transactionIds);
+            return await GetTransactions(blockchainType, transactionIds, url);
         }
 
-        private async Task<IReadOnlyCollection<TransactionModel>> GetTransactions(string blockchainType,
-            IReadOnlyCollection<TransactionId> transactionIds)
+        private async Task<IReadOnlyCollection<TransactionResponce>> GetTransactions(string blockchainType,
+            IReadOnlyCollection<TransactionId> transactionIds, IUrlHelper url, long? chainHeadNumber = null)
         {
-            var getLastBlockNumber = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
+            var getChainHeadNumber = chainHeadNumber != null ?
+                Task.FromResult(chainHeadNumber.Value) :_chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
 
             var getBalanceActions = _balanceActionsRepository.GetCollectionAsync(blockchainType,
                 transactionIds.ToArray());
 
             var getFees = _feeEnvelopesRepository.GetTransactionFeesAsync(blockchainType, transactionIds.ToList());
 
-            await Task.WhenAll(getLastBlockNumber, getBalanceActions, getFees);
-
-            //TODO check with chain head
+            await Task.WhenAll(getChainHeadNumber, getBalanceActions, getFees);
+            
+            //checked with chain head inside mapper
             return transactionIds.ToViewModel(getFees.Result, 
                 getBalanceActions.Result,
-                getLastBlockNumber.Result);
+                getChainHeadNumber.Result,
+                url,
+                blockchainType);
         }
 
-        public async Task<IReadOnlyCollection<TransactionModel>> GetTransactionsByBlockNumber(string blockchainType, 
+        public async Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByBlockNumber(string blockchainType, 
             int blockNumberValue,
             int limit,
             bool orderAsc,
             string startingAfter,
-            string endingBefore)
+            string endingBefore,
+            IUrlHelper url)
         {
-            var block = await _blockHeadersRepository.GetOrDefaultAsync(blockchainType, blockNumberValue);
 
-            if (block == null)
+            var getBlock = _blockHeadersRepository.GetOrDefaultAsync(blockchainType, blockNumberValue);
+            var getChainHeadNumber = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
+
+
+            await Task.WhenAll(getChainHeadNumber, getBlock);
+
+            if (getBlock.Result == null || getChainHeadNumber.Result < getBlock.Result.Number)
             {
-                return Enumerable.Empty<TransactionModel>().ToList();
+                return Enumerable.Empty<TransactionResponce>().ToList();
             }
 
             return await GetTransactionsByBlockId(blockchainType,
-                block.Id,
+                getBlock.Result.Id,
                 limit,
                 orderAsc,
                 startingAfter,
-                endingBefore);
+                endingBefore,
+                url);
         }
     }
 }

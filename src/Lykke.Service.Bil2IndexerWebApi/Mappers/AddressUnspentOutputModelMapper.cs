@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
@@ -9,15 +8,15 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
     public static class AddressUnspentOutputModelMapper
     {
-        public static IReadOnlyCollection<AddressUnspentOutputModel> ToViewModel(this IReadOnlyCollection<Coin> source, long lastBlockNumber)
+        public static IReadOnlyCollection<AddressUnspentOutputResponce> ToViewModel(this IReadOnlyCollection<Coin> source, long lastBlockNumber)
         {
-            return source.Select(p => new AddressUnspentOutputModel
+            return source.Select(p => new AddressUnspentOutputResponce
             {
                 Id = p.Id.BuildCoinId(),
                 TransactionId = p.Id.TransactionId,
-                AddressBalanceChangeModel = new AddressBalanceChangeModel
+                AddressBalanceChangeResponce = new AddressBalanceChangeResponce
                 {
-                    AssetId = new AssetIdModel
+                    AssetId = new AssetIdResponce
                     {
                         Address = p.Asset.Address,
                         Ticker = p.Asset.Id

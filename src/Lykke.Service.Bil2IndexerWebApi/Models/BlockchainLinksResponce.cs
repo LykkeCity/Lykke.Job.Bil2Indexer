@@ -1,6 +1,6 @@
 ﻿namespace Lykke.Service.Bil2IndexerWebApi.Models
 {
-    public class BlockchainLinksModel
+    public class BlockchainLinksResponce
     {
         public string AddressesUrl { get; set; }
         public string AssetsUrl { get; set; }

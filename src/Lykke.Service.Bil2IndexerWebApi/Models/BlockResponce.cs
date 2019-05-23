@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Lykke.Service.Bil2IndexerWebApi.Models
 {
-    public class BlockModel
+    public class BlockResponce
     {
         public string Id { get; set; }
         public long Number { get; set; }

@@ -87,6 +87,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
         public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfAddressAsync(string blockchainType, 
             Address address,
+            long maxBlockNumber,
             int limit,
             bool orderAsc,
             TransactionId startingAfter,
@@ -97,7 +98,7 @@ namespace Lykke.Job.Bil2Indexer.Decorators.AppInsight
 
             return _appInsightTelemetryProvider.ExecuteMethodWithTelemetryAndReturnAsync(operationName,
                 operationId,
-                () => _impl.GetTransactionsOfAddressAsync(blockchainType, address, limit, orderAsc, startingAfter, endingBefore));
+                () => _impl.GetTransactionsOfAddressAsync(blockchainType, address, maxBlockNumber, limit, orderAsc, startingAfter, endingBefore));
         }
 
         public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfBlockAsync(string blockchainType,

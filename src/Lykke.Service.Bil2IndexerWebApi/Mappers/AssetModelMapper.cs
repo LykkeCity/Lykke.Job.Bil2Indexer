@@ -18,7 +18,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
             return new AssetModel
             {
                 Accuracy = source.Scale,
-                Id = new AssetIdModel
+                AssetId = new AssetIdResponce
                 {
                     Address = source.Asset.Address,
                     Ticker = source.Asset.Id,

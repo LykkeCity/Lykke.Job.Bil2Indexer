@@ -118,16 +118,17 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var ordered = actions.OrderBy(p => p.TransactionId.ToString()).ToList();
 
 
-            var retrieved1 = await repo.GetTransactionsOfAddressAsync(bType, address, 99999, true, null, null);
+            var retrieved1 = await repo.GetTransactionsOfAddressAsync(bType, address, long.MaxValue ,99999, true, null, null);
 
             Assert.AreEqual(actions.Count, retrieved1.Count);
 
-            var retrieved2 = await repo.GetTransactionsOfAddressAsync(bType, address, 15, true, null, null);
+            var retrieved2 = await repo.GetTransactionsOfAddressAsync(bType, address, long.MaxValue, 15, true, null, null);
 
             Assert.AreEqual(15, retrieved2.Count);
 
             var retrieved3= await repo.GetTransactionsOfAddressAsync(bType, 
                 address,
+                99999999,
                 99999, 
                 true,
                 ordered.Skip(5).First().TransactionId, 
@@ -135,6 +136,17 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
 
 
             Assert.AreEqual(4, retrieved3.Count);
+
+            var retrieved4 = await repo.GetTransactionsOfAddressAsync(bType,
+                address,
+                0,
+                99999,
+                true,
+                ordered.Skip(5).First().TransactionId,
+                ordered.Skip(10).First().TransactionId);
+
+
+            Assert.AreEqual(0, retrieved4.Count);
         }
 
         [Test]

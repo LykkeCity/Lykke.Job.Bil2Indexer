@@ -1,8 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
+using Lykke.Service.Bil2IndexerWebApi.Models.Requests;
 using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,46 +20,27 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
 
         [HttpGet(RoutePrefix, Name = nameof(GetAssets))]
         public async Task<ActionResult<Paginated<AssetModel, string>>> GetAssets(
-            [FromRoute] string blockchainType,
-            [FromQuery] string assetTicker,
-            [FromQuery] string assetAddress,
-            [FromQuery] PaginationRequest<string> pagination)
+            [FromQuery][FromRoute] AssetsRequest request)
         {
-            Paginated<AssetModel, string> result;
-
-            if (assetTicker != null && assetAddress != null)
-            {
-                var asset = await _assetQueryFacade.GetAsset(blockchainType, assetAddress, assetTicker);
-
-                result = asset.PaginateSingle(pagination);
-            }
-            else
-            {
-                result = (await _assetQueryFacade.GetAssets(blockchainType, 
-                    pagination.Limit, 
-                    pagination.Order == PaginationOrder.Asc, 
-                    pagination.StartingAfter,
-                    pagination.EndingBefore)).Paginate(pagination);
-            }
-
-            return Ok(result);
+            return  (await _assetQueryFacade.GetAssets(request.BlockchainType,
+                        request.Limit,
+                        request.Order == PaginationOrder.Asc,
+                        request.StartingAfter,
+                        request.EndingBefore))
+                .Paginate(request, Url, p => p.AssetId.Id);
         }
 
         [HttpGet(RoutePrefix + "/{assetTicker}/without-address", Name = nameof(GetAssetWithoutAddress))]
-        public async Task<ActionResult<AssetModel>> GetAssetWithoutAddress(
-            [FromRoute] string blockchainType,
-            [FromRoute] string assetTicker)
+        public async Task<ActionResult<AssetModel>> GetAssetWithoutAddress([FromRoute] AssetWithoutAddressRequest request)
         {
-            throw new NotImplementedException();
+            return await _assetQueryFacade.GetAsset(request.BlockchainType, request.AssetTicker);
         }
 
         [HttpGet(RoutePrefix + "/{assetTicker}/addresses/{assetAddress}", Name = nameof(GetAssetWithAddress))]
         public async Task<ActionResult<AssetModel>> GetAssetWithAddress(
-            [FromRoute] string blockchainType,
-            [FromRoute] string assetTicker,
-            [FromRoute] string assetAddress)
+            [FromRoute] AssetWithAddressRequest request)
         {
-            throw new NotImplementedException();
+            return await _assetQueryFacade.GetAsset(request.BlockchainType, request.AssetTicker, request.AssetAddress);
         }
     }
 }

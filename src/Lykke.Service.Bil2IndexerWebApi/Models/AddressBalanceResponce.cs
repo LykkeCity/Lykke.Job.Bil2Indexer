@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-
-namespace Lykke.Service.Bil2IndexerWebApi.Models
+﻿namespace Lykke.Service.Bil2IndexerWebApi.Models
 {
-    public class AddressBalanceModel
+    public class AddressBalanceResponce
     {
         public string Address { get; set; }
-        public AssetIdModel AssetId { get; set; }
+        public AssetIdResponce AssetId { get; set; }
         public string Amount { get; set; }
 
         // by pass

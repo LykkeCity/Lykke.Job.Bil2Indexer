@@ -42,11 +42,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             return dbEntity => dbEntity.BlockId == stringBlockId;
         }
 
-        public static Expression<Func<BalanceActionEntity, bool>> Build(Address address)
+        public static Expression<Func<BalanceActionEntity, bool>> Build(Address address, long maxBlockNumber)
         {
             var stringValue = address.ToString();
 
-            return dbEntity => dbEntity.Address == stringValue;
+            return dbEntity => dbEntity.Address == stringValue && dbEntity.BlockNumber <= maxBlockNumber;
         }
 
         public static Expression<Func<BalanceActionEntity, bool>> Build(TransactionId transactionId)
@@ -57,7 +57,17 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                                && dbEntity.TransactionId == stringValue;
         }
 
-        public static Expression<Func<BalanceActionEntity, bool>> BuildEnumerationPredicate(
+        public static Expression<Func<BalanceActionEntity, bool>> BuildEnumeration(
+            Expression<Func<BalanceActionEntity, bool>> sourcePredicate,
+            TransactionId startingAfter,
+            TransactionId endingBefore,
+            bool orderAsc)
+        {
+            return orderAsc? BuildAscEnumeration(sourcePredicate, startingAfter, endingBefore) 
+                : BuildDescEnumeration(sourcePredicate, startingAfter, endingBefore);
+        }
+
+        private static Expression<Func<BalanceActionEntity, bool>> BuildAscEnumeration(
             Expression<Func<BalanceActionEntity, bool>> sourcePredicate,
             TransactionId startingAfter,
             TransactionId endingBefore)
@@ -74,6 +84,28 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
                 var stringValue = endingBefore.ToString();
                 // ReSharper disable once StringCompareToIsCultureSpecific
                 predicate = predicate.And(p => p.TransactionId.CompareTo(stringValue) < 0);
+            }
+
+            return predicate;
+        }
+
+        private static Expression<Func<BalanceActionEntity, bool>> BuildDescEnumeration(
+            Expression<Func<BalanceActionEntity, bool>> sourcePredicate,
+            TransactionId startingAfter,
+            TransactionId endingBefore)
+        {
+            var predicate = PredicateBuilder.New(sourcePredicate);
+            if (startingAfter != null)
+            {
+                var stringValue = startingAfter.ToString();
+                // ReSharper disable once StringCompareToIsCultureSpecific
+                predicate = predicate.And(p => p.TransactionId.CompareTo(stringValue) < 0);
+            }
+            if (endingBefore != null)
+            {
+                var stringValue = endingBefore.ToString();
+                // ReSharper disable once StringCompareToIsCultureSpecific
+                predicate = predicate.And(p => p.TransactionId.CompareTo(stringValue) > 0);
             }
 
             return predicate;

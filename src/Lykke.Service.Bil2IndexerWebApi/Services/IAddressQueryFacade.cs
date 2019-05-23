@@ -7,7 +7,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
     public interface IAddressQueryFacade
     {
-        Task<IReadOnlyCollection<AddressUnspentOutputModel>> GetUnspentOutputs(
+        Task<IReadOnlyCollection<AddressUnspentOutputResponce>> GetUnspentOutputs(
             string blockchainType, 
             string address,
             int limit,
@@ -15,21 +15,21 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             string startingAfter,
             string endingBefore);
 
-        Task<IReadOnlyCollection<AddressBalanceModel>> GetBalances(
+        Task<IReadOnlyCollection<AddressBalanceResponce>> GetBalances(
             string blockchainType, 
             string address);
 
-        Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesByBlockId(
+        Task<IReadOnlyCollection<AddressBalanceResponce>> GetBalancesByBlockId(
             string blockchainType, 
             string address,
             string blockId);
 
-        Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesByBlockNumber(
+        Task<IReadOnlyCollection<AddressBalanceResponce>> GetBalancesByBlockNumber(
             string blockchainType, 
             string address,
             long blockNumber);
     
-        Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesOnDate(string blockchainType,
+        Task<IReadOnlyCollection<AddressBalanceResponce>> GetBalancesOnDate(string blockchainType,
             string address,
             DateTime date);
     }

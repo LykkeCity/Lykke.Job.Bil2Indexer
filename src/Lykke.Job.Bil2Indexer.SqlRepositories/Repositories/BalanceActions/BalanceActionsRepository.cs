@@ -237,13 +237,14 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
 
         public Task<IReadOnlyCollection<TransactionId>> GetTransactionsOfAddressAsync(string blockchainType, 
             Address address,
+            long maxBlockNumber,
             int limit,
             bool orderAsc,
             TransactionId startingAfter,
             TransactionId endingBefore)
         {
             return GetTransactionIdsByPredicateAsync(blockchainType,
-                BalanceActionsPredicates.Build(address),
+                BalanceActionsPredicates.Build(address, maxBlockNumber),
                 limit,
                 orderAsc,
                 startingAfter,
@@ -275,13 +276,14 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BalanceActions
             using (var db = new BlockchainDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var query = db.BalanceActions
-                    .Where(BalanceActionsPredicates.BuildEnumerationPredicate(predicate, startingAfter, endingBefore))
-                    .Take(limit);
+                    .Where(BalanceActionsPredicates.BuildEnumeration(predicate, startingAfter, endingBefore, orderAsc))
+                    .Distinct();
 
                 query = orderAsc ? query.OrderBy(p => p.TransactionId) : query.OrderByDescending(p => p.TransactionId);
 
+                query = query.Take(limit);
+
                 return (await query.Select(p => p.TransactionId)
-                        .Distinct()
                         .ToListAsync())
                     .Select(p=> new TransactionId(p)).ToList();
             }

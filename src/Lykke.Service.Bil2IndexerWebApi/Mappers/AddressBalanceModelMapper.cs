@@ -9,20 +9,20 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
     public static class AddressBalanceModelMapper
     {
-        public static IReadOnlyCollection<AddressBalanceModel> ToViewModel(this IReadOnlyDictionary<Address, IReadOnlyDictionary<Asset, Money>> source, 
+        public static IReadOnlyCollection<AddressBalanceResponce> ToViewModel(this IReadOnlyDictionary<Address, IReadOnlyDictionary<Asset, Money>> source, 
             BlockHeader blockHeader)
         {
             return source.SelectMany(p => ToViewModel(p.Value, p.Key, blockHeader)).ToList();
         }
 
-        public static IReadOnlyCollection<AddressBalanceModel> ToViewModel(this IReadOnlyDictionary<Asset, Money> source, 
+        public static IReadOnlyCollection<AddressBalanceResponce> ToViewModel(this IReadOnlyDictionary<Asset, Money> source, 
             Address address, 
             BlockHeader blockHeader)
         {
-            return source.Select(p => new AddressBalanceModel
+            return source.Select(p => new AddressBalanceResponce
             {
                 Address =  address,
-                AssetId = new AssetIdModel
+                AssetId = new AssetIdResponce
                 {
                     Address = p.Key.Address,
                     Ticker = p.Key.Id

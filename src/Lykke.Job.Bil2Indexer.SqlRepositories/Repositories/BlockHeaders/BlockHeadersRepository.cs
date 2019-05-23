@@ -115,14 +115,13 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
             }
         }
 
-        public async Task<IReadOnlyCollection<BlockHeader>> GetCollectionAsync(string blockchainType, int limit, bool orderAsc, long? startingAfterNumber = null,
+        public async Task<IReadOnlyCollection<BlockHeader>> GetCollectionAsync(string blockchainType,  long maxBlockNumber, int limit, bool orderAsc, long? startingAfterNumber = null,
             long? endingBeforeNumber = null)
         {
             using (var db = new StateDataContext(_connectionStringProvider.GetConnectionString(blockchainType)))
             {
                 var query = db.BlockHeaders
-                    .Where(BlockHeadersPredicates.Build(startingAfterNumber, endingBeforeNumber))
-                    .Take(limit);
+                    .Where(BlockHeadersPredicates.BuildEnumeration(maxBlockNumber, startingAfterNumber, endingBeforeNumber, orderAsc));
 
                 if (orderAsc)
                 {
@@ -134,6 +133,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders
                 }
 
                 var entities = await query
+                    .Take(limit)
                     .ToListAsync();
 
                 return entities.Select(p => p.ToDomain(blockchainType)).ToList();

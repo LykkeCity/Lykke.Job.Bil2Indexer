@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
+using Lykke.Service.Bil2IndexerWebApi.Models.Requests;
+using Lykke.Service.Bil2IndexerWebApi.Models.Requests.Shared;
 using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,66 +22,61 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(RoutePrefix, Name = nameof(GetTransactions))]
-        public async Task<ActionResult<Paginated<TransactionModel, string>>> GetTransactions(
-            [FromRoute] string blockchainType,
-            [FromQuery] string blockId,
-            [FromQuery] int? blockNumber, 
-            [FromQuery] string address,
-            [FromQuery] PaginationRequest<string> pagination)
+        public async Task<ActionResult<Paginated<TransactionResponce, string>>> GetTransactions(
+            [FromRoute][FromQuery] TransactionsRequest request)
         {
-            IReadOnlyCollection<TransactionModel> transactions;
-
-            // TODO: Validate parameters
-
-            if (blockId != null)
+            IReadOnlyCollection<TransactionResponce> transactions;
+            
+            if (request.BlockId != null)
             {
-                transactions = await _transactionQueryFacade.GetTransactionsByBlockId(blockchainType, 
-                    blockId,
-                    pagination.Limit,
-                    pagination.Order == PaginationOrder.Asc,
-                    pagination.StartingAfter,
-                    pagination.EndingBefore);
+                transactions = await _transactionQueryFacade.GetTransactionsByBlockId(request.BlockchainType,
+                    request.BlockId,
+                    request.Limit,
+                    request.Order == PaginationOrder.Asc,
+                    request.StartingAfter,
+                    request.EndingBefore, 
+                    Url);
             } 
-            else if (blockNumber != null)
+            else if (request.BlockNumber != null)
             {
-                transactions = await _transactionQueryFacade.GetTransactionsByBlockNumber(blockchainType, 
-                    blockNumber.Value,
-                    pagination.Limit,
-                    pagination.Order == PaginationOrder.Asc,
-                    pagination.StartingAfter,
-                    pagination.EndingBefore);
+                transactions = await _transactionQueryFacade.GetTransactionsByBlockNumber(request.BlockchainType,
+                    request.BlockNumber.Value,
+                    request.Limit,
+                    request.Order == PaginationOrder.Asc,
+                    request.StartingAfter,
+                    request.EndingBefore, 
+                    Url);
             }
-            else if (address != null)
+            else if (request.Address != null)
             {
-                transactions = await _transactionQueryFacade.GetTransactionsByAddress(blockchainType, 
-                    address,
-                    pagination.Limit,
-                    pagination.Order == PaginationOrder.Asc,
-                    pagination.StartingAfter,
-                    pagination.EndingBefore);
+                transactions = await _transactionQueryFacade.GetTransactionsByAddress(request.BlockchainType,
+                    request.Address,
+                    request.Limit,
+                    request.Order == PaginationOrder.Asc,
+                    request.StartingAfter,
+                    request.EndingBefore,
+                    Url);
             }
             else
             {
-                // TODO: Describe why request is failed
-                return BadRequest();
+                throw new ArgumentException("This should not happen due validation logic");
             }
 
-            return transactions.Paginate(pagination);
+            return transactions.Paginate(request, Url, p => p.Id);
         }
 
-        [HttpGet(RoutePrefix + "{id}", Name = nameof(GetTransactionById))]
-        public async Task<ActionResult<TransactionModel>> GetTransactionById(
-            [FromRoute] string blockchainType,
-            [FromRoute] string id)
+        [HttpGet(RoutePrefix + "/{id}", Name = nameof(GetTransactionById))]
+        public async Task<ActionResult<TransactionResponce>> GetTransactionById(
+            [FromRoute] ByIdRequest request)
         {
-            var transaction = await _transactionQueryFacade.GetTransactionById(blockchainType, id);
+            return await _transactionQueryFacade.GetTransactionById(request.BlockchainType, request.Id, Url);
+        }
 
-            if (transaction == null)
-            {
-                return NotFound();
-            }
-
-            return transaction;
+        [HttpGet(RoutePrefix + "/{id}/raw", Name = nameof(GetTransactionRawById))]
+        public Task<ActionResult<TransactionResponce>> GetTransactionRawById(
+            [FromRoute] ByIdRequest request)
+        {
+            throw new NotImplementedException();
         }
     }
 }

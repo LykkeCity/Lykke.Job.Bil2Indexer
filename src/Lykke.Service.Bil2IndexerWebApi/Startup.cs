@@ -5,7 +5,9 @@ using Lykke.Sdk;
 using Lykke.Service.Bil2IndexerWebApi.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Serialization;
 
 namespace Lykke.Service.Bil2IndexerWebApi
 {
@@ -23,11 +25,8 @@ namespace Lykke.Service.Bil2IndexerWebApi
         {
             return services.BuildServiceProvider<AppSettings>(options =>
             {
-                //options.DisableFluentValidation();
-                //options.DisableValidationFilter();
-
                 options.SwaggerOptions = _swaggerOptions;
-
+                
                 options.Logs = logs =>
                 {
                     logs.AzureTableName = "Bil2IndexerWebApiLog";
@@ -50,6 +49,21 @@ namespace Lykke.Service.Bil2IndexerWebApi
                         });
                     };
                 };
+
+                options.ConfigureMvcBuilder = builder =>
+                {
+                    builder.AddJsonOptions(json =>
+                    {
+                        json.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                    });
+
+                    //temporaly disable
+                    //builder.Services.Configure<RouteOptions>(route =>
+                    //{
+                    //    route.LowercaseQueryStrings = true;
+                    //    route.LowercaseUrls = true;
+                    //});
+                };
             });
         }
 
@@ -63,9 +77,6 @@ namespace Lykke.Service.Bil2IndexerWebApi
 
             app.UseLykkeConfiguration(options =>
             {
-                //options.DisableUnhandledExceptionLoggingMiddleware();
-                //options.DisableValidationExceptionMiddleware();
-                // TODO: Add option to specify empty RoutePrefix for swagger to the Lykke.Sdk
                 options.SwaggerOptions = _swaggerOptions;
             });
         }

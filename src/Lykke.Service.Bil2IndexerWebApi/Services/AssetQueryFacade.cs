@@ -16,10 +16,10 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             _assetInfosRepository = assetInfosRepository;
         }
 
-        public async Task<AssetModel> GetAsset(string blockchainType, string address, string ticker)
+        public async Task<AssetModel> GetAsset(string blockchainType, string ticker, string address)
         {
             return (await _assetInfosRepository.GetOrDefaultAsync(blockchainType,
-                    new Asset(new AssetId(ticker), ticker != null ? new AssetAddress(ticker) : null)))
+                    new Asset(new AssetId(ticker), address != null ? new AssetAddress(address) : null)))
                 ?.ToViewModel();
         }
 

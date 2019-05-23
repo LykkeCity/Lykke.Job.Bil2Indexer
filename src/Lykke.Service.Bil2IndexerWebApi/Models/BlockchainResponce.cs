@@ -2,11 +2,11 @@
 
 namespace Lykke.Service.Bil2IndexerWebApi.Models
 {
-    public class BlockchainModel
+    public class BlockchainResponce
     {
         public string BlockchainType { get; set; }
 
         [JsonProperty(PropertyName = "_links")]
-        public BlockchainLinksModel Links { get; set; }
+        public BlockchainLinksResponce Links { get; set; }
     }
 }
