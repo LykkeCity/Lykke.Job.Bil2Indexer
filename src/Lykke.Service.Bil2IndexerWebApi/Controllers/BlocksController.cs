@@ -41,7 +41,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
             return await _blockQueryFacade.GetBlockByIdOrDefault(blockchainType, id, Url);
         }
 
-        [HttpGet(RoutePrefix + "/{height:int}", Name = nameof(GetBlockByHeigh))]
+        [HttpGet(RoutePrefix + "/{number:int}", Name = nameof(GetBlockByHeigh))]
         public async Task<ActionResult<BlockResponce>> GetBlockByHeigh([FromRoute] ByBlockNumberRequest request)
         {
             return await _blockQueryFacade.GetBlockByNumberOrDefault(request.BlockchainType, request.Number, Url);
