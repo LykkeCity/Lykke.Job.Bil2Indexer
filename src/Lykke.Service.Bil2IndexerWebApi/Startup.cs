@@ -5,7 +5,9 @@ using Lykke.Sdk;
 using Lykke.Service.Bil2IndexerWebApi.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Serialization;
 
 namespace Lykke.Service.Bil2IndexerWebApi
 {
@@ -25,9 +27,9 @@ namespace Lykke.Service.Bil2IndexerWebApi
             {
                 //options.DisableFluentValidation();
                 //options.DisableValidationFilter();
-
+                
                 options.SwaggerOptions = _swaggerOptions;
-
+                
                 options.Logs = logs =>
                 {
                     logs.AzureTableName = "Bil2IndexerWebApiLog";
@@ -49,6 +51,14 @@ namespace Lykke.Service.Bil2IndexerWebApi
                             channelOptions.IncludeHealthNotifications();
                         });
                     };
+                };
+
+                options.ConfigureMvcBuilder = builder =>
+                {
+                    builder.AddJsonOptions(json =>
+                    {
+                        json.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                    });
                 };
             });
         }
