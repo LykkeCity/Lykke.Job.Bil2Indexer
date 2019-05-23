@@ -27,7 +27,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             _balanceActionsRepository = balanceActionsRepository;
         }
 
-        public async Task<IReadOnlyCollection<AddressUnspentOutputModel>> GetUnspentOutputs(string blockchainType,
+        public async Task<IReadOnlyCollection<AddressUnspentOutputResponce>> GetUnspentOutputs(string blockchainType,
             string address, 
             int limit, 
             bool orderAsc,
@@ -45,7 +45,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
                 .ToViewModel(await getChainHead);
         }
 
-        public async Task<IReadOnlyCollection<AddressBalanceModel>> GetBalances(string blockchainType, 
+        public async Task<IReadOnlyCollection<AddressBalanceResponce>> GetBalances(string blockchainType, 
             string address)
         {
             var chainHead = await _chainHeadsRepository.GetAsync(blockchainType);
@@ -54,7 +54,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             return await GetBalancesInner(blockchainType, address, block);
         }
 
-        public async Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesByBlockId(string blockchainType,
+        public async Task<IReadOnlyCollection<AddressBalanceResponce>> GetBalancesByBlockId(string blockchainType,
             string address,
             string blockId)
         {
@@ -63,7 +63,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             return await GetBalancesInner(blockchainType, address, block);
         }
 
-        public async Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesByBlockNumber(string blockchainType, 
+        public async Task<IReadOnlyCollection<AddressBalanceResponce>> GetBalancesByBlockNumber(string blockchainType, 
             string address,
             long blockNumber)
         {
@@ -73,7 +73,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
         }
         
 
-        public async Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesOnDate(string blockchainType,
+        public async Task<IReadOnlyCollection<AddressBalanceResponce>> GetBalancesOnDate(string blockchainType,
             string address, 
             DateTime date)
         {
@@ -82,7 +82,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             return await GetBalancesInner(blockchainType, address, block);
         }
 
-        private async Task<IReadOnlyCollection<AddressBalanceModel>> GetBalancesInner(string blockchainType,
+        private async Task<IReadOnlyCollection<AddressBalanceResponce>> GetBalancesInner(string blockchainType,
             string address,
             BlockHeader blockHeader)
         {

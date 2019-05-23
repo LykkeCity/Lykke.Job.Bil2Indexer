@@ -7,10 +7,10 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
     public interface IBlockQueryFacade
     {
-        Task<BlockModel> GetBlockByIdOrDefault(string blockchainType, BlockId id);
-        Task<BlockModel> GetBlockByNumberOrDefault(string blockchainType, long number);
-        Task<IReadOnlyCollection<BlockModel>> GetBlocks(string blockchainType, int limit, bool orderAsc, long? startingAfter, long? endingBefore);
-        Task<BlockModel> GetLastIrreversibleBlockAsync(string blockchainType);
-        Task<BlockModel> GetLastBlockAsync(string blockchainType);
+        Task<BlockResponce> GetBlockByIdOrDefault(string blockchainType, BlockId id);
+        Task<BlockResponce> GetBlockByNumberOrDefault(string blockchainType, long number);
+        Task<IReadOnlyCollection<BlockResponce>> GetBlocks(string blockchainType, int limit, bool orderAsc, long? startingAfter, long? endingBefore);
+        Task<BlockResponce> GetLastIrreversibleBlockAsync(string blockchainType);
+        Task<BlockResponce> GetLastBlockAsync(string blockchainType);
     }
 }

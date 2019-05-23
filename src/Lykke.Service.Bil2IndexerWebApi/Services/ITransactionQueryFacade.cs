@@ -6,12 +6,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
 {
     public interface ITransactionQueryFacade
     {
-        Task<TransactionModel> GetTransactionById(string blockchainType, string id);
-        Task<IReadOnlyCollection<TransactionModel>> GetTransactionsByBlockId(string blockchainType, string blockId, int limit, bool orderAsc,
+        Task<TransactionResponce> GetTransactionById(string blockchainType, string id);
+        Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByBlockId(string blockchainType, string blockId, int limit, bool orderAsc,
             string startingAfter, string endingBefore);
-        Task<IReadOnlyCollection<TransactionModel>> GetTransactionsByAddress(string blockchainType, string address, int limit, bool orderAsc,
+        Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByAddress(string blockchainType, string address, int limit, bool orderAsc,
             string startingAfter, string endingBefore);
-        Task<IReadOnlyCollection<TransactionModel>> GetTransactionsByBlockNumber(string blockchainType, int blockNumberValue, int limit,
+        Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByBlockNumber(string blockchainType, int blockNumberValue, int limit,
             bool orderAsc, string startingAfter, string endingBefore);
     }
 }

@@ -20,13 +20,14 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             _chainHeadsRepository = chainHeadsRepository;
         }
 
-        public async Task<BlockModel> GetBlockByIdOrDefault(string blockchainType, BlockId id)
+        public async Task<BlockResponce> GetBlockByIdOrDefault(string blockchainType, BlockId id)
         {
             var getBlock = _blockHeadersRepository.GetOrDefaultAsync(blockchainType, id);
             var getChainHead = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
 
             await Task.WhenAll(getBlock, getChainHead);
-            if (getBlock.Result.Number <= getChainHead.Result)
+            
+            if (getBlock.Result?.Number <= getChainHead.Result)
             {
                 return getBlock.Result.ToViewModel(getChainHead.Result);
             }
@@ -34,13 +35,13 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             return null;
         }
 
-        public async Task<BlockModel> GetBlockByNumberOrDefault(string blockchainType, long number)
+        public async Task<BlockResponce> GetBlockByNumberOrDefault(string blockchainType, long number)
         {
             var getBlock = _blockHeadersRepository.GetOrDefaultAsync(blockchainType, number);
             var getChainHead = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
 
             await Task.WhenAll(getBlock, getChainHead);
-            if (getBlock.Result.Number <= getChainHead.Result)
+            if (getBlock.Result?.Number <= getChainHead.Result)
             {
                 return getBlock.Result.ToViewModel(getChainHead.Result);
             }
@@ -48,7 +49,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             return null;
         }
 
-        public async Task<IReadOnlyCollection<BlockModel>> GetBlocks(string blockchainType, int limit, bool orderAsc, long? startingAfterNumber,
+        public async Task<IReadOnlyCollection<BlockResponce>> GetBlocks(string blockchainType, int limit, bool orderAsc, long? startingAfterNumber,
             long? endingBeforeNumber)
         {
             var getChainHead = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
@@ -59,13 +60,13 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             return getBlocks.Result.Where(p => p.Number <= getChainHead.Result).ToList().ToViewModel(getChainHead.Result);
         }
 
-        public Task<BlockModel> GetLastIrreversibleBlockAsync(string blockchainType)
+        public Task<BlockResponce> GetLastIrreversibleBlockAsync(string blockchainType)
         {
             //TODO discuss
             return GetLastBlockAsync(blockchainType);
         }
 
-        public async Task<BlockModel> GetLastBlockAsync(string blockchainType)
+        public async Task<BlockResponce> GetLastBlockAsync(string blockchainType)
         {
             var head = await _chainHeadsRepository.GetAsync(blockchainType);
 

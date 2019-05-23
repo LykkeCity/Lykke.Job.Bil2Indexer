@@ -12,13 +12,13 @@ namespace Lykke.Service.Bil2IndexerWebApi.Models.Requests
         [FromRoute(Name = "blockchainType")]
         public string BlockchainType { get; set; }
 
-        [FromRoute(Name = "assetTicker")]
+        [FromQuery(Name = "assetTicker")]
         public string AssetTicker { get; set; }
 
-        [FromRoute(Name = "assetAddress")]
+        [FromQuery(Name = "assetAddress")]
         public string AssetAddress { get; set; }
 
-        [FromQuery]
+        [FromQuery(Name = "")]
         public PaginationRequest<string> Pagination { get; set; }
     }
 }

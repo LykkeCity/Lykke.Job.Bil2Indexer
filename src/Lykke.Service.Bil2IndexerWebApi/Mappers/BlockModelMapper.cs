@@ -7,9 +7,9 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
     public static class BlockModelMapper
     {
-        public static BlockModel ToViewModel(this BlockHeader source, long lastBlockNumber)
+        public static BlockResponce ToViewModel(this BlockHeader source, long lastBlockNumber)
         {
-            return new BlockModel
+            return new BlockResponce
             {
                 Id = source.Id,
                 Number = source.Number,
@@ -25,7 +25,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
             };
         }
 
-        public static IReadOnlyCollection<BlockModel> ToViewModel(this IReadOnlyCollection<BlockHeader> source, long lastBlockNumber)
+        public static IReadOnlyCollection<BlockResponce> ToViewModel(this IReadOnlyCollection<BlockHeader> source, long lastBlockNumber)
         {
             return source.Select(p => p.ToViewModel(lastBlockNumber)).ToList();
         }

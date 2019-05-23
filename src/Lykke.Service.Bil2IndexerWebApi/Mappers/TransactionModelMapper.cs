@@ -8,7 +8,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
 {
     public static class TransactionModelMapper
     {
-        public static IReadOnlyCollection<TransactionModel> ToViewModel(this IReadOnlyCollection<TransactionId> transactionIds, 
+        public static IReadOnlyCollection<TransactionResponce> ToViewModel(this IReadOnlyCollection<TransactionId> transactionIds, 
             IReadOnlyCollection<FeeEnvelope> fees,
             IReadOnlyCollection<BalanceAction> balances,
             long lastBlockNumber)
@@ -20,14 +20,14 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
                 balancesPerTx[p].ToList(), lastBlockNumber)).ToList();
         }
 
-        public static TransactionModel ToViewModel(this TransactionId transactionId, 
+        public static TransactionResponce ToViewModel(this TransactionId transactionId, 
             IReadOnlyCollection<FeeEnvelope> fees,
             IReadOnlyCollection<BalanceAction> balances,  
             long lastBlockNumber)
         {
             var tx = balances.First();
             
-            return new TransactionModel
+            return new TransactionResponce
             {
                 Id = tx.TransactionId,
                 BlockId = tx.BlockId,
@@ -36,7 +36,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
                 BlockNumber = tx.BlockNumber,
                 Fees = fees.Select(p=> new FeeModel
                 {
-                    AssetId = new AssetIdModel
+                    AssetId = new AssetIdResponce
                     {
                         Address = p.Fee.Asset.Address,
                         Ticker = p.Fee.Asset.Id
@@ -45,9 +45,9 @@ namespace Lykke.Service.Bil2IndexerWebApi.Mappers
                 }).ToArray(),
 
                 ConfirmationsCount = lastBlockNumber - tx.BlockNumber,
-                Transfers = balances.Select(p=> new TransferModel
+                Transfers = balances.Select(p=> new TransferResponce
                 {
-                    AssetId = new AssetIdModel
+                    AssetId = new AssetIdResponce
                     {
                         Address = p.AccountId.Asset.Address,
                         Ticker = p.AccountId.Asset.Id

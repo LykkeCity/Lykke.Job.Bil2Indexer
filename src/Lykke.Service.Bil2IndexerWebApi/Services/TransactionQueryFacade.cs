@@ -26,13 +26,13 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             _blockHeadersRepository = blockHeadersRepository;
         }
 
-        public async Task<TransactionModel> GetTransactionById(string blockchainType, string id)
+        public async Task<TransactionResponce> GetTransactionById(string blockchainType, string id)
         {
             return (await GetTransactions(blockchainType, new List<TransactionId> {new TransactionId(id)}))
                 .SingleOrDefault();
         }
 
-        public async Task<IReadOnlyCollection<TransactionModel>> GetTransactionsByBlockId(string blockchainType, 
+        public async Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByBlockId(string blockchainType, 
             string blockId,
             int limit, 
             bool orderAsc,
@@ -49,7 +49,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             return await GetTransactions(blockchainType, transactionIds);
         }
 
-        public async Task<IReadOnlyCollection<TransactionModel>> GetTransactionsByAddress(string blockchainType, 
+        public async Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByAddress(string blockchainType, 
             string address,
             int limit,
             bool orderAsc,
@@ -66,7 +66,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
             return await GetTransactions(blockchainType, transactionIds);
         }
 
-        private async Task<IReadOnlyCollection<TransactionModel>> GetTransactions(string blockchainType,
+        private async Task<IReadOnlyCollection<TransactionResponce>> GetTransactions(string blockchainType,
             IReadOnlyCollection<TransactionId> transactionIds)
         {
             var getLastBlockNumber = _chainHeadsRepository.GetChainHeadNumberAsync(blockchainType);
@@ -84,7 +84,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
                 getLastBlockNumber.Result);
         }
 
-        public async Task<IReadOnlyCollection<TransactionModel>> GetTransactionsByBlockNumber(string blockchainType, 
+        public async Task<IReadOnlyCollection<TransactionResponce>> GetTransactionsByBlockNumber(string blockchainType, 
             int blockNumberValue,
             int limit,
             bool orderAsc,
@@ -95,7 +95,7 @@ namespace Lykke.Service.Bil2IndexerWebApi.Services
 
             if (block == null)
             {
-                return Enumerable.Empty<TransactionModel>().ToList();
+                return Enumerable.Empty<TransactionResponce>().ToList();
             }
 
             return await GetTransactionsByBlockId(blockchainType,

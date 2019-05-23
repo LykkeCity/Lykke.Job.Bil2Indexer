@@ -4,6 +4,7 @@ using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
 using Lykke.Service.Bil2IndexerWebApi.Models.Requests;
+using Lykke.Service.Bil2IndexerWebApi.Models.Requests.Shared;
 using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,23 +21,9 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(RoutePrefix, Name = nameof(GetBlocks))]
-        public async Task<ActionResult<Paginated<BlockModel, long>>> GetBlocks(
+        public async Task<ActionResult<Paginated<BlockResponce, long>>> GetBlocks(
             [FromRoute][FromQuery] BlocksRequest request)
         {
-            // TODO: Validate parameters
-
-            if (request.Number != null)
-            {
-                var block = await _blockQueryFacade.GetBlockByNumberOrDefault(request.BlockchainType, request.Number.Value);
-
-                if (block == null)
-                {
-                    return NotFound();
-                }
-
-                return block.PaginateSingle(request.Pagination);
-            }
-
             var blocks = await _blockQueryFacade.GetBlocks(request.BlockchainType, request.Pagination.Limit,
                 request.Pagination.Order == PaginationOrder.Asc,
                 request.Pagination.StartingAfter,
@@ -46,50 +33,35 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(RoutePrefix + "/{id}", Name = nameof(GetBlockById))]
-        public async Task<ActionResult<BlockModel>> GetBlockById(
+        public async Task<ActionResult<BlockResponce>> GetBlockById(
             [FromRoute] string blockchainType,
             [FromRoute] string id)
         {
-            var block = await _blockQueryFacade.GetBlockByIdOrDefault(blockchainType, id);
+            return await _blockQueryFacade.GetBlockByIdOrDefault(blockchainType, id);
+        }
 
-            if (block == null)
-            {
-                return NotFound();
-            }
-            
-            return block;
+
+        [HttpGet(RoutePrefix + "/{height:int}", Name = nameof(GetBlockByHeigh))]
+        public async Task<ActionResult<BlockResponce>> GetBlockByHeigh([FromRoute] ByBlockHeightRequest request)
+        {
+            return await _blockQueryFacade.GetBlockByNumberOrDefault(request.BlockchainType, request.Height);
         }
 
         [HttpGet(RoutePrefix + "/last-irreversible", Name = nameof(GetIrreversibleBlock))]
-        public async Task<ActionResult<BlockModel>> GetIrreversibleBlock([FromRoute] string blockchainType)
+        public async Task<ActionResult<BlockResponce>> GetIrreversibleBlock([FromRoute] ByBlockchainRequest request)
         {
-            var block = await _blockQueryFacade.GetLastIrreversibleBlockAsync(blockchainType);
-
-            if (block == null)
-            {
-                return NotFound();
-            }
-
-            return block;
+            return await _blockQueryFacade.GetLastIrreversibleBlockAsync(request.BlockchainType);
         }
 
         [HttpGet(RoutePrefix + "/last", Name = nameof(GetLastBlock))]
-        public async Task<ActionResult<BlockModel>> GetLastBlock([FromRoute] string blockchainType)
+        public async Task<ActionResult<BlockResponce>> GetLastBlock([FromRoute] ByBlockchainRequest request)
         {
-            var block = await _blockQueryFacade.GetLastBlockAsync(blockchainType);
-
-            if (block == null)
-            {
-                return NotFound();
-            }
-
-            return block;
+            return await _blockQueryFacade.GetLastBlockAsync(request.BlockchainType);
         }
 
         [HttpGet(RoutePrefix+ "/{id}/raw", Name = nameof(GetRawBlock))]
         public IActionResult GetRawBlock(
-            [FromRoute] string blockchainType,
-            [FromRoute] string id)
+            [FromRoute] ByIdRequest request)
         {
             throw new NotImplementedException();
             //if (id == null)

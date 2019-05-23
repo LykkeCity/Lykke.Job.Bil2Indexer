@@ -2,7 +2,7 @@
 {
     public class FeeModel
     {
-        public AssetIdModel AssetId { get; set; }
+        public AssetIdResponce AssetId { get; set; }
         public string Amount { get; set; }
     }
 }

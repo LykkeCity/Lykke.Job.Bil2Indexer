@@ -2,7 +2,7 @@
 {
     public class AssetModel
     {
-        public AssetIdModel Id { get; set; }
+        public AssetIdResponce Id { get; set; }
         public int Accuracy { get;set; }
     }
 }

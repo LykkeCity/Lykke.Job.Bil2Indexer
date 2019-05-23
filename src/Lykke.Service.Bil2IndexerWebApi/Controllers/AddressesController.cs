@@ -18,12 +18,12 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         {
             _addressQueryFacade = addressQueryFacade;
         }
-
+        
         [HttpGet(RoutePrefix + "/{address}/balances", Name = nameof(GetAddressBalances))]
-        public async Task<ActionResult<IReadOnlyCollection<AddressBalanceModel>>> GetAddressBalances(
+        public async Task<ActionResult<IReadOnlyCollection<AddressBalanceResponce>>> GetAddressBalances(
             [FromRoute][FromQuery] AddressBalancesRequest request)
         {
-            IReadOnlyCollection<AddressBalanceModel> result;
+            IReadOnlyCollection<AddressBalanceResponce> result;
             if (request.BlockId != null)
             {
                 result =  await _addressQueryFacade.GetBalancesByBlockId
@@ -64,22 +64,20 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(RoutePrefix + "/{address}/unspent-outputs", Name = nameof(GetAddressUnspentOutputs))]
-        public async Task<ActionResult<Paginated<AddressUnspentOutputModel, string>>> GetAddressUnspentOutputs(
-            [FromRoute] string blockchainType,
-            [FromRoute] string address,
-            [FromQuery] PaginationRequest<string> pagination)
+        public async Task<ActionResult<Paginated<AddressUnspentOutputResponce, string>>> GetAddressUnspentOutputs(
+            [FromRoute] [FromQuery] AddressUnspentOutputsRequest request)
         {
             var result = await _addressQueryFacade.GetUnspentOutputs
             (
-                blockchainType,
-                address,
-                pagination.Limit,
-                pagination.Order == PaginationOrder.Asc,
-                pagination.StartingAfter,
-                pagination.EndingBefore
+                request.BlockchainType,
+                request.Address,
+                request.Pagination.Limit,
+                request.Pagination.Order == PaginationOrder.Asc,
+                request.Pagination.StartingAfter,
+                request.Pagination.EndingBefore
             );
 
-            return result.Paginate(pagination);
+            return result.Paginate(request.Pagination);
         }
     }
 }

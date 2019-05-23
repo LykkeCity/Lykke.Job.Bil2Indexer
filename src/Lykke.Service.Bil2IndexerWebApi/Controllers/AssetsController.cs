@@ -24,9 +24,9 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         {
             Paginated<AssetModel, string> result;
 
-            if (request.AssetTicker != null && request.AssetAddress != null)
+            if (request.AssetTicker != null)
             {
-                var asset = await _assetQueryFacade.GetAsset(request.BlockchainType, request.AssetAddress, request.AssetTicker);
+                var asset = await _assetQueryFacade.GetAsset(request.BlockchainType, request.AssetTicker, request.AssetAddress);
 
                 result = asset.PaginateSingle(request.Pagination);
             }
@@ -43,20 +43,16 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(RoutePrefix + "/{assetTicker}/without-address", Name = nameof(GetAssetWithoutAddress))]
-        public async Task<ActionResult<AssetModel>> GetAssetWithoutAddress(
-            [FromRoute] string blockchainType,
-            [FromRoute] string assetTicker)
+        public async Task<ActionResult<AssetModel>> GetAssetWithoutAddress([FromRoute] AssetWithoutAddressRequest request)
         {
-            return await _assetQueryFacade.GetAsset(blockchainType, assetTicker);
+            return await _assetQueryFacade.GetAsset(request.BlockchainType, request.AssetTicker);
         }
 
         [HttpGet(RoutePrefix + "/{assetTicker}/addresses/{assetAddress}", Name = nameof(GetAssetWithAddress))]
         public async Task<ActionResult<AssetModel>> GetAssetWithAddress(
-            [FromRoute] string blockchainType,
-            [FromRoute] string assetTicker,
-            [FromRoute] string assetAddress)
+            [FromRoute] AssetWithAddressRequest request)
         {
-            return await _assetQueryFacade.GetAsset(blockchainType, assetTicker, assetAddress);
+            return await _assetQueryFacade.GetAsset(request.BlockchainType, request.AssetTicker, request.AssetAddress);
         }
     }
 }

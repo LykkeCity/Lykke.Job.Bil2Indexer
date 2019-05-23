@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Dapper;
 using Lykke.Job.Bil2Indexer.Domain;
 using Lykke.Job.Bil2Indexer.Domain.Repositories;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders;
 using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads;
 using Lykke.Job.Bil2Indexer.Tests.Sql.Mocks;
+using Npgsql;
 using NUnit.Framework;
 
 namespace Lykke.Job.Bil2Indexer.Tests.Sql
@@ -15,6 +17,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanSaveAndRead()
         {
+            RemoveAll();
+
             var repo = new ChainHeadsRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             var source1 = BuildRandom();
@@ -44,6 +48,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task CanHandleNotFound()
         {
+            RemoveAll();
+
             var blockchainType = Guid.NewGuid().ToString();
             var blockNumber = new Random().Next();
             var blockId = Guid.NewGuid().ToString();
@@ -65,6 +71,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         [Test]
         public async Task HandlesOptimisticConcurrency()
         {
+            RemoveAll();
+
             var repo = new ChainHeadsRepository(ContextFactory.GetPosgresTestsConnStringProvider());
 
             var source1 = BuildRandom();
@@ -117,6 +125,14 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 Guid.NewGuid().ToString(),
                 ChainHeadMode.FollowsCrawler
             );
+        }
+
+        private void RemoveAll()
+        {
+            using (var conn = new NpgsqlConnection(ContextFactory.GetPosgresTestsConnString()))
+            {
+                conn.Execute("truncate table chain_heads");
+            }
         }
     }
 

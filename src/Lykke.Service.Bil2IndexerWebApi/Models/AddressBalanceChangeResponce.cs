@@ -1,9 +1,9 @@
 ﻿namespace Lykke.Service.Bil2IndexerWebApi.Models
 {
-    public class AddressBalanceChangeModel
+    public class AddressBalanceChangeResponce
     {
         public string Address { get; set; }
-        public AssetIdModel AssetId { get; set; }
+        public AssetIdResponce AssetId { get; set; }
         public string Amount { get; set; }
         public long BlockNumber { get; set; }
         public string BlockId { get; set; }

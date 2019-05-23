@@ -5,6 +5,7 @@ using Lykke.Service.Bil2IndexerWebApi.Mappers;
 using Lykke.Service.Bil2IndexerWebApi.Models;
 using Lykke.Service.Bil2IndexerWebApi.Models.Common;
 using Lykke.Service.Bil2IndexerWebApi.Models.Requests;
+using Lykke.Service.Bil2IndexerWebApi.Models.Requests.Shared;
 using Lykke.Service.Bil2IndexerWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,12 +22,10 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(RoutePrefix, Name = nameof(GetTransactions))]
-        public async Task<ActionResult<Paginated<TransactionModel, string>>> GetTransactions([FromRoute][FromQuery] TransactionsRequest request)
+        public async Task<ActionResult<Paginated<TransactionResponce, string>>> GetTransactions([FromRoute][FromQuery] TransactionsRequest request)
         {
-            IReadOnlyCollection<TransactionModel> transactions;
-
-            // TODO: Validate parameters
-
+            IReadOnlyCollection<TransactionResponce> transactions;
+            
             if (request.BlockId != null)
             {
                 transactions = await _transactionQueryFacade.GetTransactionsByBlockId(request.BlockchainType,
@@ -63,18 +62,10 @@ namespace Lykke.Service.Bil2IndexerWebApi.Controllers
         }
 
         [HttpGet(RoutePrefix + "{id}", Name = nameof(GetTransactionById))]
-        public async Task<ActionResult<TransactionModel>> GetTransactionById(
-            [FromRoute] string blockchainType,
-            [FromRoute] string id)
+        public async Task<ActionResult<TransactionResponce>> GetTransactionById(
+            [FromRoute] ByIdRequest request)
         {
-            var transaction = await _transactionQueryFacade.GetTransactionById(blockchainType, id);
-
-            if (transaction == null)
-            {
-                return NotFound();
-            }
-
-            return transaction;
+            return await _transactionQueryFacade.GetTransactionById(request.BlockchainType, request.Id);
         }
     }
 }
