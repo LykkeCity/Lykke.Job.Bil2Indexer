@@ -76,9 +76,12 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
             switch (Mode)
             {
-                case ChainHeadMode.CatchesCrawlerUp when infiniteCrawler.IsOnBlock(blockNumber):
-                    Mode = ChainHeadMode.FollowsCrawler;
-                    CrawlerSequence = infiniteCrawler.Sequence;
+                case ChainHeadMode.CatchesCrawlerUp:
+                    if (infiniteCrawler.IsOnBlock(blockNumber))
+                    {
+                        Mode = ChainHeadMode.FollowsCrawler;
+                        CrawlerSequence = infiniteCrawler.Sequence;
+                    }
                     break;
 
                 case ChainHeadMode.FollowsCrawler:

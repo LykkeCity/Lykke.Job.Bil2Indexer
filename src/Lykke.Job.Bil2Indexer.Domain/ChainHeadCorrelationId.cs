@@ -37,50 +37,19 @@ namespace Lykke.Job.Bil2Indexer.Domain
             var blockchainType = correlationIdString.Substring(3, firstColonIndex - 3);
             var secondColonIndex = correlationIdString.IndexOf(':', firstColonIndex + 1);
             var modeString = correlationIdString.Substring(firstColonIndex + 1, secondColonIndex - firstColonIndex - 1);
-            var mode = (ChainHeadMode) int.Parse(modeString);
-            long sequence;
-            long crawlerSequence;
+            var mode = (ChainHeadMode)int.Parse(modeString);
+            var thirdColonIndex = correlationIdString.IndexOf(':', secondColonIndex + 1);
+            var sequenceString = correlationIdString.Substring(secondColonIndex + 1, thirdColonIndex - secondColonIndex - 1);
+            var sequence = long.Parse(sequenceString);
+            var crawlerSequenceString = correlationIdString.Substring(thirdColonIndex + 1);
+            var crawlerSequence = long.Parse(crawlerSequenceString);
 
-            switch (mode)
-            {
-                case ChainHeadMode.CatchesCrawlerUp:
-                {
-                    var sequenceString = correlationIdString.Substring(secondColonIndex + 1);
-                    sequence = long.Parse(sequenceString);
-                    crawlerSequence = 0;
-                }
-                    break;
-
-                case ChainHeadMode.FollowsCrawler:
-                {
-                    var thirdColonIndex = correlationIdString.IndexOf(':', secondColonIndex + 1);
-                    var sequenceString = correlationIdString.Substring(secondColonIndex + 1, thirdColonIndex - secondColonIndex -1);
-                    sequence = long.Parse(sequenceString);
-                    var crawlerSequenceString = correlationIdString.Substring(thirdColonIndex + 1);
-                    crawlerSequence = long.Parse(crawlerSequenceString);
-                }
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(mode), mode, string.Empty);
-            }
-            
             return new ChainHeadCorrelationId(blockchainType, mode, sequence, crawlerSequence);
         }
 
         public override string ToString()
         {
-            switch (Mode)
-            {
-                case ChainHeadMode.CatchesCrawlerUp:
-                    return $"{Type}{BlockchainType}:{(int)ChainHeadMode.CatchesCrawlerUp}:{Sequence}";
-                
-                case ChainHeadMode.FollowsCrawler:
-                    return $"{Type}{BlockchainType}:{(int)ChainHeadMode.FollowsCrawler}:{Sequence}:{CrawlerSequence}";
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(Mode), Mode, string.Empty);
-            }
+            return $"{Type}{BlockchainType}:{(int)Mode}:{Sequence}:{CrawlerSequence}";
         }
 
         public bool IsPreviousOf(ChainHeadCorrelationId another)
@@ -97,7 +66,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.FollowsCrawler:
                     return Sequence + 1 == another.Sequence;
                 case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return Sequence + 1 == another.Sequence;
+                    return Sequence + 1 == another.Sequence && CrawlerSequence == another.CrawlerSequence;
                 case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.FollowsCrawler:
                     return CrawlerSequence + 1 == another.CrawlerSequence;
                 default:
