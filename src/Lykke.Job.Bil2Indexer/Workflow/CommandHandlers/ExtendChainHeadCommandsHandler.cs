@@ -310,7 +310,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             foreach (var transaction in transactions)
             {
-                if (transaction.IsTransferAmount)
+                if (transaction.IsTransferCoins)
                 {
                     executedTransactions.Add(transaction.AsTransferCoins());
                 }
