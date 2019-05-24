@@ -185,8 +185,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             var balanceActions = transactionsBalanceChanges
                 .Where(x => 
                     x.BalanceChange.Address != null && 
-                    x.BalanceChange.Address != Address.Unrecognized &&
-                    x.BalanceChange.Value != 0)
+                    x.BalanceChange.Address != Address.Unrecognized)
                 .GroupBy(x => new
                 {
                     x.Transaction.TransactionId,
