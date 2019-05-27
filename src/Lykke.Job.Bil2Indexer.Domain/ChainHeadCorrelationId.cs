@@ -125,7 +125,19 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 throw new InvalidOperationException($"Blockchain type mismatch: {BlockchainType}, another: {another}");
             }
 
-            return Sequence == another.Sequence && Mode == another.Mode && CrawlerSequence == another.CrawlerSequence;
+            switch (Mode)
+            {
+                case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.CatchesCrawlerUp:
+                    return Sequence == another.Sequence;
+                case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.FollowsCrawler:
+                    return false;
+                case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.CatchesCrawlerUp:
+                    return false;
+                case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.FollowsCrawler:
+                    return CrawlerSequence == another.CrawlerSequence;
+                default:
+                    throw new InvalidOperationException($"Unknown mode: {Mode}, or another.Mode: {another.Mode}");
+            }
         }
 
         public bool Equals(ChainHeadCorrelationId other)
