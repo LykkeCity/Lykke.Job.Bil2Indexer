@@ -95,12 +95,14 @@ namespace Lykke.Job.Bil2Indexer.Tests
         [TestCase("ch#Bitcoin:1:101:202", "ch#Bitcoin:1:100:200", ExpectedResult = false)]
 
         [TestCase("ch#Ripple:1:100:200", "ch#Ripple:0:101:200", ExpectedResult = true)]
+        [TestCase("ch#Ripple:1:100:200", "ch#Ripple:0:102:200", ExpectedResult = true)]
         [TestCase("ch#Ripple:1:100:200", "ch#Ripple:0:101:201", ExpectedResult = false)]
         [TestCase("ch#Ripple:1:100:200", "ch#Ripple:0:101:202", ExpectedResult = false)]
         [TestCase("ch#Ripple:1:100:201", "ch#Ripple:0:101:200", ExpectedResult = false)]
         [TestCase("ch#Ripple:1:100:202", "ch#Ripple:0:101:200", ExpectedResult = false)]
 
         [TestCase("ch#Ripple:0:101:200", "ch#Ripple:1:100:200", ExpectedResult = false)]
+        [TestCase("ch#Ripple:0:102:200", "ch#Ripple:1:100:200", ExpectedResult = false)]
         [TestCase("ch#Ripple:0:101:201", "ch#Ripple:1:100:200", ExpectedResult = false)]
         [TestCase("ch#Ripple:0:101:202", "ch#Ripple:1:100:200", ExpectedResult = false)]
         [TestCase("ch#Ripple:0:101:200", "ch#Ripple:1:100:201", ExpectedResult = false)]

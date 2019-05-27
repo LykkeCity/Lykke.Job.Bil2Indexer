@@ -66,7 +66,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.FollowsCrawler:
                     return Sequence + 1 == another.Sequence;
                 case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return Sequence + 1 == another.Sequence && CrawlerSequence == another.CrawlerSequence;
+                    return Sequence < another.Sequence && CrawlerSequence == another.CrawlerSequence;
                 case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.FollowsCrawler:
                     return CrawlerSequence + 1 == another.CrawlerSequence;
                 default:
