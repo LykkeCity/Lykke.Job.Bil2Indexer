@@ -13,7 +13,7 @@ create table coins
     id               uuid default uuid_generate_v1() not null,
     transaction_id   varchar(256)                            not null,
     coin_number      integer                         not null,
-    asset_id         varchar(32)                            not null,
+    asset_id         varchar(64)                            not null,
     coin_id          varchar(264)                            not null,
     asset_address    varchar(256),
     value            numeric                         not null,
@@ -153,7 +153,7 @@ create table fees
     id              uuid default uuid_generate_v1() not null,
     block_id        varchar(256)                            not null,
     transaction_id  varchar(256)                            not null,
-    asset_id        varchar(32)                            not null,
+    asset_id        varchar(64)                            not null,
     asset_address   varchar(256),
     value           numeric                         not null,
     value_string    text                            not null,
@@ -182,7 +182,7 @@ create table balance_actions
     id              uuid default uuid_generate_v1(),
     block_id        varchar(256)    not null,
     block_number    integer not null,
-    asset_id        varchar(32)    not null,
+    asset_id        varchar(64)    not null,
     asset_address   varchar(256),
     transaction_id  varchar(256)    not null,
     value           numeric not null,
@@ -213,8 +213,8 @@ create  trigger set_numeric_value_from_string_trigger before insert or update
 
 create table assets
 (
-    id              varchar(296)                            not null,
-    asset_id        varchar(32)                            not null,
+    id              varchar(328)                            not null,
+    asset_id        varchar(64)                            not null,
     asset_address   varchar(256),
 	scale int not null,
 	constraint assets_natural_key_pk
