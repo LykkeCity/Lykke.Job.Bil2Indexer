@@ -6,6 +6,7 @@ using Lykke.Bil2.SharedDomain;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models.Props;
 using Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models.Props.Payloads;
+using Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Helpers;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mappers
 {
@@ -21,7 +22,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Transactions.Mapper
                     Fees = source.Fees,
                     IsIrreversible = source.IsIrreversible,
                     BalanceChanges = source.BalanceChanges.Select(p => p.ToDbEntity())
-                }.ToJson(),
+                }.ToJson().SanitazeJson(),
                 TransactionId = source.TransactionId,
                 TransactionNumber = source.TransactionNumber,
                 Type = (int) TransactionType.TransferAmount
