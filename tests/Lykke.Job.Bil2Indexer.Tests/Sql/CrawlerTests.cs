@@ -111,7 +111,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                 rnd.Next(),
                 new CrawlerConfiguration(rnd.Next(), rnd.Next()),
                 rnd.Next(),
-                CrawlerMode.Indexing
+                rnd.NextDouble() > 0.5 ? CrawlerMode.Indexing : CrawlerMode.WaitingForChainHead
             );
         }
     }
