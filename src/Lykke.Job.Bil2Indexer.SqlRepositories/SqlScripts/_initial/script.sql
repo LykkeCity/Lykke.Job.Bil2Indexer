@@ -264,6 +264,7 @@ create table crawlers
     stop_accembling_block bigint not null,
     sequence              bigint not null,
     expected_block_number bigint not null,
+    mode                  integer not null,
     constraint crawlers_natural_key_pk
         primary key (start_block, stop_accembling_block)
 );

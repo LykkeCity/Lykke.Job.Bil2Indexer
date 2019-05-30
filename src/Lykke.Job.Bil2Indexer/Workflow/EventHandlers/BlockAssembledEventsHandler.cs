@@ -40,17 +40,18 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             _integrationSettingsProvider = integrationSettingsProvider;
         }
 
-        public async Task<MessageHandlingResult> HandleAsync(BlockAssembledEvent evt, MessageHeaders headers, IMessagePublisher replyPublisher)
+        public async Task<MessageHandlingResult> HandleAsync(BlockAssembledEvent evt, MessageHeaders headers,
+            IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = CrawlerCorrelationId.Parse(headers.CorrelationId);
             var newBlock = await _blockHeadersRepository.GetAsync(evt.BlockchainType, evt.BlockId);
-            
+
             var (previousBlock, crawler) = await TaskExecution.WhenAll
             (
                 _blockHeadersRepository.GetOrDefaultAsync(evt.BlockchainType, newBlock.Number - 1),
                 _crawlersManager.GetCrawlerAsync(evt.BlockchainType, newBlock.Number)
             );
-            
+
             var crawlerCorrelationId = crawler.GetCorrelationId();
 
             if (messageCorrelationId.IsLegacyRelativeTo(crawlerCorrelationId))
@@ -67,36 +68,41 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return MessageHandlingResult.TransientFailure();
             }
 
-            var crawlingDirection = crawler.EvaluateDirection(previousBlock, newBlock);
-            
-            switch (crawlingDirection)
+            if (newBlock.IsAssembled)
             {
-                case CrawlingDirection.Forward:
-                    await MoveForwardAsync(evt, replyPublisher, crawler, crawlerCorrelationId, newBlock);
-                    break;
+                var crawlingDirection = crawler.EvaluateDirection(previousBlock, newBlock);
+                var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
 
-                case CrawlingDirection.Backward:
-                    await MoveBackwardAsync(evt, replyPublisher, crawlerCorrelationId, newBlock, previousBlock, headers);
-                    break;
+                switch (crawlingDirection)
+                {
+                    case CrawlingDirection.Forward:
+                        MoveForward(evt, replyPublisher, crawler, chainHead, crawlerCorrelationId, newBlock);
+                        break;
 
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(crawlingDirection), crawlingDirection, "Unknown value");
+                    case CrawlingDirection.Backward:
+                        MoveBackward(evt, replyPublisher, crawler, chainHead, crawlerCorrelationId, newBlock,
+                            previousBlock);
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(crawlingDirection), crawlingDirection, "Unknown value");
+                }
             }
 
             return MessageHandlingResult.Success();
         }
 
-        private async Task<MessageHandlingResult> MoveForwardAsync(
+        private void MoveForward(
             BlockAssembledEvent evt, 
             IMessagePublisher replyPublisher, 
             Crawler crawler,
+            ChainHead chainHead,
             CrawlerCorrelationId crawlerCorrelationId,
             BlockHeader newBlock)
         {
             var settings = _settingsProvider.Get(evt.BlockchainType);
             var nextBlockNumber = crawler.EvaluateNextBlockToMoveForward(newBlock);
-            var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
-
+            
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
                 if (chainHead.IsFollowCrawler || newBlock.Number == _integrationSettingsProvider.Get(evt.BlockchainType).Capabilities.FirstBlockNumber)
@@ -132,44 +138,55 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 throw new ArgumentOutOfRangeException(nameof(settings.Capabilities.TransferModel), settings.Capabilities.TransferModel, "Unknown transfer model");
             }
 
-            replyPublisher.Publish(new MoveCrawlerCommand
+            if (crawler.HaveToWaitFor(chainHead, CrawlingDirection.Forward))
             {
-                BlockchainType = evt.BlockchainType,
-                NextBlockNumber = nextBlockNumber
-            });
-
-            return MessageHandlingResult.Success();
+                replyPublisher.Publish(new WaitForChainHeadCommand
+                {
+                    BlockchainType = evt.BlockchainType,
+                    Direction = CrawlingDirection.Forward,
+                    TargetBlockNumber = nextBlockNumber,
+                    OutdatedBlockNumber = 0,
+                    OutdatedBlockId = null,
+                    TriggeredByBlockId = newBlock.Id
+                });
+            }
+            else
+            {
+                replyPublisher.Publish(new MoveCrawlerCommand
+                {
+                    BlockchainType = evt.BlockchainType, 
+                    NextBlockNumber = nextBlockNumber
+                });
+            }
         }
 
-        private async Task<MessageHandlingResult> MoveBackwardAsync(BlockAssembledEvent evt,
+        private void MoveBackward(BlockAssembledEvent evt,
             IMessagePublisher replyPublisher,
+            Crawler crawler,
+            ChainHead chainHead,
             CrawlerCorrelationId crawlerCorrelationId,
             BlockHeader newBlock,
-            BlockHeader previousBlock, 
-            MessageHeaders headers)
+            BlockHeader previousBlock)
         {
-            var chainHead = await _chainHeadsRepository.GetAsync(evt.BlockchainType);
             var nextChainHeadBlockNumber = previousBlock.Number - 1;
-
-            if (chainHead.IsCatchCrawlerUp)
+            
+            if (crawler.HaveToWaitFor(chainHead, CrawlingDirection.Backward))
             {
-                // Chain head reduction is only possible if chain head follows the crawler
-                _log.Info("Backward movement is only possible if chain head follows the crawler", new
+                replyPublisher.Publish(new WaitForChainHeadCommand
                 {
-                    Headers = headers,
-                    Message = evt,
-                    ChainHead = chainHead
+                    BlockchainType = evt.BlockchainType,
+                    Direction = CrawlingDirection.Backward,
+                    TargetBlockNumber = nextChainHeadBlockNumber,
+                    OutdatedBlockId = previousBlock.Id,
+                    // it's possible that previous block can't be processed by the crawler (because of crawler range bounds),
+                    // but we ignores this case since this is very unlikely that chain fork can intersect ranges of different crawlers.
+                    OutdatedBlockNumber = previousBlock.Number,
+                    TriggeredByBlockId = newBlock.Id
                 });
-
-                return MessageHandlingResult.TransientFailure();
             }
-
-            if (!chainHead.IsFollowCrawler)
+            else
             {
-                throw new InvalidOperationException("Chain head reduction requires that chain head follows the crawler");
-            }
-
-            replyPublisher.Publish
+                replyPublisher.Publish
                 (
                     new ReduceChainHeadCommand
                     {
@@ -183,8 +200,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                     },
                     chainHead.GetCorrelationId(crawlerCorrelationId).ToString()
                 );
-
-            return MessageHandlingResult.Success();
+            }
         }
     }
 }

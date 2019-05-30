@@ -87,7 +87,9 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Bitcoin
             var transactionCount = block.Block.Transactions.Count;
             var previousBlockId = block.Block.Header.HashPrevBlock.ToString();
 
-            return new BlockHeader(blockHash,
+            return new BlockHeader
+            (
+                blockHash,
                 version,
                 "Bitcoin",
                 (long)blockNumber,
@@ -95,7 +97,8 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Bitcoin
                 size,
                 transactionCount,
                 previousBlockId,
-                BlockState.Executed
+                BlockState.Executed,
+                false
             );
         }
     }

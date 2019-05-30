@@ -101,10 +101,18 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             Assert.AreEqual(source.Sequence, expected.Sequence);
         }
 
-        private Crawler BuildRandom()
+        private static Crawler BuildRandom()
         {
             var rnd = new Random();
-            return new Crawler(Guid.NewGuid().ToString(), 0, rnd.Next(), new CrawlerConfiguration(rnd.Next(), rnd.Next()), rnd.Next());
+            return new Crawler
+            (
+                Guid.NewGuid().ToString(),
+                0,
+                rnd.Next(),
+                new CrawlerConfiguration(rnd.Next(), rnd.Next()),
+                rnd.Next(),
+                CrawlerMode.Indexing
+            );
         }
     }
 

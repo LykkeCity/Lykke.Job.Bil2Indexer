@@ -21,7 +21,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
 
         private const long StopAssemblingNullSqlMagicValue = -1;
         
-
         public async Task<Crawler> GetOrDefaultAsync(string blockchainType, CrawlerConfiguration configuration)
         {
             if (configuration == null)
@@ -76,7 +75,6 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
                         throw new OptimisticConcurrencyException(e);
                     }
                 }
-
             }
         }
 
@@ -90,11 +88,21 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
 
         private static Crawler Map(CrawlerEntity source, string blockchainType)
         {
-            return new Crawler(blockchainType: blockchainType, 
-                version:source.Version, 
-                sequence:source.Sequence, 
-                configuration:new CrawlerConfiguration(source.StartBlock, source.StopAssemblingBlock != StopAssemblingNullSqlMagicValue? (long?) source.StopAssemblingBlock:null),
-                expectedBlockNumber: source.ExpectedBlockNumber);
+            return new Crawler
+            (
+                blockchainType: blockchainType,
+                version: source.Version,
+                sequence: source.Sequence,
+                configuration: new CrawlerConfiguration
+                (
+                    source.StartBlock,
+                    source.StopAssemblingBlock != StopAssemblingNullSqlMagicValue
+                        ? (long?) source.StopAssemblingBlock
+                        : null
+                ),
+                expectedBlockNumber: source.ExpectedBlockNumber,
+                mode: source.Mode
+            );
         }
 
         private static CrawlerEntity Map(Crawler source)
@@ -105,7 +113,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.Crawlers
                 StopAssemblingBlock = source.Configuration.StopAssemblingBlock ?? StopAssemblingNullSqlMagicValue,
                 StartBlock = source.Configuration.StartBlock,
                 Sequence = source.Sequence,
-                ExpectedBlockNumber = source.ExpectedBlockNumber
+                ExpectedBlockNumber = source.ExpectedBlockNumber,
+                Mode = source.Mode
             };
         }
     }

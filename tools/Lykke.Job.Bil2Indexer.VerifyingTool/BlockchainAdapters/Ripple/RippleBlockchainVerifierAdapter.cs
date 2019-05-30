@@ -127,7 +127,9 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
             var transactionCount = block.Result.Ledger.Transactions?.Length ?? 0;
             var previousBlockId = ledger.ParentHash;
 
-            return new BlockHeader(blockHash,
+            return new BlockHeader
+            (
+                blockHash,
                 version,
                 "Ripple",
                 (long)blockNumber,
@@ -135,7 +137,8 @@ namespace Lykke.Job.Bil2Indexer.VerifyingTool.BlockchainAdapters.Ripple
                 size,
                 transactionCount,
                 previousBlockId,
-                BlockState.Executed
+                BlockState.Executed,
+                false
             );
         }
     }

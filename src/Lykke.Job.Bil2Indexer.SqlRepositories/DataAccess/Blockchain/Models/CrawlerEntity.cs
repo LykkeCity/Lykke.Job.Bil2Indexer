@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Lykke.Job.Bil2Indexer.Domain;
 
 namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 {
@@ -18,5 +19,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
 
         [Column("expected_block_number")]
         public long ExpectedBlockNumber { get; set; }
+
+        [Column("mode")]
+        public CrawlerMode Mode { get; set; }
     }
 }

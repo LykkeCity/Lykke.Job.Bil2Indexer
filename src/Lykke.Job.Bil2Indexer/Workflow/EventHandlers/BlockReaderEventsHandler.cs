@@ -95,19 +95,21 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                                   evt.BlockSize, evt.BlockTransactionsCount, evt.PreviousBlockId
                               );
 
-            var commandsSender = _messageSendersFactory.CreateCommandsSender();
+            if (blockHeader.IsJustCreated)
+            {
+                await _blockHeadersRepository.SaveAsync(blockHeader);
+            }
 
-            await _blockHeadersRepository.SaveAsync(blockHeader);
-
-            commandsSender.Publish
-            (
-                new WaitForBlockAssemblingCommand
-                {
-                    BlockchainType = blockchainType,
-                    BlockId = evt.BlockId
-                },
-                headers.CorrelationId
-            );
+            if (blockHeader.IsNotAssembledYet)
+            {
+                var commandsSender = _messageSendersFactory.CreateCommandsSender();
+                
+                commandsSender.Publish
+                (
+                    new WaitForBlockAssemblingCommand {BlockchainType = blockchainType, BlockId = evt.BlockId},
+                    headers.CorrelationId
+                );
+            }
 
             return MessageHandlingResult.Success();
         }

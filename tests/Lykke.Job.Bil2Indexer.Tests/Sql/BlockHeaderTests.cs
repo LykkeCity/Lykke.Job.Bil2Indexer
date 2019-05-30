@@ -186,15 +186,19 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var stateValues = Enum.GetValues(typeof(BlockState));
             var rdmState = (BlockState) stateValues.GetValue(rnd.Next(stateValues.Length));
 
-            return new BlockHeader(Guid.NewGuid().ToString(), 
-                0,
-                btype ?? Guid.NewGuid().ToString(), 
-                height ??  rnd.Next(), 
-                DateTime.UtcNow + TimeSpan.FromSeconds(rnd.Next()), 
-                rnd.Next(), 
-                rnd.Next(), 
+            return new BlockHeader
+            (
                 Guid.NewGuid().ToString(),
-                rdmState);
+                0,
+                btype ?? Guid.NewGuid().ToString(),
+                height ?? rnd.Next(),
+                DateTime.UtcNow + TimeSpan.FromSeconds(rnd.Next()),
+                rnd.Next(),
+                rnd.Next(),
+                Guid.NewGuid().ToString(),
+                rdmState,
+                false
+            );
         }
         private void RemoveAll()
         {

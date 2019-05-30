@@ -61,7 +61,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders.Mapper
 
         public static BlockHeader ToDomain(this BlockHeaderEntity source, string blockchainType)
         {
-            return new BlockHeader(id: source.Id,
+            return new BlockHeader
+            (
+                id: source.Id,
                 version: source.Version,
                 blockchainType: blockchainType,
                 number: source.Number,
@@ -69,7 +71,9 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders.Mapper
                 size: source.Size,
                 transactionsCount: source.TransactionCount,
                 previousBlockId: source.PreviousBlockId,
-                state: source.State.ToDomain());
+                state: source.State.ToDomain(),
+                false
+            );
         }
     }
 }

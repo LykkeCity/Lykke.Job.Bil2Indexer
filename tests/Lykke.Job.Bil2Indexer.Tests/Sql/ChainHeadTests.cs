@@ -28,7 +28,15 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             var retrieved1 = await repo.GetOrDefaultAsync(source1.BlockchainType);
             AssertEquals(source1, retrieved1);
 
-            var crawler = new Crawler(source1.BlockchainType, 0, 100, new CrawlerConfiguration(0, null), 101);
+            var crawler = new Crawler
+            (
+                source1.BlockchainType,
+                0,
+                100,
+                new CrawlerConfiguration(0, null),
+                101,
+                CrawlerMode.Indexing
+            );
 
             retrieved1.ExtendTo((retrieved1.BlockNumber ?? 0) + 1, Guid.NewGuid().ToString(), crawler);
 

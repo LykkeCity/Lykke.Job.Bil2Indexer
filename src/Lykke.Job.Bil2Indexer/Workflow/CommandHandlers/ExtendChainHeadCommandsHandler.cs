@@ -89,6 +89,16 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
 
             if (messageCorrelationId.IsTheSameAs(chainHeadCorrelationId))
             {
+                if (infiniteCrawler.IsOnBlock(command.ToBlockNumber))
+                {
+                    if (infiniteCrawler.IsIndexing)
+                    {
+                        // If chain head is caught the crawler, in order to continue, 
+                        // we need to wait till crawler is waiting for the chain head mode.
+                        return MessageHandlingResult.TransientFailure(TimeSpan.FromSeconds(1));
+                    }
+                }
+
                 chainHead.ExtendTo(command.ToBlockNumber, command.ToBlockId, infiniteCrawler);
 
                 // TODO: Update balance snapshots
@@ -292,7 +302,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 blockNumber,
                 executedContractTransactions,
                 failedContractTransactions,
-                // TODO: Pass block irreversibility flag
+                // TODO: Remove this flag from this event
                 false
             );
 
@@ -390,7 +400,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 blockNumber,
                 executedContractTransactions,
                 failedContractTransactions,
-                // TODO: Pass block irreversibility flag
+                // TODO: Remove this flag from this event
                 false
             );
 

@@ -24,6 +24,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public int TransactionsCount { get; }
         public BlockId PreviousBlockId { get; }
         public BlockState State { get; private set; }
+        public bool IsJustCreated { get; }
 
         public bool IsNotAssembledYet => State == BlockState.Assembling;
 
@@ -56,7 +57,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
             int size,
             int transactionsCount, 
             BlockId previousBlockId,
-            BlockState state)
+            BlockState state,
+            bool isJustCreated)
         {
             Id = id;
             Version = version;
@@ -67,6 +69,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             TransactionsCount = transactionsCount;
             PreviousBlockId = previousBlockId;
             State = state;
+            IsJustCreated = isJustCreated;
         }
 
         public static BlockHeader StartAssembling(
@@ -88,7 +91,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 size,
                 transactionsCount,
                 previousBlockId,
-                BlockState.Assembling
+                BlockState.Assembling,
+                true
             );
         }
 
