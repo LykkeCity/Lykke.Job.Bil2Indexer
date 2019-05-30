@@ -132,6 +132,28 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
         }
 
         [Test]
+        public async Task CanSanitazePg()
+        {
+            var repo = BuildRepo();
+
+            var transaction = BuildRandomTransferAmountExecutedTransaction(assetId: "\u0000\u0000\u0000\u0000\u0000\u0000");
+            var transferAmountTx = transaction.AsTransferAmount();
+
+            await repo.AddIfNotExistsAsync(new[] { transaction });
+
+            var readTransaction1 = await repo.GetOrDefaultAsync(transaction.BlockchainType, transferAmountTx.TransactionId);
+
+            Assert.IsNotNull(readTransaction1);
+            Assert.IsTrue(readTransaction1.IsTransferAmount);
+
+            await repo.TryRemoveAllOfBlockAsync(transaction.BlockchainType, transaction.BlockId);
+
+            var readTransaction2 = await repo.GetOrDefaultAsync(transaction.BlockchainType, transferAmountTx.TransactionId);
+
+            Assert.IsNull(readTransaction2);
+        }
+
+        [Test]
         public async Task CanCalcCount()
         {
             var repo = BuildRepo();
@@ -184,7 +206,7 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             );
         }
 
-        private static Transaction BuildRandomTransferAmountExecutedTransaction()
+        private static Transaction BuildRandomTransferAmountExecutedTransaction(string assetId = null)
         {
             var rdm = new Random();
 
@@ -199,8 +221,8 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
                     new TransactionId(Guid.NewGuid().ToString()),
                     new[]
                     {
-                        BuildRandomBalanceChange(),
-                        BuildRandomBalanceChange()
+                        BuildRandomBalanceChange(assetId),
+                        BuildRandomBalanceChange(assetId)
                     },
                     new[]
                     {
@@ -234,10 +256,10 @@ namespace Lykke.Job.Bil2Indexer.Tests.Sql
             );
         }
 
-        private static BalanceChange BuildRandomBalanceChange()
+        private static BalanceChange BuildRandomBalanceChange(string assetId = null)
         {
             var rdm = new Random();
-            return new BalanceChange(Guid.NewGuid().ToString(), new Asset(new AssetId(Guid.NewGuid().ToString())), new Money(rdm.Next(), 0), new Address(Guid.NewGuid().ToString()), new AddressTag(Guid.NewGuid().ToString()), AddressTagType.Number, rdm.Next());
+            return new BalanceChange(Guid.NewGuid().ToString(), new Asset(new AssetId(assetId ?? Guid.NewGuid().ToString())), new Money(rdm.Next(), 0), new Address(Guid.NewGuid().ToString()), new AddressTag(Guid.NewGuid().ToString()), AddressTagType.Number, rdm.Next());
         }
 
         private static ReceivedCoin BuildRandomReceivedCoin()
