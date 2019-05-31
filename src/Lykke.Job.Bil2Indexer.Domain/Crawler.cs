@@ -40,7 +40,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 sequence: 0,
                 configuration:configuration,
                 expectedBlockNumber: configuration.StartBlock,
-                CrawlerMode.Indexing);
+                mode: CrawlerMode.Indexing);
         }
 
         public CrawlingDirection EvaluateDirection(BlockHeader previousBlock, BlockHeader newBlock)
