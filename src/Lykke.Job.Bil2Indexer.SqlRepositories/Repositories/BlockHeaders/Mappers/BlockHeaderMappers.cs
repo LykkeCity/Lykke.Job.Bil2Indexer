@@ -72,7 +72,7 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.BlockHeaders.Mapper
                 transactionsCount: source.TransactionCount,
                 previousBlockId: source.PreviousBlockId,
                 state: source.State.ToDomain(),
-                false
+                isJustCreated: false
             );
         }
     }
