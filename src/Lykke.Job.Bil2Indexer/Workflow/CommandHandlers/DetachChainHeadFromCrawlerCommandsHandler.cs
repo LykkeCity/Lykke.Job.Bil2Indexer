@@ -62,11 +62,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             {
                 if (chainHead.IsCatchCrawlerUp)
                 {
+                    _log.Info("Chain head detached from the crawler", new
+                    {
+                        Headers = headers, 
+                        Message = command, 
+                        ChainHead = chainHead
+                    });
+
                     replyPublisher.Publish
                     (
                         new ChainHeadDetachedFromCrawlerEvent
                         {
-                            BlockchainType = command.BlockchainType, BlockNumber = command.BlockNumber
+                            BlockchainType = command.BlockchainType, 
+                            BlockNumber = command.BlockNumber
                         },
                         chainHeadCorrelationId.ToString()
                     );

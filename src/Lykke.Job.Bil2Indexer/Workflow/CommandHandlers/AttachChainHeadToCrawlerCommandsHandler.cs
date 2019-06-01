@@ -62,6 +62,13 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             {
                 if (chainHead.IsFollowCrawler)
                 {
+                    _log.Info("Chain head attached to the crawler", new
+                    {
+                        Headers = headers, 
+                        Message = command, 
+                        ChainHead = chainHead
+                    });
+
                     replyPublisher.Publish
                     (
                         new ChainHeadAttachedToCrawlerEvent
