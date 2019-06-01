@@ -11,7 +11,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public long? BlockNumber { get; private set; }
         public BlockId BlockId { get; private set; }
         public BlockId PreviousBlockId { get; private set; }
-        public long Sequence { get; private set; }
+        public long ModeSequence { get; private set; }
+        public long BlockSequence { get; private set; }
         public long CrawlerSequence { get; private set; }
         public ChainHeadMode Mode { get; private set; }
 
@@ -22,7 +23,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
             string blockchainType,
             long firstBlockNumber,
             long version,
-            long sequence,
+            long modeSequence,
+            long blockSequence,
             long crawlerSequence,
             long? blockNumber,
             BlockId blockId,
@@ -32,7 +34,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
             BlockchainType = blockchainType;
             FirstBlockNumber = firstBlockNumber;
             Version = version;
-            Sequence = sequence;
+            ModeSequence = modeSequence;
+            BlockSequence = blockSequence;
             CrawlerSequence = crawlerSequence;
             BlockNumber = blockNumber;
             BlockId = blockId;
@@ -49,7 +52,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 blockchainType: blockchainType,
                 firstBlockNumber: firstBlockNumber,
                 version: 0,
-                sequence: 0,
+                modeSequence: 0,
+                blockSequence: 0,
                 crawlerSequence: 0,
                 blockNumber: null,
                 blockId: null,
@@ -77,43 +81,18 @@ namespace Lykke.Job.Bil2Indexer.Domain
             switch (Mode)
             {
                 case ChainHeadMode.CatchesCrawlerUp:
-                    if (infiniteCrawler.IsOnBlock(blockNumber))
-                    {
-                        if (!infiniteCrawler.IsWaitingForChainHead)
-                        {
-                            throw new InvalidOperationException($"Crawler should be in the {CrawlerMode.WaitingForChainHead} mode.");
-                        }
-
-                        Mode = ChainHeadMode.FollowsCrawler;
-                        CrawlerSequence = infiniteCrawler.Sequence;
-                    }
-
+                    ++BlockSequence;
                     break;
 
                 case ChainHeadMode.FollowsCrawler:
-                    
-                    // In case when distance between crawler and chain head is too large
-                    // a lot of premature messages can be collected in the queue, making harder
-                    // and harder to find correct message in the queue. In this case
-                    // better to detach chain head from the crawler and let it catch up the crawler
-                    // again. All en-queued messages which are stick to the crawler will be
-                    // treated as obsolete after this.
-                    if (infiniteCrawler.ExpectedBlockNumber - BlockNumber > 100)
-                    {
-                        Mode = ChainHeadMode.CatchesCrawlerUp;
-                    }
-                    else
-                    {
-                        ++CrawlerSequence;
-                    }
+                    ++CrawlerSequence;
+                    ++BlockSequence;
 
                     break;
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Mode), Mode, string.Empty);
             }
-
-            ++Sequence;
         }
 
         public void ReduceTo(long blockNumber, BlockId blockId)
@@ -133,25 +112,10 @@ namespace Lykke.Job.Bil2Indexer.Domain
             BlockId = blockId;
 
             ++CrawlerSequence;
-            ++Sequence;
+            ++BlockSequence;
         }
 
-        public ChainHeadCorrelationId GetCorrelationId()
-        {
-            return new ChainHeadCorrelationId(BlockchainType, Mode, Sequence, CrawlerSequence);
-        }
-
-        public ChainHeadCorrelationId GetCorrelationId(CrawlerCorrelationId crawlerCorrelationId)
-        {
-            return new ChainHeadCorrelationId(BlockchainType, Mode, Sequence, crawlerCorrelationId.Sequence);
-        }
-
-        public override string ToString()
-        {
-            return $"{BlockchainType}:{BlockNumber}({Version})";
-        }
-
-        private bool CanExtendTo(long blockNumber)
+        public bool CanExtendTo(long blockNumber)
         {
             if (!BlockNumber.HasValue && FirstBlockNumber == blockNumber)
             {
@@ -166,7 +130,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
             return false;
         }
 
-        private bool CanReduceTo(long blockNumber)
+        public bool CanReduceTo(long blockNumber)
         {
             if (BlockNumber.HasValue && BlockNumber == blockNumber + 1 && blockNumber >= FirstBlockNumber)
             {
@@ -174,6 +138,72 @@ namespace Lykke.Job.Bil2Indexer.Domain
             }
 
             return false;
+        }
+
+        public void AttachToCrawler(long crawlerSequence)
+        {
+            if (IsCatchCrawlerUp)
+            {
+                throw new InvalidOperationException($"Chain head can be attached to the crawler only in {ChainHeadMode.CatchesCrawlerUp} mode");
+            }
+            
+            Mode = ChainHeadMode.FollowsCrawler;
+            CrawlerSequence = crawlerSequence;
+
+            ++ModeSequence;
+        }
+
+        public void DetachFromCrawler()
+        {
+            if (IsFollowCrawler)
+            {
+                throw new InvalidOperationException($"Chain head can be detached from the crawler only in {ChainHeadMode.FollowsCrawler} mode");
+            }
+
+            Mode = ChainHeadMode.CatchesCrawlerUp;
+
+            ++ModeSequence;
+        }
+
+        public bool CanAttachToCrawler(long messageModeSequence)
+        {
+            return IsCatchCrawlerUp && ModeSequence == messageModeSequence;
+        }
+
+        public bool CanDetachFromCrawler(long messageModeSequence)
+        {
+            return IsFollowCrawler && ModeSequence == messageModeSequence;
+        }
+
+        public bool HaveToAttachTo(Crawler infiniteCrawler)
+        {
+            return IsCatchCrawlerUp && infiniteCrawler.IsWaitingForChainHead;
+        }
+
+        public bool HaveToDetachFrom(Crawler infiniteCrawler)
+        {
+            // In case when distance between crawler and chain head is too large
+            // a lot of premature messages can be collected in the queue, making harder
+            // and harder to find correct message in the queue. In this case
+            // better to detach chain head from the crawler and let it catch up the crawler
+            // again. All en-queued messages which are stick to the crawler will be
+            // treated as obsolete after this.
+            return IsFollowCrawler && infiniteCrawler.ExpectedBlockNumber - BlockNumber > 100;
+        }
+
+        public ChainHeadCorrelationId GetCorrelationId()
+        {
+            return new ChainHeadCorrelationId(BlockchainType, ModeSequence, BlockSequence, CrawlerSequence);
+        }
+
+        public ChainHeadCorrelationId GetCorrelationId(CrawlerCorrelationId crawlerCorrelationId)
+        {
+            return new ChainHeadCorrelationId(BlockchainType, ModeSequence, BlockSequence, crawlerCorrelationId.Sequence);
+        }
+
+        public override string ToString()
+        {
+            return $"{BlockchainType}:{BlockNumber}({Version})";
         }
     }
 }

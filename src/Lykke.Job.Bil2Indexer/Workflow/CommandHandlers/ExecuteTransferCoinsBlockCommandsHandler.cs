@@ -44,10 +44,9 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         {
             var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
             
-            if (command.TriggeredBy == BlockExecutionTrigger.Crawler && messageCorrelationId.Mode == ChainHeadMode.FollowsCrawler ||
-                command.TriggeredBy == BlockExecutionTrigger.ChainHead && messageCorrelationId.Mode == ChainHeadMode.CatchesCrawlerUp)
+            if (command.HaveToExecuteInOrder)
             {
-                var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);    
+                var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
                 var chainHeadCorrelationId = chainHead.GetCorrelationId();
 
                 if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId))
@@ -101,7 +100,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     BlockchainType = command.BlockchainType,
                     BlockId = command.BlockId,
                     BlockNumber = block.Number,
-                    TriggeredBy = command.TriggeredBy
+                    HaveToExtendChainHead = command.HaveToExtendChainHead
                 });
             }
             else if(!block.IsPartiallyExecuted)

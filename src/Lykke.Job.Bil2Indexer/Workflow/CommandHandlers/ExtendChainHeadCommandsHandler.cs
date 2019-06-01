@@ -87,18 +87,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 return MessageHandlingResult.TransientFailure();
             }
 
-            if (messageCorrelationId.IsTheSameAs(chainHeadCorrelationId))
+            if (chainHead.CanExtendTo(command.ToBlockNumber))
             {
-                if (infiniteCrawler.IsOnBlock(command.ToBlockNumber))
-                {
-                    if (infiniteCrawler.IsIndexing)
-                    {
-                        // If chain head is caught the crawler, in order to continue, 
-                        // we need to wait till crawler is waiting for the chain head mode.
-                        return MessageHandlingResult.TransientFailure(TimeSpan.FromSeconds(1));
-                    }
-                }
-
                 chainHead.ExtendTo(command.ToBlockNumber, command.ToBlockId, infiniteCrawler);
 
                 // TODO: Update balance snapshots

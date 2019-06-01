@@ -40,6 +40,8 @@ namespace Lykke.Job.Bil2Indexer.Modules
             builder.RegisterType<ChainHeadExtendedEventsHandler>().AsSelf();
             builder.RegisterType<ChainHeadReducedEventsHandler>().AsSelf();
             builder.RegisterType<CrawlerCaughtByChainHeadEventsHandler>().AsSelf();
+            builder.RegisterType<ChainHeadAttachedToCrawlerEventsHandler>().AsSelf();
+            builder.RegisterType<ChainHeadDetachedFromCrawlerEventsHandler>().AsSelf();
 
             builder.RegisterType<ExecuteTransferCoinsBlockCommandsHandler>().AsSelf();
             builder.RegisterType<MoveCrawlerCommandsHandler>().AsSelf();
@@ -52,6 +54,8 @@ namespace Lykke.Job.Bil2Indexer.Modules
                 .AsSelf();
             builder.RegisterType<ReduceChainHeadCommandsHandler>().AsSelf();
             builder.RegisterType<WaitForChainHeadCommandsHandler>().AsSelf();
+            builder.RegisterType<AttachChainHeadToCrawlerCommandsHandler>().AsSelf();
+            builder.RegisterType<DetachChainHeadFromCrawlerCommandsHandler>().AsSelf();
         }
     }
 }

@@ -8,6 +8,7 @@ namespace Lykke.Job.Bil2Indexer.Models.Management
         public string BlockchainType { get; set; }
         public string BlockId { get; set; }
         public bool HaveToExecuteEntireBlock { get; set; }
-        public BlockExecutionTrigger TriggeredBy { get; set; }
+        public bool HaveToExecuteInOrder { get; set; }
+        public bool HaveToExtendChainHead { get; set; }
     }
 }

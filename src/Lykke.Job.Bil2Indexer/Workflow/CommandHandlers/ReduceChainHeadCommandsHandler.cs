@@ -75,7 +75,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 return MessageHandlingResult.TransientFailure();
             }
             
-            if (messageCorrelationId.IsTheSameAs(chainHeadCorrelationId))
+            if (chainHead.CanReduceTo(command.ToBlockNumber))
             {
                 chainHead.ReduceTo(command.ToBlockNumber, block.Id);
 

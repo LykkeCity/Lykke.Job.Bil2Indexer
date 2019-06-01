@@ -12,7 +12,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads.Mappers
                 blockchainType,
                 source.FirstBlockNumber,
                 source.Version,
-                source.Sequence,
+                source.ModeSequence,
+                source.BlockSequence,
                 source.CrawlerSequence,
                 source.BlockNumber,
                 source.BlockId,
@@ -26,7 +27,8 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.Repositories.ChainHeads.Mappers
             return new ChainHeadEntity
             {
                 Version = (uint)source.Version,
-                Sequence = source.Sequence,
+                ModeSequence = source.ModeSequence,
+                BlockSequence = source.BlockSequence,
                 CrawlerSequence = source.CrawlerSequence,
                 Id = source.BlockchainType,
                 FirstBlockNumber = source.FirstBlockNumber,

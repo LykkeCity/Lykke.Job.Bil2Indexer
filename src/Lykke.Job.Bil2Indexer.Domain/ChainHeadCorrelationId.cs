@@ -7,15 +7,15 @@ namespace Lykke.Job.Bil2Indexer.Domain
         public const string Type = "ch#";
 
         public string BlockchainType { get; }
-        public ChainHeadMode Mode { get; }
-        public long Sequence { get; }
+        public long ModeSequence { get; }
+        public long BlockSequence { get; }
         public long CrawlerSequence { get; }
 
-        public ChainHeadCorrelationId(string blockchainType, ChainHeadMode mode, long sequence, long crawlerSequence)
+        public ChainHeadCorrelationId(string blockchainType, long modeSequence, long blockSequence, long crawlerSequence)
         {
             BlockchainType = blockchainType ?? throw new ArgumentNullException(nameof(blockchainType));
-            Mode = mode;
-            Sequence = sequence;
+            ModeSequence = modeSequence;
+            BlockSequence = blockSequence;
             CrawlerSequence = crawlerSequence;
         }
 
@@ -34,22 +34,24 @@ namespace Lykke.Job.Bil2Indexer.Domain
             }
 
             var firstColonIndex = correlationIdString.IndexOf(':');
-            var blockchainType = correlationIdString.Substring(3, firstColonIndex - 3);
             var secondColonIndex = correlationIdString.IndexOf(':', firstColonIndex + 1);
-            var modeString = correlationIdString.Substring(firstColonIndex + 1, secondColonIndex - firstColonIndex - 1);
-            var mode = (ChainHeadMode)int.Parse(modeString);
             var thirdColonIndex = correlationIdString.IndexOf(':', secondColonIndex + 1);
-            var sequenceString = correlationIdString.Substring(secondColonIndex + 1, thirdColonIndex - secondColonIndex - 1);
-            var sequence = long.Parse(sequenceString);
+
+            var blockchainType = correlationIdString.Substring(3, firstColonIndex - 3);
+            var modeSequenceString = correlationIdString.Substring(firstColonIndex + 1, secondColonIndex - firstColonIndex - 1);
+            var blockSequenceString = correlationIdString.Substring(secondColonIndex + 1, thirdColonIndex - secondColonIndex - 1);
             var crawlerSequenceString = correlationIdString.Substring(thirdColonIndex + 1);
+
+            var modeSequence = long.Parse(modeSequenceString);
+            var blockSequence = long.Parse(blockSequenceString);
             var crawlerSequence = long.Parse(crawlerSequenceString);
 
-            return new ChainHeadCorrelationId(blockchainType, mode, sequence, crawlerSequence);
+            return new ChainHeadCorrelationId(blockchainType, modeSequence, blockSequence, crawlerSequence);
         }
 
         public override string ToString()
         {
-            return $"{Type}{BlockchainType}:{(int)Mode}:{Sequence}:{CrawlerSequence}";
+            return $"{Type}{BlockchainType}:{ModeSequence}:{BlockSequence}:{CrawlerSequence}";
         }
 
         public bool IsPreviousOf(ChainHeadCorrelationId another)
@@ -59,19 +61,32 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 throw new InvalidOperationException($"Blockchain type mismatch: {BlockchainType}, another: {another}");
             }
 
-            switch (Mode)
+            // Possible sequence updates:
+            // AttachToCrawler - Mode++ and CrawlerSequence=x
+            // DetachFromCrawler - Mode++
+            // ExtendTo - BlockSequence++ or BlockSequence++ and CrawlerSequence++
+            // ReduceTo - BlockSequence++ and CrawlerSequence++
+            // Publication from BlockAssembledEventHandler - BlockSequence=x and CrawlerSequence++
+
+            // AttachToCrawler, DetachFromCrawler
+            if (ModeSequence + 1 == another.ModeSequence && BlockSequence == another.BlockSequence)
             {
-                case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return Sequence + 1 == another.Sequence;
-                case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.FollowsCrawler:
-                    return Sequence + 1 == another.Sequence;
-                case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return Sequence < another.Sequence && CrawlerSequence == another.CrawlerSequence;
-                case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.FollowsCrawler:
-                    return CrawlerSequence + 1 == another.CrawlerSequence;
-                default:
-                    throw new InvalidOperationException($"Unknown chain mode: {Mode}, or another.Mode: {another.Mode}");
+                return true;
             }
+
+            // ExtendTo, ReduceTo
+            if (ModeSequence == another.ModeSequence && BlockSequence + 1 == another.BlockSequence)
+            {
+                return true;
+            }
+
+            // Publication from BlockAssembledEventHandler
+            if (ModeSequence == another.ModeSequence && CrawlerSequence + 1 == another.CrawlerSequence)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public bool IsLegacyRelativeTo(ChainHeadCorrelationId another)
@@ -81,19 +96,32 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 throw new InvalidOperationException($"Blockchain type mismatch: {BlockchainType}, another: {another}");
             }
 
-            switch (Mode)
+            // Possible sequence updates:
+            // AttachToCrawler - Mode++ and CrawlerSequence=x
+            // DetachFromCrawler - Mode++
+            // ExtendTo - BlockSequence++ or BlockSequence++ and CrawlerSequence++
+            // ReduceTo - BlockSequence++ and CrawlerSequence++
+            // Publication from BlockAssembledEventHandler - BlockSequence=x and CrawlerSequence++
+
+            // AttachToCrawler, DetachFromCrawler
+            if (ModeSequence < another.ModeSequence)
             {
-                case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return Sequence < another.Sequence;
-                case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.FollowsCrawler:
-                    return Sequence < another.Sequence;
-                case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return Sequence < another.Sequence;
-                case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.FollowsCrawler:
-                    return CrawlerSequence < another.CrawlerSequence;
-                default:
-                    throw new InvalidOperationException($"Unknown mode: {Mode}, or another.Mode: {another.Mode}");
+                return true;
             }
+
+            // ExtendTo, ReduceTo
+            if (ModeSequence == another.ModeSequence && BlockSequence < another.BlockSequence)
+            {
+                return true;
+            }
+
+            // Publication from BlockAssembledEventHandler
+            if (ModeSequence == another.ModeSequence && CrawlerSequence < another.CrawlerSequence)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public bool IsPrematureRelativeTo(ChainHeadCorrelationId another)
@@ -102,42 +130,33 @@ namespace Lykke.Job.Bil2Indexer.Domain
             {
                 throw new InvalidOperationException($"Blockchain type mismatch: {BlockchainType}, another: {another}");
             }
+            
+            // Possible sequence updates:
+            // AttachToCrawler - Mode++ and CrawlerSequence=x
+            // DetachFromCrawler - Mode++
+            // ExtendTo - BlockSequence++ or BlockSequence++ and CrawlerSequence++
+            // ReduceTo - BlockSequence++ and CrawlerSequence++
+            // Publication from BlockAssembledEventHandler - BlockSequence=x and CrawlerSequence++
 
-            switch (Mode)
+            // AttachToCrawler, DetachFromCrawler
+            if (ModeSequence > another.ModeSequence)
             {
-                case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return Sequence > another.Sequence;
-                case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.FollowsCrawler:
-                    return Sequence > another.Sequence;
-                case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return Sequence > another.Sequence;
-                case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.FollowsCrawler:
-                    return CrawlerSequence > another.CrawlerSequence;
-                default:
-                    throw new InvalidOperationException($"Unknown mode: {Mode}, or another.Mode: {another.Mode}");
-            }
-        }
-
-        public bool IsTheSameAs(ChainHeadCorrelationId another)
-        {
-            if (!BlockchainType.Equals(another.BlockchainType))
-            {
-                throw new InvalidOperationException($"Blockchain type mismatch: {BlockchainType}, another: {another}");
+                return true;
             }
 
-            switch (Mode)
+            // ExtendTo, ReduceTo
+            if (ModeSequence == another.ModeSequence && BlockSequence > another.BlockSequence)
             {
-                case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return Sequence == another.Sequence;
-                case ChainHeadMode.CatchesCrawlerUp when another.Mode == ChainHeadMode.FollowsCrawler:
-                    return false;
-                case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.CatchesCrawlerUp:
-                    return false;
-                case ChainHeadMode.FollowsCrawler when another.Mode == ChainHeadMode.FollowsCrawler:
-                    return CrawlerSequence == another.CrawlerSequence;
-                default:
-                    throw new InvalidOperationException($"Unknown mode: {Mode}, or another.Mode: {another.Mode}");
+                return true;
             }
+
+            // Publication from BlockAssembledEventHandler
+            if (ModeSequence == another.ModeSequence && CrawlerSequence > another.CrawlerSequence)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public bool Equals(ChainHeadCorrelationId other)
@@ -153,8 +172,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
             }
 
             return string.Equals(BlockchainType, other.BlockchainType) && 
-                   Mode == other.Mode && 
-                   Sequence == other.Sequence && 
+                   ModeSequence == other.ModeSequence && 
+                   BlockSequence == other.BlockSequence && 
                    CrawlerSequence == other.CrawlerSequence;
         }
 
@@ -178,8 +197,8 @@ namespace Lykke.Job.Bil2Indexer.Domain
             unchecked
             {
                 var hashCode = BlockchainType.GetHashCode();
-                hashCode = (hashCode * 397) ^ (int) Mode;
-                hashCode = (hashCode * 397) ^ Sequence.GetHashCode();
+                hashCode = (hashCode * 397) ^ ModeSequence.GetHashCode();
+                hashCode = (hashCode * 397) ^ BlockSequence.GetHashCode();
                 hashCode = (hashCode * 397) ^ CrawlerSequence.GetHashCode();
                 return hashCode;
             }

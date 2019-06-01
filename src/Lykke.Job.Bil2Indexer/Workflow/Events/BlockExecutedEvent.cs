@@ -16,11 +16,11 @@ namespace Lykke.Job.Bil2Indexer.Workflow.Events
         public long BlockNumber { get; set; }
 
         [DataMember(Order = 3)]
-        public BlockExecutionTrigger TriggeredBy { get; set; }
+        public bool HaveToExtendChainHead { get; set; }
 
         public override string ToString()
         {
-            return $"{BlockchainType}:{BlockId}:({BlockNumber}:{TriggeredBy}";
+            return $"{BlockchainType}:{BlockId}:({BlockNumber}:{HaveToExtendChainHead}";
         }
     }
 }

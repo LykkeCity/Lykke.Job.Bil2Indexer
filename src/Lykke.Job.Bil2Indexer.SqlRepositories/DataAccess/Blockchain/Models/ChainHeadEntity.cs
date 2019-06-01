@@ -21,8 +21,11 @@ namespace Lykke.Job.Bil2Indexer.SqlRepositories.DataAccess.Blockchain.Models
         [Column("prev_block_id")]
         public string PreviousBlockId { get; set; }
 
-        [Column("sequence")]
-        public long Sequence { get; set; }
+        [Column("mode_sequence")]
+        public long ModeSequence { get; set; }
+
+        [Column("block_sequence")]
+        public long BlockSequence { get; set; }
 
         [Column("crawler_sequence")]
         public long CrawlerSequence { get; set; }

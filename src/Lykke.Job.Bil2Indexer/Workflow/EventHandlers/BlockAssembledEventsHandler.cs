@@ -102,10 +102,12 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
         {
             var settings = _settingsProvider.Get(evt.BlockchainType);
             var nextBlockNumber = crawler.EvaluateNextBlockToMoveForward(newBlock);
-            
+            var firstBlockNumber = _integrationSettingsProvider.Get(evt.BlockchainType).Capabilities.FirstBlockNumber;
+            var haveToExtendChainHead = chainHead.IsFollowCrawler || newBlock.Number == firstBlockNumber;
+
             if (settings.Capabilities.TransferModel == BlockchainTransferModel.Amount)
             {
-                if (chainHead.IsFollowCrawler || newBlock.Number == _integrationSettingsProvider.Get(evt.BlockchainType).Capabilities.FirstBlockNumber)
+                if (haveToExtendChainHead)
                 {
                     replyPublisher.Publish
                     (
@@ -128,7 +130,8 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                         BlockchainType = evt.BlockchainType,
                         BlockId = newBlock.Id,
                         HaveToExecuteEntireBlock = chainHead.IsFollowCrawler || chainHead.BlockNumber + 1 == newBlock.Number,
-                        TriggeredBy = BlockExecutionTrigger.Crawler
+                        HaveToExecuteInOrder = chainHead.IsFollowCrawler,
+                        HaveToExtendChainHead = haveToExtendChainHead
                     },
                     chainHead.GetCorrelationId(crawlerCorrelationId).ToString()
                 );

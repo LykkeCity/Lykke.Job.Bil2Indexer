@@ -78,11 +78,6 @@ namespace Lykke.Job.Bil2Indexer.Domain
             return $"{BlockchainType}:{configuration}({Sequence}):{ExpectedBlockNumber}";
         }
 
-        public bool IsOnBlock(long blockNumber)
-        {
-            return ExpectedBlockNumber == blockNumber;
-        }
-
         public bool HaveToWaitFor(ChainHead chainHead, CrawlingDirection direction)
         {
             if (!chainHead.BlockNumber.HasValue)
@@ -126,6 +121,11 @@ namespace Lykke.Job.Bil2Indexer.Domain
             }
 
             Mode = CrawlerMode.Indexing;
+        }
+
+        private bool IsOnBlock(long blockNumber)
+        {
+            return ExpectedBlockNumber - 1 == blockNumber;
         }
     }
 }

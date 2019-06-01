@@ -50,6 +50,8 @@ namespace Lykke.Job.Bil2Indexer.Services
                 .Handle<ChainHeadExtendedEvent>(o => o.WithHandler<ChainHeadExtendedEventsHandler>())
                 .Handle<ChainHeadReducedEvent>(o => o.WithHandler<ChainHeadReducedEventsHandler>())
                 .Handle<CrawlerCaughtByChainHeadEvent>(o => o.WithHandler<CrawlerCaughtByChainHeadEventsHandler>())
+                .Handle<ChainHeadAttachedToCrawlerEvent>(o => o.WithHandler<ChainHeadAttachedToCrawlerEventsHandler>())
+                .Handle<ChainHeadDetachedFromCrawlerEvent>(o => o.WithHandler<ChainHeadDetachedFromCrawlerEventsHandler>())
                 .AddFilter(new AppInsightTelemetryMessageFilter());
 
             if (_settings.TraceMessages)
@@ -82,6 +84,8 @@ namespace Lykke.Job.Bil2Indexer.Services
                 .Handle<ExtendChainHeadCommand>(o => { o.WithHandler<ExtendChainHeadCommandsHandler>(); })
                 .Handle<ReduceChainHeadCommand>(o => { o.WithHandler<ReduceChainHeadCommandsHandler>(); })
                 .Handle<WaitForChainHeadCommand>(o => { o.WithHandler<WaitForChainHeadCommandsHandler>(); })
+                .Handle<AttachChainHeadToCrawlerCommand>(o => { o.WithHandler<AttachChainHeadToCrawlerCommandsHandler>(); })
+                .Handle<DetachChainHeadFromCrawlerCommand>(o => { o.WithHandler<DetachChainHeadFromCrawlerCommandsHandler>(); })
                 .AddFilter(new AppInsightTelemetryMessageFilter());
 
             if (_settings.TraceMessages)

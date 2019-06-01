@@ -34,7 +34,8 @@ namespace Lykke.Job.Bil2Indexer.Controllers
                     BlockchainType = request.BlockchainType,
                     BlockId = request.BlockId,
                     HaveToExecuteEntireBlock = request.HaveToExecuteEntireBlock,
-                    TriggeredBy = request.TriggeredBy
+                    HaveToExecuteInOrder = request.HaveToExecuteInOrder,
+                    HaveToExtendChainHead = request.HaveToExtendChainHead
                 },
                 request.CorrelationId
             );
