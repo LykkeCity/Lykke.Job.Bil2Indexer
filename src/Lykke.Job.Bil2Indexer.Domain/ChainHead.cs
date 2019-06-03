@@ -142,7 +142,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public void AttachToCrawler(long crawlerSequence)
         {
-            if (IsCatchCrawlerUp)
+            if (!IsCatchCrawlerUp)
             {
                 throw new InvalidOperationException($"Chain head can be attached to the crawler only in {ChainHeadMode.CatchesCrawlerUp} mode");
             }
@@ -155,7 +155,7 @@ namespace Lykke.Job.Bil2Indexer.Domain
 
         public void DetachFromCrawler()
         {
-            if (IsFollowCrawler)
+            if (!IsFollowCrawler)
             {
                 throw new InvalidOperationException($"Chain head can be detached from the crawler only in {ChainHeadMode.FollowsCrawler} mode");
             }
