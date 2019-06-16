@@ -69,11 +69,10 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
             var chainHeadCorrelationId = chainHead.GetCorrelationId();
 
             if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId, chainHead.Mode) &&
-                // In case of retry after chain head sequence incremented and saved,
-                // the message is became previous relative to the updated chain head,
+                // In case of retry after chain head is updated and saved,
                 // we should process the message, since we not sure if the events
                 // are published.
-                !messageCorrelationId.IsPreviousOf(chainHeadCorrelationId, chainHead.Mode))
+                chainHead.BlockNumber != command.ToBlockNumber)
             {
                 // The message is legacy, it already was processed for sure, we can ignore it.
                 _log.LogLegacyMessage(command, headers);
@@ -99,7 +98,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                 chainHeadCorrelationId = chainHead.GetCorrelationId();
             }
 
-            if (messageCorrelationId.IsPreviousOf(chainHeadCorrelationId, chainHead.Mode))
+            if (chainHead.BlockNumber == command.ToBlockNumber)
             {
                 _log.Info("Chain head extended", new
                 {
