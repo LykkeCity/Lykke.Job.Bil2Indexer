@@ -47,7 +47,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
             );
             var chainHeadCorrelationId = chainHead.GetCorrelationId();
 
-            if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId))
+            if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId, chainHead.Mode))
             {
                 // The message is legacy, it already was processed for sure, we can ignore it.
                 _log.LogLegacyMessage(evt, headers);
@@ -55,7 +55,7 @@ namespace Lykke.Job.Bil2Indexer.Workflow.EventHandlers
                 return MessageHandlingResult.Success();
             }
 
-            if (messageCorrelationId.IsPrematureRelativeTo(chainHeadCorrelationId))
+            if (messageCorrelationId.IsPrematureRelativeTo(chainHeadCorrelationId, chainHead.Mode))
             {
                 // The message is premature, it can't be processed yet, we should retry it later.
                 return MessageHandlingResult.TransientFailure();

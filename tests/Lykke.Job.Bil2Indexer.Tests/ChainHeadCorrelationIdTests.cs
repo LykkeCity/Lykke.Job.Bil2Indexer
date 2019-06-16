@@ -23,115 +23,144 @@ namespace Lykke.Job.Bil2Indexer.Tests
         [Test]
         
         // The same
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp,  ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler,  ExpectedResult = false)]
 
         // AttachToCrawler:
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:40", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:40", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:51:100:40", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:55:100:40", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:40", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:40", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:51:100:40", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:55:100:40", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:51:100:40", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:55:100:40", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
 
         // DetachFromCrawler
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:51:100:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:55:100:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:51:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:55:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:51:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:55:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+
 
         // ExtendTo in catching up mode
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:101:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:105:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:101:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:105:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:101:0", ChainHeadMode.CatchesCrawlerUp,  ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:105:0", ChainHeadMode.CatchesCrawlerUp,  ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:101:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp,  ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:105:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp,  ExpectedResult = false)]
 
         // ExtendTo in following mode / ReduceTo
-        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:101:41", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:105:45", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:101:41", "ch#Bitcoin:50:100:40", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:105:45", "ch#Bitcoin:50:100:40", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:100:41", "ch#Bitcoin:50:100:40", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:100:45", "ch#Bitcoin:50:100:40", ExpectedResult = false)]
-        public bool Test_is_legacy_relative_to(string checkedValue, string againstValue)
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:101:41", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:105:45", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:41", "ch#Bitcoin:50:105:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:101:41", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:105:45", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:41", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:45", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        public bool Test_is_legacy_relative_to(string checkedValue, string againstValue, ChainHeadMode mode)
         {
             var checkedId = ChainHeadCorrelationId.Parse(checkedValue);
             var againstId = ChainHeadCorrelationId.Parse(againstValue);
 
-            return checkedId.IsLegacyRelativeTo(againstId);
+            return checkedId.IsLegacyRelativeTo(againstId, mode);
         }
 
         [Test]
 
         // The same
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
 
         // AttachToCrawler:
-        [TestCase("ch#Bitcoin:51:100:40", "ch#Bitcoin:50:100:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:55:100:40", "ch#Bitcoin:50:100:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:40", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:40", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:51:100:40", "ch#Bitcoin:50:100:40", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:55:100:40", "ch#Bitcoin:50:100:40", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:51:100:40", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:55:100:40", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:51:100:40", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:55:100:40", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:51:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:55:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
 
         // DetachFromCrawler
-        [TestCase("ch#Bitcoin:51:100:0", "ch#Bitcoin:50:100:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:55:100:0", "ch#Bitcoin:50:100:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:0", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:51:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:55:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:51:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:55:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
 
         // ExtendTo in catching up mode
-        [TestCase("ch#Bitcoin:50:101:0", "ch#Bitcoin:50:100:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:105:0", "ch#Bitcoin:50:100:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:101:0", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:105:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:101:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:105:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:101:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:105:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
 
         // ExtendTo in following mode / ReduceTo
-        [TestCase("ch#Bitcoin:50:101:41", "ch#Bitcoin:50:100:40", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:105:45", "ch#Bitcoin:50:100:40", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:41", "ch#Bitcoin:50:100:40", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:45", "ch#Bitcoin:50:100:40", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:101:41", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:105:45", ExpectedResult = false)]
-        public bool Test_is_premature_relative_to(string checkedValue, string againstValue)
+        [TestCase("ch#Bitcoin:50:101:41", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:105:45", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:41", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:45", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:101:41", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:105:45", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        public bool Test_is_premature_relative_to(string checkedValue, string againstValue, ChainHeadMode mode)
         {
             var checkedId = ChainHeadCorrelationId.Parse(checkedValue);
             var againstId = ChainHeadCorrelationId.Parse(againstValue);
 
-            return checkedId.IsPrematureRelativeTo(againstId);
+            return checkedId.IsPrematureRelativeTo(againstId, mode);
         }
 
         [Test]
         // The same
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
 
         // AttachToCrawler:
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:40", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:40", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:51:100:40", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:55:100:40", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:51:100:40", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:55:100:40", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:51:100:40", "ch#Bitcoin:50:100:40", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:55:100:40", "ch#Bitcoin:50:100:40", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:51:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:55:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:51:100:40", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:55:100:40", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
 
         // DetachFromCrawler
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:0", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:51:100:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:55:100:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:51:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:55:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:51:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:55:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:51:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:55:100:0", "ch#Bitcoin:50:100:0", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
 
         // ExtendTo in catching up mode
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:101:0", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:105:0", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:101:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:105:0", "ch#Bitcoin:50:100:0", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:101:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:0", "ch#Bitcoin:50:105:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:101:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:105:0", "ch#Bitcoin:50:100:0", ChainHeadMode.CatchesCrawlerUp, ExpectedResult = false)]
 
         // ExtendTo in following mode / ReduceTo
-        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:101:41", ExpectedResult = true)]
-        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:105:45", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:101:41", "ch#Bitcoin:50:100:40", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:105:45", "ch#Bitcoin:50:100:40", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:100:41", "ch#Bitcoin:50:100:40", ExpectedResult = false)]
-        [TestCase("ch#Bitcoin:50:100:45", "ch#Bitcoin:50:100:40", ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:101:41", ChainHeadMode.FollowsCrawler, ExpectedResult = true)]
+        [TestCase("ch#Bitcoin:50:100:40", "ch#Bitcoin:50:105:45", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:101:41", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:105:45", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:41", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
+        [TestCase("ch#Bitcoin:50:100:45", "ch#Bitcoin:50:100:40", ChainHeadMode.FollowsCrawler, ExpectedResult = false)]
 
-        public bool Test_is_previous_of(string checkedValue, string againstValue)
+        public bool Test_is_previous_of(string checkedValue, string againstValue, ChainHeadMode mode)
         {
             var checkedId = ChainHeadCorrelationId.Parse(checkedValue);
             var againstId = ChainHeadCorrelationId.Parse(againstValue);
 
-            return checkedId.IsPreviousOf(againstId);
+            return checkedId.IsPreviousOf(againstId, mode);
         }
     }
 }

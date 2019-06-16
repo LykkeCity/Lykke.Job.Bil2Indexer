@@ -43,13 +43,16 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
         public async Task<MessageHandlingResult> HandleAsync(ExecuteTransferCoinsBlockCommand command, MessageHeaders headers, IMessagePublisher replyPublisher)
         {
             var messageCorrelationId = ChainHeadCorrelationId.Parse(headers.CorrelationId);
-            
+
+            var getBLockTask = _blockHeadersRepository.GetOrDefaultAsync(command.BlockchainType, command.BlockId);
+            BlockHeader block;
+
             if (command.HaveToExecuteInOrder)
             {
                 var chainHead = await _chainHeadsRepository.GetAsync(command.BlockchainType);
                 var chainHeadCorrelationId = chainHead.GetCorrelationId();
 
-                if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId))
+                if (messageCorrelationId.IsLegacyRelativeTo(chainHeadCorrelationId, chainHead.Mode))
                 {
                     // The message is legacy, it already was processed for sure, we can ignore it.
                     _log.LogLegacyMessage(command, headers);
@@ -57,14 +60,19 @@ namespace Lykke.Job.Bil2Indexer.Workflow.CommandHandlers
                     return MessageHandlingResult.Success();
                 }
 
-                if (messageCorrelationId.IsPrematureRelativeTo(chainHeadCorrelationId))
+                block = await getBLockTask;
+
+                if (messageCorrelationId.IsPrematureRelativeTo(chainHeadCorrelationId, chainHead.Mode) && 
+                    !chainHead.CanExtendTo(block.Number))
                 {
                     // The message is premature, it can't be processed yet, we should retry it later.
                     return MessageHandlingResult.TransientFailure();
                 }
             }
-
-            var block = await _blockHeadersRepository.GetOrDefaultAsync(command.BlockchainType, command.BlockId);
+            else
+            {
+                block = await getBLockTask;
+            }
 
             if (block == null)
             {

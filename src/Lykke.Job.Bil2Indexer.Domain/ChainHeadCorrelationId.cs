@@ -54,54 +54,56 @@ namespace Lykke.Job.Bil2Indexer.Domain
             return $"{Type}{BlockchainType}:{ModeSequence}:{BlockSequence}:{CrawlerSequence}";
         }
 
-        public bool IsPreviousOf(ChainHeadCorrelationId another)
+        public bool IsPreviousOf(ChainHeadCorrelationId another, ChainHeadMode mode)
         {
             if (!BlockchainType.Equals(another.BlockchainType))
             {
                 throw new InvalidOperationException($"Blockchain type mismatch: {BlockchainType}, another: {another}");
             }
 
-            // Possible sequence updates:
-            // AttachToCrawler - Mode++ and CrawlerSequence=x
-            // DetachFromCrawler - Mode++
-            // ExtendTo - BlockSequence++ or BlockSequence++ and CrawlerSequence++
-            // ReduceTo - BlockSequence++ and CrawlerSequence++
-            // Publication from BlockAssembledEventHandler - BlockSequence=x and CrawlerSequence++
-
             // AttachToCrawler, DetachFromCrawler
-            if (ModeSequence + 1 == another.ModeSequence && BlockSequence == another.BlockSequence)
+            if (ModeSequence + 1 == another.ModeSequence && BlockSequence == another.BlockSequence && CrawlerSequence == another.CrawlerSequence)
             {
                 return true;
             }
 
-            // ExtendTo, ReduceTo
-            if (ModeSequence == another.ModeSequence && BlockSequence + 1 == another.BlockSequence)
+            switch (mode)
             {
-                return true;
-            }
+                case ChainHeadMode.CatchesCrawlerUp:
+                {
+                    // ExecuteTransferCoinsBlock, ExtendTo
+                    if (ModeSequence == another.ModeSequence && BlockSequence + 1 == another.BlockSequence)
+                    {
+                        return true;
+                    }
 
-            // Publication from BlockAssembledEventHandler
-            if (ModeSequence == another.ModeSequence && CrawlerSequence + 1 == another.CrawlerSequence)
-            {
-                return true;
+                    break;
+                }
+
+                case ChainHeadMode.FollowsCrawler:
+                {
+                    // ExecuteTransferCoinsBlock, ExtendTo, ReduceTo
+                    if (ModeSequence == another.ModeSequence && CrawlerSequence + 1 == another.CrawlerSequence)
+                    {
+                        return true;
+                    }
+
+                    break;
+                }
+
+                default:
+                    throw new InvalidOperationException($"Unknown chain head mode {mode}");
             }
 
             return false;
         }
 
-        public bool IsLegacyRelativeTo(ChainHeadCorrelationId another)
+        public bool IsLegacyRelativeTo(ChainHeadCorrelationId another, ChainHeadMode mode)
         {
             if (!BlockchainType.Equals(another.BlockchainType))
             {
                 throw new InvalidOperationException($"Blockchain type mismatch: {BlockchainType}, another: {another}");
             }
-
-            // Possible sequence updates:
-            // AttachToCrawler - Mode++ and CrawlerSequence=x
-            // DetachFromCrawler - Mode++
-            // ExtendTo - BlockSequence++ or BlockSequence++ and CrawlerSequence++
-            // ReduceTo - BlockSequence++ and CrawlerSequence++
-            // Publication from BlockAssembledEventHandler - BlockSequence=x and CrawlerSequence++
 
             // AttachToCrawler, DetachFromCrawler
             if (ModeSequence < another.ModeSequence)
@@ -109,51 +111,76 @@ namespace Lykke.Job.Bil2Indexer.Domain
                 return true;
             }
 
-            // ExtendTo, ReduceTo
-            if (ModeSequence == another.ModeSequence && BlockSequence < another.BlockSequence)
+            switch (mode)
             {
-                return true;
-            }
+                case ChainHeadMode.CatchesCrawlerUp:
+                {
+                    // ExecuteTransferCoinsBlock, ExtendTo
+                    if (ModeSequence == another.ModeSequence && BlockSequence < another.BlockSequence)
+                    {
+                        return true;
+                    }
 
-            // Publication from BlockAssembledEventHandler
-            if (ModeSequence == another.ModeSequence && CrawlerSequence < another.CrawlerSequence)
-            {
-                return true;
+                    break;
+                }
+
+                case ChainHeadMode.FollowsCrawler:
+                {
+                    // ExecuteTransferCoinsBlock, ExtendTo, ReduceTo
+                    if (ModeSequence == another.ModeSequence && CrawlerSequence < another.CrawlerSequence)
+                    {
+                        return true;
+                    }
+
+                    break;
+                }
+
+                default:
+                    throw new InvalidOperationException($"Unknown chain head mode {mode}");
             }
 
             return false;
         }
 
-        public bool IsPrematureRelativeTo(ChainHeadCorrelationId another)
+        public bool IsPrematureRelativeTo(ChainHeadCorrelationId another, ChainHeadMode mode)
         {
             if (!BlockchainType.Equals(another.BlockchainType))
             {
                 throw new InvalidOperationException($"Blockchain type mismatch: {BlockchainType}, another: {another}");
             }
             
-            // Possible sequence updates:
-            // AttachToCrawler - Mode++ and CrawlerSequence=x
-            // DetachFromCrawler - Mode++
-            // ExtendTo - BlockSequence++ or BlockSequence++ and CrawlerSequence++
-            // ReduceTo - BlockSequence++ and CrawlerSequence++
-            // Publication from BlockAssembledEventHandler - BlockSequence=x and CrawlerSequence++
-
             // AttachToCrawler, DetachFromCrawler
             if (ModeSequence > another.ModeSequence)
             {
                 return true;
             }
 
-            // ExtendTo, ReduceTo
-            if (ModeSequence == another.ModeSequence && BlockSequence > another.BlockSequence)
+            switch (mode)
             {
-                return true;
-            }
+                case ChainHeadMode.CatchesCrawlerUp:
+                {
+                    // ExecuteTransferCoinsBlock, ExtendTo
+                    if (ModeSequence == another.ModeSequence && BlockSequence > another.BlockSequence)
+                    {
+                        return true;
+                    }
 
-            // Publication from BlockAssembledEventHandler
-            if (ModeSequence == another.ModeSequence && CrawlerSequence > another.CrawlerSequence)
-            {
-                return true;
+                    break;
+                }
+
+                case ChainHeadMode.FollowsCrawler:
+                {
+                    // ExecuteTransferCoinsBlock, ExtendTo, ReduceTo
+                    if (ModeSequence == another.ModeSequence && CrawlerSequence > another.CrawlerSequence)
+                    {
+                        return true;
+                    }
+
+                    break;
+                }
+
+                default:
+                    throw new InvalidOperationException($"Unknown chain head mode {mode}");
             }
 
             return false;
